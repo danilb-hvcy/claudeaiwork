@@ -292,9 +292,21 @@ const db=firebase.firestore();
 // In-memory cache — all reads are synchronous against this
 let _complaints=[];
 let _actions=[];
+let _users=[];
 
 function getComplaints(){return _complaints;}
 function getActions(){return _actions;}
+function getUsers(){return _users;}
+
+function saveUser(u){
+  const idx=_users.findIndex(x=>x.id===u.id);
+  if(idx>=0)_users[idx]=u; else _users.push(u);
+  db.collection("hced_users").doc(u.id).set(u).catch(console.error);
+}
+function deleteUser(id){
+  _users=_users.filter(u=>u.id!==id);
+  db.collection("hced_users").doc(id).delete().catch(console.error);
+}
 
 function saveComplaints(arr){
   _complaints=arr;
@@ -339,12 +351,26 @@ function startRealtimeListeners(){
 
 // Load all data once from Firestore, then start listeners
 async function loadFirestoreData(){
-  const [cs,as]=await Promise.all([
+  const [cs,as,us]=await Promise.all([
     db.collection("hced_complaints").get(),
-    db.collection("hced_admin_actions").get()
+    db.collection("hced_admin_actions").get(),
+    db.collection("hced_users").get()
   ]);
   _complaints=cs.docs.map(d=>d.data());
   _actions=as.docs.map(d=>d.data());
+  _users=us.docs.map(d=>d.data());
+  // Seed default users into Firestore if none exist yet
+  if(_users.length===0){
+    const defaults=[
+      {id:"U001",name:"Danil Babadjanov",username:"danil",password:"Danilka2010!",role:"admin",title:"System Administrator",active:true,mustResetPassword:false},
+      {id:"U002",name:"Aleksey Babadzhanov",username:"aleksey",password:"Aleksey2131!",role:"admin",title:"System Administrator",active:true,mustResetPassword:false},
+      {id:"U003",name:"Leonid Babadjanov",username:"leonid",password:"Leonid1973!",role:"admin",title:"System Administrator",active:true,mustResetPassword:false},
+      {id:"U004",name:"Support Agent",username:"agent",password:"HVAgent2024!",role:"agent",title:"Support Agent",active:true,mustResetPassword:false}
+    ];
+    const batch=db.batch();
+    defaults.forEach(u=>{_users.push(u);batch.set(db.collection("hced_users").doc(u.id),u);});
+    batch.commit().catch(console.error);
+  }
 }
 
 function seedData(){
@@ -399,7 +425,7 @@ document.getElementById("l-pass").addEventListener("keydown",e=>{if(e.key==="Ent
 function doLogin(){
   const u=document.getElementById("l-user").value.trim();
   const p=document.getElementById("l-pass").value;
-  const found=USERS.find(x=>x.username===u&&x.password===p);
+  const found=_users.find(x=>x.username===u&&x.password===p&&x.active!==false);
   const err=document.getElementById("login-error");
   if(!found){err.style.display="block";return;}
   err.style.display="none";
@@ -408,11 +434,56 @@ function doLogin(){
     {text:"Loading your workspace...",dur:900},
     {text:"Welcome, "+found.name+".",dur:800}
   ],2500,()=>{
+    if(found.mustResetPassword){
+      // Force password reset before entering app
+      document.getElementById("login-page").style.display="none";
+      showForcedPasswordReset(found);
+      return;
+    }
     setSession(found);currentUser=found;
     document.getElementById("login-page").style.display="none";
     document.getElementById("app").style.display="block";
     initApp();
   });
+}
+
+function showForcedPasswordReset(user){
+  document.getElementById("app").style.display="none";
+  const mc=document.createElement("div");
+  mc.id="force-reset-page";
+  mc.style.cssText="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0D2137;z-index:500";
+  mc.innerHTML=`<div class="login-card" style="max-width:440px">
+    <img src="heyvacay-logo.svg" alt="HeyVacay" style="height:32px;margin-bottom:24px"/>
+    <div class="login-title" style="font-size:18px">Set Your New Password</div>
+    <div class="login-sub">Your password has been reset by an administrator. You must set a new password before continuing.</div>
+    <div class="login-field" style="text-align:left;margin-top:20px">
+      <label>New Password</label>
+      <input type="password" id="fr-pw1" placeholder="Enter new password"/>
+    </div>
+    <div class="login-field" style="text-align:left">
+      <label>Verify Password</label>
+      <input type="password" id="fr-pw2" placeholder="Re-enter new password"/>
+    </div>
+    <div id="fr-err" style="color:#ef4444;font-size:13px;margin-bottom:12px;display:none"></div>
+    <button class="btn btn-primary" style="width:100%" onclick="submitForcedReset('${user.id}')">Set Password & Sign In</button>
+  </div>`;
+  document.body.appendChild(mc);
+}
+
+function submitForcedReset(userId){
+  const p1=document.getElementById("fr-pw1").value;
+  const p2=document.getElementById("fr-pw2").value;
+  const err=document.getElementById("fr-err");
+  if(!p1||p1.length<6){err.style.display="block";err.textContent="Password must be at least 6 characters.";return;}
+  if(p1!==p2){err.style.display="block";err.textContent="Passwords do not match.";return;}
+  const user=_users.find(u=>u.id===userId);
+  if(!user)return;
+  user.password=p1;user.mustResetPassword=false;
+  saveUser(user);
+  document.getElementById("force-reset-page").remove();
+  setSession(user);currentUser=user;
+  document.getElementById("app").style.display="block";
+  initApp();
 }
 
 // ===== APP INIT =====
@@ -431,9 +502,9 @@ function initApp(){
 
 function renderNav(){
   const tabs=currentUser.role==="admin"
-    ?["dashboard","new_complaint","my_complaints","hotel_lookup","complaint_registry","admin_panel","completed_actions"]
+    ?["dashboard","new_complaint","my_complaints","hotel_lookup","complaint_registry","admin_panel","completed_actions","users"]
     :["dashboard","new_complaint","my_complaints","hotel_lookup"];
-  const labels={"dashboard":"Dashboard","new_complaint":"New Complaint","my_complaints":"My Complaints","hotel_lookup":"Hotel Lookup","complaint_registry":"Complaint Registry","admin_panel":"Admin Panel","completed_actions":"Completed Actions"};
+  const labels={"dashboard":"Dashboard","new_complaint":"New Complaint","my_complaints":"My Complaints","hotel_lookup":"Hotel Lookup","complaint_registry":"Complaint Registry","admin_panel":"Admin Panel","completed_actions":"Completed Actions","users":"Users"};
   const nav=document.getElementById("main-nav");
   nav.innerHTML=tabs.map(t=>`<div class="nav-tab ${currentPage===t?"active":""}" onclick="navigate('${t}')">${labels[t]}</div>`).join("");
 }
@@ -451,6 +522,7 @@ function navigate(page){
     else if(page==="complaint_registry")renderComplaintRegistry();
     else if(page==="admin_panel")renderAdminPanel();
     else if(page==="completed_actions")renderCompletedActions();
+    else if(page==="users")renderUsers();
   });
 }
 
@@ -1724,6 +1796,190 @@ function paginator(page,pages,cbName){
   if(page<pages)html+=`<button class="page-btn" onclick="${cbName}(${page+1})">→</button>`;
   html+=`</div>`;
   return html;
+}
+
+// ===== USERS MODULE =====
+function renderUsers(){
+  const mc=document.getElementById("main-content");
+  mc.innerHTML=`
+    <div class="page-header">
+      <h1 class="page-title">Users</h1>
+      <button class="btn btn-primary" onclick="openCreateUserModal()">+ Create User</button>
+    </div>
+    <div id="users-table"></div>`;
+  renderUsersTable();
+}
+
+function renderUsersTable(){
+  const users=getUsers().slice().sort((a,b)=>a.name.localeCompare(b.name));
+  const tb=document.getElementById("users-table");
+  if(!users.length){tb.innerHTML=`<div class="empty-state">No users found.</div>`;return;}
+  tb.innerHTML=`<table>
+    <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>${users.map(u=>`<tr>
+      <td><strong>${u.name}</strong></td>
+      <td style="font-family:monospace;font-size:13px">${u.username}</td>
+      <td><span class="badge ${u.role==="admin"?"badge-cyan":"badge-gray"}">${u.role==="admin"?"Admin":"Agent"}</span></td>
+      <td>${u.title}</td>
+      <td>${u.active===false?`<span class="badge badge-gray">Inactive</span>`:`<span class="badge badge-green">Active</span>`}${u.mustResetPassword?` <span class="badge badge-orange" style="font-size:11px">Must Reset PW</span>`:""}</td>
+      <td style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-secondary" onclick="openEditUserModal('${u.id}')">Edit</button>
+        <button class="btn btn-sm btn-secondary" onclick="openResetPasswordModal('${u.id}')">Reset Password</button>
+        ${u.id!==currentUser.id?`<button class="btn btn-sm btn-danger" onclick="confirmDeleteUser('${u.id}')">Delete</button>`:`<button class="btn btn-sm btn-secondary" disabled title="Cannot delete yourself" style="opacity:.4">Delete</button>`}
+      </td>
+    </tr>`).join("")}</tbody>
+  </table>`;
+}
+
+function genUserId(){return "U"+Date.now().toString().slice(-6);}
+
+function openCreateUserModal(){
+  openModal("Create New User",`
+    <div class="form-group"><label>Full Name *</label><input type="text" id="cu-name" placeholder="Full name"/><div class="field-error" id="e-cu-name">Required</div></div>
+    <div class="form-row">
+      <div class="form-group"><label>Username *</label><input type="text" id="cu-username" placeholder="lowercase, no spaces"/><div class="field-error" id="e-cu-username">Required</div></div>
+      <div class="form-group"><label>Title *</label><input type="text" id="cu-title" placeholder="e.g. Support Agent"/><div class="field-error" id="e-cu-title">Required</div></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Role *</label>
+        <select id="cu-role"><option value="agent">Agent</option><option value="admin">Admin</option></select>
+      </div>
+      <div class="form-group"><label>Password *</label><input type="password" id="cu-pw1" placeholder="Set initial password"/><div class="field-error" id="e-cu-pw1">Required (min 6 chars)</div></div>
+    </div>
+    <div class="form-group"><label>Verify Password *</label><input type="password" id="cu-pw2" placeholder="Re-enter password"/><div class="field-error" id="e-cu-pw2">Passwords do not match</div></div>
+    <div class="form-group">
+      <label class="checkbox-label" style="margin-bottom:0"><input type="checkbox" id="cu-mustreset"/> Require this user to set a new password on first login</label>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitCreateUser()">Create User</button>
+    </div>`,{noClickClose:false});
+}
+
+function submitCreateUser(){
+  const name=document.getElementById("cu-name").value.trim();
+  const username=document.getElementById("cu-username").value.trim().toLowerCase();
+  const title=document.getElementById("cu-title").value.trim();
+  const role=document.getElementById("cu-role").value;
+  const pw1=document.getElementById("cu-pw1").value;
+  const pw2=document.getElementById("cu-pw2").value;
+  const mustReset=document.getElementById("cu-mustreset").checked;
+  let ok=true;
+  if(!name){document.getElementById("e-cu-name").style.display="block";ok=false;}else{document.getElementById("e-cu-name").style.display="none";}
+  if(!username){document.getElementById("e-cu-username").style.display="block";ok=false;}
+  else if(_users.find(u=>u.username===username)){document.getElementById("e-cu-username").style.display="block";document.getElementById("e-cu-username").textContent="Username already taken";ok=false;}
+  else{document.getElementById("e-cu-username").style.display="none";}
+  if(!title){document.getElementById("e-cu-title").style.display="block";ok=false;}else{document.getElementById("e-cu-title").style.display="none";}
+  if(!pw1||pw1.length<6){document.getElementById("e-cu-pw1").style.display="block";ok=false;}else{document.getElementById("e-cu-pw1").style.display="none";}
+  if(pw1!==pw2){document.getElementById("e-cu-pw2").style.display="block";ok=false;}else{document.getElementById("e-cu-pw2").style.display="none";}
+  if(!ok)return;
+  const user={id:genUserId(),name,username,title,role,password:pw1,active:true,mustResetPassword:mustReset};
+  saveUser(user);
+  closeModal();
+  renderUsersTable();
+}
+
+function openEditUserModal(id){
+  const u=_users.find(x=>x.id===id);
+  if(!u)return;
+  openModal("Edit User — "+u.name,`
+    <div class="form-group"><label>Full Name *</label><input type="text" id="eu-name" value="${u.name}"/></div>
+    <div class="form-row">
+      <div class="form-group"><label>Username *</label><input type="text" id="eu-username" value="${u.username}"/></div>
+      <div class="form-group"><label>Title *</label><input type="text" id="eu-title" value="${u.title}"/></div>
+    </div>
+    <div class="form-group"><label>Role</label>
+      <select id="eu-role"><option value="agent" ${u.role==="agent"?"selected":""}>Agent</option><option value="admin" ${u.role==="admin"?"selected":""}>Admin</option></select>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label" style="margin-bottom:0"><input type="checkbox" id="eu-active" ${u.active!==false?"checked":""}/> Account Active</label>
+    </div>
+    <div id="eu-err" style="color:#ef4444;font-size:13px;margin-top:8px;display:none"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitEditUser('${id}')">Save Changes</button>
+    </div>`,{noClickClose:false});
+}
+
+function submitEditUser(id){
+  const u=_users.find(x=>x.id===id);
+  if(!u)return;
+  const name=document.getElementById("eu-name").value.trim();
+  const username=document.getElementById("eu-username").value.trim().toLowerCase();
+  const title=document.getElementById("eu-title").value.trim();
+  const role=document.getElementById("eu-role").value;
+  const active=document.getElementById("eu-active").checked;
+  const err=document.getElementById("eu-err");
+  if(!name||!username||!title){err.style.display="block";err.textContent="All fields are required.";return;}
+  const dupe=_users.find(x=>x.username===username&&x.id!==id);
+  if(dupe){err.style.display="block";err.textContent="Username already taken by another user.";return;}
+  u.name=name;u.username=username;u.title=title;u.role=role;u.active=active;
+  saveUser(u);
+  // Update session if editing self
+  if(currentUser.id===id){setSession(u);currentUser=u;document.getElementById("header-username").textContent=u.name;}
+  closeModal();
+  renderUsersTable();
+}
+
+function openResetPasswordModal(id){
+  const u=_users.find(x=>x.id===id);
+  if(!u)return;
+  openModal("Reset Password — "+u.name,`
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px;line-height:1.6">Set a new password for <strong style="color:#fff">${u.name}</strong>. You can either set a specific password, or leave it for the user to create their own on next login.</p>
+    <div class="form-group">
+      <label>New Password *</label>
+      <input type="password" id="rp-pw1" placeholder="Enter new password (min 6 chars)"/>
+      <div class="field-error" id="e-rp-pw1">Required — minimum 6 characters</div>
+    </div>
+    <div class="form-group">
+      <label>Verify Password *</label>
+      <input type="password" id="rp-pw2" placeholder="Re-enter new password"/>
+      <div class="field-error" id="e-rp-pw2">Passwords do not match</div>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label" style="margin-bottom:0"><input type="checkbox" id="rp-mustreset" checked/> Require user to set a new password on next login</label>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitResetPassword('${id}')">Reset Password</button>
+    </div>`,{noClickClose:false});
+}
+
+function submitResetPassword(id){
+  const pw1=document.getElementById("rp-pw1").value;
+  const pw2=document.getElementById("rp-pw2").value;
+  const mustReset=document.getElementById("rp-mustreset").checked;
+  let ok=true;
+  if(!pw1||pw1.length<6){document.getElementById("e-rp-pw1").style.display="block";ok=false;}else{document.getElementById("e-rp-pw1").style.display="none";}
+  if(pw1!==pw2){document.getElementById("e-rp-pw2").style.display="block";ok=false;}else{document.getElementById("e-rp-pw2").style.display="none";}
+  if(!ok)return;
+  const u=_users.find(x=>x.id===id);
+  if(!u)return;
+  u.password=pw1;u.mustResetPassword=mustReset;
+  saveUser(u);
+  closeModal();
+  renderUsersTable();
+}
+
+function confirmDeleteUser(id){
+  const u=_users.find(x=>x.id===id);
+  if(!u)return;
+  openModal("Delete User",`
+    <div style="text-align:center;padding:8px 0 24px">
+      <div style="font-size:40px;margin-bottom:16px">⚠️</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:8px">Delete <span style="color:var(--cyan)">${u.name}</span>?</div>
+      <p style="color:var(--muted);font-size:13px;line-height:1.6">This will permanently remove this user account. Their filed complaints will remain on record. This cannot be undone.</p>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="submitDeleteUser('${id}')">Delete User</button>
+    </div>`,{noClickClose:false});
+}
+
+function submitDeleteUser(id){
+  deleteUser(id);
+  closeModal();
+  renderUsersTable();
 }
 
 // ===== BOOT =====
