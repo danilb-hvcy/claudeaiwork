@@ -407,6 +407,20 @@ function sevBadgeShort(s){return `<span class="badge sev-${s}">${s}</span>`;}
 function statusBadge(st){const map={"open":"status-open","under_review":"status-under_review","action_taken":"status-action_taken","closed":"status-closed"};const lbl={"open":"Open","under_review":"Under Review","action_taken":"Action Taken","closed":"Closed"};return `<span class="badge ${map[st]||"badge-gray"}">${lbl[st]||st}</span>`;}
 function getHotelComplaints(hotelId){return getComplaints().filter(c=>c.property.hotelId===hotelId);}
 function hotelHasAction(hotelId){return getActions().some(a=>a.hotelId===hotelId&&(a.action==="remove"||a.action==="suspend"||a.action==="keep"));}
+
+// Returns true if hotel should appear in Admin Panel "Requires Action".
+// Handles initial 5-complaint threshold AND re-review thresholds set on prior actions.
+function hotelNeedsAdminReview(hotelId){
+  const complaints=getComplaints().filter(c=>c.property.hotelId===hotelId);
+  const actions=getActions().filter(a=>a.hotelId===hotelId).sort((a,b)=>a.actionedAt.localeCompare(b.actionedAt));
+  if(!actions.length) return complaints.length>=5;
+  const last=actions[actions.length-1];
+  if(last.action==="remove") return false;
+  if(!last.reReviewAt) return false;
+  const newComplaints=complaints.filter(c=>c.filedAt>last.actionedAt);
+  return newComplaints.length>=last.reReviewAt;
+}
+
 function getHotelStatus(hotelId){
   const acts=getActions().filter(a=>a.hotelId===hotelId);
   if(!acts.length)return "Monitoring";
@@ -461,6 +475,7 @@ function viewComplaintModal(id){
       <div class="review-row"><span class="review-label">Reported to Staff</span><span class="review-val">${c.complaint.reportedToStaff}</span></div>
       ${c.complaint.staffResponse?`<div class="review-row"><span class="review-label">Staff Response</span><span class="review-val">${c.complaint.staffResponse}</span></div>`:""}
       <div class="review-row"><span class="review-label">Evidence Available</span><span class="review-val">${c.complaint.evidenceAvailable}${c.complaint.evidenceDescription?" — "+c.complaint.evidenceDescription:""}</span></div>
+      <div class="review-row"><span class="review-label">Charges Disputed</span><span class="review-val">${c.chargesDisputed==="yes"?`Yes${c.totalLoss!=null?" — <strong style='color:#ef4444'>$"+Number(c.totalLoss).toFixed(2)+" total loss</strong>":" — amount not recorded"}`:"No"}</span></div>
       <div class="review-row" style="flex-direction:column;gap:6px"><span class="review-label">Incident Summary</span><span class="review-val" style="line-height:1.6">${c.complaint.summary}</span></div>
     </div>`;
   openModal("Complaint — "+c.id,html);
@@ -496,13 +511,10 @@ function renderDashboard(){
     const actionsMonth=actions.filter(a=>a.actionedAt>=monthStart);
     const allOpen=complaints.filter(c=>c.status==="open"||c.status==="under_review");
     const hotelIds=[...new Set(complaints.map(c=>c.property.hotelId))];
-    const atThreshold=hotelIds.filter(id=>{
-      const hc=getHotelComplaints(id);
-      return hc.length>=5&&!hotelHasAction(id);
-    });
+    const atThreshold=hotelIds.filter(id=>hotelNeedsAdminReview(id));
     const nearing=hotelIds.filter(id=>{
       const hc=getHotelComplaints(id);
-      return (hc.length===3||hc.length===4)&&!hotelHasAction(id);
+      return (hc.length===3||hc.length===4)&&!hotelNeedsAdminReview(id)&&!hotelHasAction(id);
     });
     const recent=complaints.slice().sort((a,b)=>b.filedAt.localeCompare(a.filedAt)).slice(0,10);
     mc.innerHTML=`
@@ -623,10 +635,12 @@ function afterStepRender(){
     if(d.reportedToStaff)selectRadioOpt("rts",d.reportedToStaff);
     if(d.impactLevel)selectRadioOpt("impact",d.impactLevel);
     if(d.evidenceAvailable)selectRadioOpt("evid",d.evidenceAvailable);
+    if(d.chargesDisputed)selectRadioOpt("chdisp",d.chargesDisputed);
     if(d.staffResponse)setVal("c-staffresp",d.staffResponse);
     if(d.evidenceDescription)setVal("c-eviddesc",d.evidenceDescription);
+    if(d.totalLoss)setVal("c-totalloss",d.totalLoss);
     updateCharCount();
-    toggleStaffResp();toggleEvidDesc();
+    toggleStaffResp();toggleEvidDesc();toggleTotalLoss();
   }
   if(s===5){
     if(d.severity!==undefined)selectSeverity(d.severity);
@@ -787,6 +801,18 @@ function step4HTML(){
       <label>Evidence Description</label>
       <input type="text" id="c-eviddesc" placeholder="Describe the evidence available (photos, email exchanges, receipts, etc.)"/>
     </div>
+    <div class="form-group" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+      <label>Were any charges disputed due to this incident? *</label>
+      <div class="radio-row">
+        ${["yes","no"].map(val=>`<label class="radio-opt" data-name="chdisp" data-val="${val}" onclick="selectRadio(this,'chdisp');toggleTotalLoss()"><input type="radio" name="chdisp" value="${val}"/> ${val.charAt(0).toUpperCase()+val.slice(1)}</label>`).join("")}
+      </div>
+      <div class="field-error" id="e-chdisp">Required</div>
+    </div>
+    <div id="total-loss-wrap" style="display:none" class="form-group">
+      <label>Total Loss Amount (USD)</label>
+      <input type="number" id="c-totalloss" min="0" step="0.01" placeholder="e.g. 350.00"/>
+      <div class="helper-text">Include the transaction total plus any dispute/chargeback fee.</div>
+    </div>
     <div style="display:flex;justify-content:space-between;margin-top:8px">
       <button class="btn btn-secondary" onclick="goBack()">← Back</button>
       <button class="btn btn-primary" onclick="step4Next()">Continue →</button>
@@ -819,6 +845,11 @@ function toggleEvidDesc(){
   const wrap=document.getElementById("evid-desc-wrap");
   if(wrap)wrap.style.display=(sel&&sel.dataset.val==="yes")?"block":"none";
 }
+function toggleTotalLoss(){
+  const sel=document.querySelector('.radio-opt[data-name="chdisp"].selected');
+  const wrap=document.getElementById("total-loss-wrap");
+  if(wrap)wrap.style.display=(sel&&sel.dataset.val==="yes")?"block":"none";
+}
 
 function step4Next(){
   const cats=[...document.querySelectorAll(".cat-cb:checked")].map(cb=>cb.dataset.cat);
@@ -832,6 +863,8 @@ function step4Next(){
   if(!imp){showErr("e-impact");ok=false;}else{hideErr("e-impact");}
   const evid=document.querySelector('.radio-opt[data-name="evid"].selected');
   if(!evid){showErr("e-evid");ok=false;}else{hideErr("e-evid");}
+  const chdisp=document.querySelector('.radio-opt[data-name="chdisp"].selected');
+  if(!chdisp){showErr("e-chdisp");ok=false;}else{hideErr("e-chdisp");}
   if(!ok){scrollToFirst();return;}
   const d=wizardState.data;
   d.categories=cats;d.summary=summary;
@@ -840,6 +873,8 @@ function step4Next(){
   d.impactLevel=imp.dataset.val;
   d.evidenceAvailable=evid.dataset.val;
   d.evidenceDescription=v("c-eviddesc");
+  d.chargesDisputed=chdisp.dataset.val;
+  d.totalLoss=chdisp.dataset.val==="yes"?parseFloat(v("c-totalloss"))||null:null;
   wizardState.step=5;renderWizard();
 }
 
@@ -905,6 +940,7 @@ function updateReviewSummary(){
     <div class="review-row"><span class="review-label">Severity</span><span class="review-val">${d.severity!==undefined?sevBadge(d.severity):"<span style='color:var(--muted)'>Not selected</span>"}</span></div>
     <div class="review-row"><span class="review-label">Impact Level</span><span class="review-val">${d.impactLevel||"-"}</span></div>
     <div class="review-row"><span class="review-label">Categories</span><span class="review-val">${(d.categories||[]).join(", ")||"-"}</span></div>
+    <div class="review-row"><span class="review-label">Charges Disputed</span><span class="review-val">${d.chargesDisputed==="yes"?`Yes${d.totalLoss!=null?" — <strong>$"+Number(d.totalLoss).toFixed(2)+" total loss</strong>":" — amount not entered"}`:"No"}</span></div>
     <div class="review-row" style="flex-direction:column;gap:4px"><span class="review-label">Summary</span><span class="review-val" style="line-height:1.6">${d.summary?((d.summary.length>300)?d.summary.slice(0,300)+'... <a href="#" onclick="expandSummary(event)" style="color:var(--cyan)">read more</a>':d.summary):"-"}</span></div>
   </div>`;
 }
@@ -927,6 +963,8 @@ function submitComplaint(){
     guest:{name:d.guestName,email:d.guestEmail,phone:d.guestPhone||"",reservationId:d.reservationId,checkIn:d.checkIn,checkOut:d.checkOut,roomType:d.roomType||"",numGuests:d.numGuests||""},
     property:{hotelId:d.hotelId,hotelName:d.hotelName||"",city:d.city||"",country:d.country||"",hotelEmail:d.hotelEmail||"",supplier:d.supplier||""},
     complaint:{categories:d.categories,summary:d.summary,reportedToStaff:d.reportedToStaff,staffResponse:d.staffResponse||"",impactLevel:d.impactLevel,evidenceAvailable:d.evidenceAvailable,evidenceDescription:d.evidenceDescription||""},
+    chargesDisputed:d.chargesDisputed||"no",
+    totalLoss:d.totalLoss||null,
     severity:d.severity,
     status:"open",
     certificationConfirmed:true
@@ -939,9 +977,11 @@ function submitComplaint(){
   ],3000,()=>{
     const complaints=getComplaints();
     complaints.push(complaint);
-    // check threshold
     const hotelComplaints=complaints.filter(c=>c.property.hotelId===complaint.property.hotelId);
-    if(hotelComplaints.length>=5){
+    // mark under_review if initial threshold OR re-review threshold hit
+    if(hotelNeedsAdminReview(complaint.property.hotelId)){
+      hotelComplaints.forEach(c=>{if(c.status==="open"||c.status==="action_taken")c.status="under_review";});
+    } else if(hotelComplaints.length>=5&&!hotelHasAction(complaint.property.hotelId)){
       hotelComplaints.forEach(c=>{if(c.status==="open")c.status="under_review";});
     }
     saveComplaints(complaints);
@@ -1080,6 +1120,10 @@ function doHotelSearch(){
     const closed=complaints.filter(c=>c.status==="action_taken"||c.status==="closed").length;
     const sevCounts=[0,1,2,3,4,5].map(n=>complaints.filter(c=>c.severity===n).length);
     const barSegs=sevCounts.map((cnt,i)=>cnt>0?`<div class="sev-bar-seg" style="background:${SEV_COLORS[i]};flex:${cnt}" title="Severity ${i}: ${cnt}"></div>`:"").join("");
+    const disputedComplaints=complaints.filter(c=>c.chargesDisputed==="yes"&&c.totalLoss!=null);
+    const actionLosses=getActions().filter(a=>a.hotelId===q&&a.chargesDisputed==="yes"&&a.totalLoss!=null);
+    const totalDisputedLoss=disputedComplaints.reduce((s,c)=>s+Number(c.totalLoss),0)+actionLosses.reduce((s,a)=>s+Number(a.totalLoss),0);
+    const disputedCount=disputedComplaints.length+actionLosses.length;
     res.innerHTML=`
       <div class="card" style="margin-bottom:16px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
@@ -1088,6 +1132,10 @@ function doHotelSearch(){
           <div><div class="stat-label">Hotel Email</div><div style="font-size:13px">${hotelEmail}</div></div>
           <div><div class="stat-label">Total Complaints</div><div style="font-size:18px;font-weight:700">${complaints.length}</div></div>
         </div>
+        ${disputedCount>0?`<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+          <div><div class="stat-label" style="margin-bottom:2px">Total Disputed Loss</div><div style="font-size:22px;font-weight:700;color:#ef4444">$${totalDisputedLoss.toFixed(2)}</div></div>
+          <div style="font-size:12px;color:var(--muted);text-align:right">${disputedCount} dispute${disputedCount!==1?"s":""} recorded<br/>(complaints + admin actions)</div>
+        </div>`:""}
         <div class="stat-label">Severity Breakdown</div>
         <div class="sev-bar">${barSegs}</div>
         <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
@@ -1096,16 +1144,18 @@ function doHotelSearch(){
         <div style="display:flex;gap:12px;margin-top:12px;font-size:13px">
           <span style="color:var(--cyan)">Open: <strong>${open}</strong></span>
           <span style="color:#22c55e">Resolved: <strong>${closed}</strong></span>
+          ${disputedCount===0?`<span style="color:var(--muted)">No disputes recorded</span>`:`<span style="color:#ef4444">Disputes: <strong>${disputedCount}</strong></span>`}
         </div>
       </div>
       <div class="section-title">Complaints for ${q}</div>
       <table>
-        <thead><tr><th>HCED ID</th><th>Filed By</th><th>Date</th><th>Severity</th><th>Impact Level</th><th>Status</th><th>Action</th></tr></thead>
+        <thead><tr><th>HCED ID</th><th>Filed By</th><th>Date</th><th>Severity</th><th>Impact Level</th><th>Disputed Loss</th><th>Status</th><th>Action</th></tr></thead>
         <tbody>${complaints.map(c=>`<tr>
           <td><span style="font-family:monospace;font-size:12px">${c.id}</span></td>
           <td>${c.filedBy.name}</td><td>${fmtDate(c.filedAt)}</td>
           <td>${sevBadgeShort(c.severity)}</td>
           <td style="font-size:12px">${c.complaint.impactLevel?.split("—")[0]?.trim()||"-"}</td>
+          <td style="font-size:13px">${c.chargesDisputed==="yes"&&c.totalLoss!=null?`<span style="color:#ef4444;font-weight:600">$${Number(c.totalLoss).toFixed(2)}</span>`:"—"}</td>
           <td>${statusBadge(c.status)}</td>
           <td><button class="btn btn-sm btn-secondary" onclick="viewComplaintModal('${c.id}')">View</button></td>
         </tr>`).join("")}</tbody>
@@ -1237,10 +1287,7 @@ function renderAdminSubTab(){
 function renderRequiresAction(el){
   const complaints=getComplaints();
   const hotelIds=[...new Set(complaints.map(c=>c.property.hotelId))];
-  const needsAction=hotelIds.filter(id=>{
-    const hc=complaints.filter(c=>c.property.hotelId===id);
-    return hc.length>=5&&!hotelHasAction(id);
-  });
+  const needsAction=hotelIds.filter(id=>hotelNeedsAdminReview(id));
   if(!needsAction.length){el.innerHTML=`<div class="no-action-msg">No properties currently require action. All hotels are below the review threshold.</div>`;return;}
   el.innerHTML=needsAction.map(id=>propertyActionCardHTML(id)).join("");
   // bind action forms
@@ -1303,6 +1350,17 @@ function propertyActionCardHTML(hotelId){
         </div>
       </div>
       <div id="action-extra-${hotelId}"></div>
+      <div class="form-group" style="border-top:1px solid var(--border);padding-top:16px">
+        <label>Were any charges disputed in relation to this decision?</label>
+        <div class="radio-row">
+          <label class="radio-opt" data-name="adm-chdisp-${hotelId}" data-val="yes" onclick="selectAdminDisp(this,'${hotelId}')"><input type="radio" name="adm-chdisp-${hotelId}" value="yes"/> Yes</label>
+          <label class="radio-opt" data-name="adm-chdisp-${hotelId}" data-val="no" onclick="selectAdminDisp(this,'${hotelId}')"><input type="radio" name="adm-chdisp-${hotelId}" value="no"/> No</label>
+        </div>
+      </div>
+      <div id="adm-loss-wrap-${hotelId}" style="display:none" class="form-group">
+        <label>Total Loss Amount (USD)</label>
+        <input type="number" id="adm-totalloss-${hotelId}" min="0" step="0.01" placeholder="Transaction total + dispute/chargeback fee"/>
+      </div>
       <div class="form-group">
         <label>Administrative Comment (Required)</label>
         <textarea id="action-comment-${hotelId}" rows="4" minlength="30" placeholder="Document the reason for this decision, any communications with the property, and any relevant context. This comment is permanently recorded and cannot be edited after submission."></textarea>
@@ -1311,6 +1369,13 @@ function propertyActionCardHTML(hotelId){
       <button class="btn btn-primary" onclick="submitAdminAction('${hotelId}')">Confirm & Submit Action</button>
     </div>
   </div>`;
+}
+
+function selectAdminDisp(el,hotelId){
+  document.querySelectorAll(`[data-name="adm-chdisp-${hotelId}"]`).forEach(o=>o.classList.remove("selected"));
+  el.classList.add("selected");el.querySelector("input").checked=true;
+  const wrap=document.getElementById("adm-loss-wrap-"+hotelId);
+  if(wrap)wrap.style.display=el.dataset.val==="yes"?"block":"none";
 }
 
 function checkNotifyCb(hotelId){
@@ -1357,11 +1422,14 @@ function submitAdminAction(hotelId){
     const unit=document.getElementById("susp-unit-"+hotelId)?.value;
     if(val)suspensionDuration={value:parseInt(val),unit};
     const rr=document.getElementById("rereview-"+hotelId)?.value;
-    if(rr)reReviewAt=parseInt(rr);
+    if(rr&&parseInt(rr)>0)reReviewAt=parseInt(rr);
   } else if(action==="keep"){
     const rr=document.getElementById("rereview-"+hotelId)?.value;
-    if(rr)reReviewAt=parseInt(rr);
+    if(rr&&parseInt(rr)>0)reReviewAt=parseInt(rr);
   }
+  const admDispEl=document.querySelector(`[data-name="adm-chdisp-${hotelId}"].selected`);
+  const admChargesDisputed=admDispEl?admDispEl.dataset.val:"no";
+  const admTotalLoss=admChargesDisputed==="yes"?(parseFloat(document.getElementById("adm-totalloss-"+hotelId)?.value)||null):null;
   showLoading([
     {text:"Processing administrative directive...",dur:900},
     {text:"Updating property status...",dur:800},
@@ -1372,7 +1440,8 @@ function submitAdminAction(hotelId){
       actionedBy:{id:currentUser.id,name:currentUser.name},
       actionedAt:new Date().toISOString(),
       relatedComplaintIds:complaints.map(c=>c.id),
-      hotelNotified,hotelEmail:hotelEmail||null
+      hotelNotified,hotelEmail:hotelEmail||null,
+      chargesDisputed:admChargesDisputed,totalLoss:admTotalLoss
     };
     const actions=getActions();actions.push(act);saveActions(actions);
     const allComplaints=getComplaints();
@@ -1391,7 +1460,7 @@ function renderAllMonitored(el){
     const name=hc.find(c=>c.property.hotelName)?.property.hotelName||"—";
     const maxSev=Math.max(...hc.map(c=>c.severity));
     const status=getHotelStatus(id);
-    const needsAction=hc.length>=5&&!hotelHasAction(id);
+    const needsAction=hotelNeedsAdminReview(id);
     const statusBadgeHtml=needsAction?`<span class="badge badge-red">Pending Admin Review</span>`:
       status==="Removed"?`<span class="badge badge-gray">Removed</span>`:
       status==="Suspended"?`<span class="badge badge-orange">Suspended</span>`:
@@ -1488,6 +1557,7 @@ function viewActionModal(id){
       <div class="review-row"><span class="review-label">Hotel Notified</span><span class="review-val">${a.hotelNotified?"Yes":"No"}</span></div>
       ${a.suspensionDuration?`<div class="review-row"><span class="review-label">Suspension Duration</span><span class="review-val">${a.suspensionDuration.value} ${a.suspensionDuration.unit}</span></div>`:""}
       ${a.reReviewAt?`<div class="review-row"><span class="review-label">Re-Review After</span><span class="review-val">${a.reReviewAt} additional complaints</span></div>`:""}
+      <div class="review-row"><span class="review-label">Charges Disputed</span><span class="review-val">${a.chargesDisputed==="yes"?`Yes${a.totalLoss!=null?" — <strong style='color:#ef4444'>$"+Number(a.totalLoss).toFixed(2)+" total loss</strong>":" — amount not recorded"}`:"No"}</span></div>
       <div class="review-row" style="flex-direction:column;gap:6px"><span class="review-label">Administrative Comment</span><span class="review-val" style="line-height:1.6">${a.comment}</span></div>
     </div>
     ${relComplaints.length?`<div style="font-size:13px;font-weight:600;color:var(--muted);margin:16px 0 8px">RELATED COMPLAINTS (${relComplaints.length})</div>
