@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 40" fill="none">
+  <text x="0" y="28" font-family="Inter, Segoe UI, system-ui, sans-serif" font-size="22" font-weight="700" fill="#23e3ef">Hey</text>
+  <text x="46" y="28" font-family="Inter, Segoe UI, system-ui, sans-serif" font-size="22" font-weight="700" fill="#FFFFFF">Vacay</text>
+  <circle cx="168" cy="14" r="7" fill="#23e3ef" opacity="0.9"/>
+  <path d="M164 14 Q168 8 172 14" stroke="#0D2137" stroke-width="1.5" fill="none"/>
+  <path d="M165 17 Q168 21 171 17" stroke="#0D2137" stroke-width="1.5" fill="none"/>
+</svg>
