@@ -348,22 +348,9 @@ async function loadFirestoreData(){
 }
 
 function seedData(){
-  if(_complaints.length>0)return;
-  const base=new Date("2026-05-15").toISOString();
-  const c=[
-    {id:"HCED-20260515-1001",filedBy:{id:"U001",name:"Danil Babadjanov",title:"System Administrator"},filedAt:"2026-05-15T09:00:00.000Z",notificationConfirmed:true,guest:{name:"John Smith",email:"john@example.com",phone:"",reservationId:"RES-001",checkIn:"2026-05-10",checkOut:"2026-05-14",roomType:"Standard",numGuests:2},property:{hotelId:"HV-TEST-001",hotelName:"Test Grand Hotel",city:"Dubai",country:"UAE",hotelEmail:"info@testgrand.com",supplier:"RateHawk"},complaint:{categories:["Room Cleanliness / Housekeeping Failure","Noise Complaint"],summary:"Guest reported severe cleanliness issues with the room. Dirty towels were found on arrival and housekeeping did not respond to multiple requests. Noise from adjacent room was excessive throughout the night.",reportedToStaff:"yes",staffResponse:"Staff acknowledged but took no action.",impactLevel:"Moderate impact — one or more aspects of stay affected",evidenceAvailable:"yes",evidenceDescription:"Photos of dirty room, email exchanges with front desk"},severity:2,status:"open",certificationConfirmed:true},
-    {id:"HCED-20260522-2002",filedBy:{id:"U002",name:"Aleksey Babadzhanov",title:"System Administrator"},filedAt:"2026-05-22T11:30:00.000Z",notificationConfirmed:true,guest:{name:"Maria Garcia",email:"maria@example.com",phone:"+1234567890",reservationId:"RES-002",checkIn:"2026-05-18",checkOut:"2026-05-22",roomType:"Deluxe",numGuests:1},property:{hotelId:"HV-TEST-001",hotelName:"Test Grand Hotel",city:"Dubai",country:"UAE",hotelEmail:"info@testgrand.com",supplier:"RateHawk"},complaint:{categories:["Air Conditioning / Heating Malfunction","Staff Conduct / Unprofessional Behavior"],summary:"Air conditioning unit was completely non-functional for the entire stay. Multiple complaints to staff were met with dismissive responses and no repair was arranged. Guest had to purchase a portable fan at their own expense.",reportedToStaff:"yes",staffResponse:"Staff said maintenance would come but never did.",impactLevel:"Significant impact — majority of stay negatively affected",evidenceAvailable:"yes",evidenceDescription:"Receipts for fan purchase, maintenance request logs"},severity:3,status:"open",certificationConfirmed:true},
-    {id:"HCED-20260601-3003",filedBy:{id:"U001",name:"Danil Babadjanov",title:"System Administrator"},filedAt:"2026-06-01T14:00:00.000Z",notificationConfirmed:true,guest:{name:"Robert Chen",email:"rchen@example.com",phone:"+9876543210",reservationId:"RES-003",checkIn:"2026-05-29",checkOut:"2026-06-01",roomType:"Suite",numGuests:3},property:{hotelId:"HV-TEST-001",hotelName:"Test Grand Hotel",city:"Dubai",country:"UAE",hotelEmail:"info@testgrand.com",supplier:"RateHawk"},complaint:{categories:["Misleading Room Description / Category Mismatch","Billing / Overcharge Issue","Amenity Not Available As Advertised"],summary:"The booked suite was substantially smaller than described online. Pool access listed as included was not available. Upon checkout, the bill included multiple unexplained charges totaling over $200 above the agreed price.",reportedToStaff:"yes",staffResponse:"Manager offered a 10% discount but refused to remove fraudulent charges.",impactLevel:"Severe impact — stay cut short or guest required relocation",evidenceAvailable:"yes",evidenceDescription:"Booking screenshots, itemized bill, photo comparisons"},severity:4,status:"open",certificationConfirmed:true},
-    {id:"HCED-20260605-4004",filedBy:{id:"U004",name:"Support Agent",title:"Support Agent"},filedAt:"2026-06-05T10:00:00.000Z",notificationConfirmed:true,guest:{name:"Lisa Brown",email:"lbrown@example.com",phone:"",reservationId:"RES-004",checkIn:"2026-06-02",checkOut:"2026-06-04",roomType:"Standard",numGuests:1},property:{hotelId:"HV-TEST-002",hotelName:"Seaside Inn",city:"Bali",country:"Indonesia",hotelEmail:"",supplier:"LiteAPI"},complaint:{categories:["Plumbing / Water Issue"],summary:"Hot water was unavailable in the room for the entire 2-night stay. Despite contacting reception on both days, no resolution was provided and no alternative accommodation was offered.",reportedToStaff:"yes",staffResponse:"Reception said they were aware of the issue but could not resolve it.",impactLevel:"Minor inconvenience — no meaningful stay disruption",evidenceAvailable:"no",evidenceDescription:""},severity:1,status:"open",certificationConfirmed:true}
-  ];
-  // Write seed data directly to Firestore
-  const batch=db.batch();
-  c.forEach(complaint=>{
-    _complaints.push(complaint);
-    batch.set(db.collection("hced_complaints").doc(complaint.id),complaint);
-  });
-  batch.commit().catch(console.error);
+  // Seed data removed — system starts empty
 }
+
 
 // ===== SESSION =====
 let currentUser=null;
