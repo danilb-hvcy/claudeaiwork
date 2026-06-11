@@ -432,13 +432,57 @@ function getHotelStatus(hotelId){
 }
 
 // ===== MODAL =====
-function openModal(title,html){
+function openModal(title,html,opts={}){
   document.getElementById("modal-title").textContent=title;
   document.getElementById("modal-body").innerHTML=html;
-  document.getElementById("modal-overlay").style.display="flex";
+  const ov=document.getElementById("modal-overlay");
+  ov.style.display="flex";
+  // prevent click-outside close for confirmation modals
+  ov._noClickClose=opts.noClickClose||false;
 }
 function closeModal(){document.getElementById("modal-overlay").style.display="none";}
-function closeModalOnOverlay(e){if(e.target===document.getElementById("modal-overlay"))closeModal();}
+function closeModalOnOverlay(e){
+  const ov=document.getElementById("modal-overlay");
+  if(e.target===ov&&!ov._noClickClose)closeModal();
+}
+
+// ===== EMAIL CONFIRMATION MODAL =====
+let _emailConfirmCallback=null;
+
+function showEmailConfirmModal(config){
+  // config: { title, intro, bodyLabel, bodyPlaceholder, confirmBtnText, isSupervisor, onConfirm }
+  _emailConfirmCallback=config.onConfirm;
+  const supervisorNote=config.isSupervisor
+    ?`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:8px;padding:14px 16px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:20px;flex-shrink:0">⚠️</span>
+        <div>
+          <div style="font-weight:600;color:#ef4444;margin-bottom:4px">Supervisor Notification Required</div>
+          <div style="color:var(--muted);font-size:13px;line-height:1.6">Please send an email to your direct supervisor to have this property removed from the platform before proceeding.</div>
+        </div>
+      </div>`
+    :"";
+  const html=`
+    ${supervisorNote}
+    <p style="color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:18px">${config.intro}</p>
+    <div class="form-group">
+      <label>${config.bodyLabel||"Email Body (paste here)"}</label>
+      <textarea id="ecm-body" rows="8" placeholder="${config.bodyPlaceholder||"Paste the full email you sent..."}" style="font-size:13px;line-height:1.6"></textarea>
+      <div id="ecm-err" class="field-error" style="display:none">Please paste the email body before confirming.</div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="ecm-confirm-btn" onclick="confirmEmailModal()">${config.confirmBtnText||"I have sent this email — Proceed"}</button>
+    </div>`;
+  openModal(config.title||"Email Confirmation Required", html, {noClickClose:true});
+}
+
+function confirmEmailModal(){
+  const body=document.getElementById("ecm-body")?.value?.trim();
+  if(!body){document.getElementById("ecm-err").style.display="block";return;}
+  closeModal();
+  if(_emailConfirmCallback)_emailConfirmCallback(body);
+  _emailConfirmCallback=null;
+}
 
 function viewComplaintModal(id){
   const c=getComplaints().find(x=>x.id===id);
@@ -477,7 +521,8 @@ function viewComplaintModal(id){
       <div class="review-row"><span class="review-label">Evidence Available</span><span class="review-val">${c.complaint.evidenceAvailable}${c.complaint.evidenceDescription?" — "+c.complaint.evidenceDescription:""}</span></div>
       <div class="review-row"><span class="review-label">Charges Disputed</span><span class="review-val">${c.chargesDisputed==="yes"?`Yes${c.totalLoss!=null?" — <strong style='color:#ef4444'>$"+Number(c.totalLoss).toFixed(2)+" total loss</strong>":" — amount not recorded"}`:"No"}</span></div>
       <div class="review-row" style="flex-direction:column;gap:6px"><span class="review-label">Incident Summary</span><span class="review-val" style="line-height:1.6">${c.complaint.summary}</span></div>
-    </div>`;
+    </div>
+    ${c.notificationEmailBody?`<div style="font-size:13px;font-weight:600;color:var(--muted);margin:16px 0 8px">HOTEL NOTIFICATION EMAIL (RECORDED)</div><div style="background:#0a1e30;border:1px solid rgba(35,227,239,.2);border-radius:8px;padding:14px;font-size:12px;color:var(--muted);white-space:pre-wrap;line-height:1.7;font-family:monospace;max-height:200px;overflow-y:auto">${c.notificationEmailBody.replace(/</g,'&lt;')}</div>`:""}`;
   openModal("Complaint — "+c.id,html);
 }
 
@@ -955,11 +1000,27 @@ function updateCertBtn(){
 function submitComplaint(){
   if(wizardState.data.severity===undefined){showErr("e-sev");scrollToFirst();return;}
   const d=wizardState.data;
+  // Show email confirmation modal before proceeding
+  showEmailConfirmModal({
+    title:"Hotel Notification — Email Confirmation",
+    intro:`Before this complaint is submitted, confirm that you have sent a notification email to the hotel property${d.hotelEmail?" ("+d.hotelEmail+")":""}. Paste the email body below — it will be permanently recorded alongside this complaint.`,
+    bodyLabel:"Email Body Sent to Hotel (paste here)",
+    bodyPlaceholder:"Paste the full text of the notification email you sent to the hotel property...",
+    confirmBtnText:"I have sent this email — Submit Complaint",
+    isSupervisor:false,
+    onConfirm(emailBody){
+      _doSubmitComplaint(d, emailBody);
+    }
+  });
+}
+
+function _doSubmitComplaint(d, notificationEmailBody){
   const complaint={
     id:wizardState.id,
     filedBy:{id:currentUser.id,name:currentUser.name,title:currentUser.title},
     filedAt:d.filedAt||new Date().toISOString(),
     notificationConfirmed:true,
+    notificationEmailBody:notificationEmailBody||"",
     guest:{name:d.guestName,email:d.guestEmail,phone:d.guestPhone||"",reservationId:d.reservationId,checkIn:d.checkIn,checkOut:d.checkOut,roomType:d.roomType||"",numGuests:d.numGuests||""},
     property:{hotelId:d.hotelId,hotelName:d.hotelName||"",city:d.city||"",country:d.country||"",hotelEmail:d.hotelEmail||"",supplier:d.supplier||""},
     complaint:{categories:d.categories,summary:d.summary,reportedToStaff:d.reportedToStaff,staffResponse:d.staffResponse||"",impactLevel:d.impactLevel,evidenceAvailable:d.evidenceAvailable,evidenceDescription:d.evidenceDescription||""},
@@ -1430,6 +1491,27 @@ function submitAdminAction(hotelId){
   const admDispEl=document.querySelector(`[data-name="adm-chdisp-${hotelId}"].selected`);
   const admChargesDisputed=admDispEl?admDispEl.dataset.val:"no";
   const admTotalLoss=admChargesDisputed==="yes"?(parseFloat(document.getElementById("adm-totalloss-"+hotelId)?.value)||null):null;
+
+  // Always show email confirmation modal before proceeding
+  const actionLabels={"remove":"Remove from Platform","suspend":"Suspend (Temporary)","keep":"Keep & Monitor"};
+  showEmailConfirmModal({
+    title: action==="remove" ? "Supervisor Notification — Email Confirmation" : "Administrative Action — Email Confirmation",
+    intro: action==="remove"
+      ? `You are about to remove <strong>${hotelId}${hotelName?" ("+hotelName+")":""}</strong> from the platform. You must notify your direct supervisor and paste the email body below. This is permanently recorded.`
+      : `You are about to record an administrative action (<strong>${actionLabels[action]}</strong>) for <strong>${hotelId}</strong>. Paste the email body of any notification you sent below — this will be permanently recorded alongside this action.`,
+    bodyLabel: action==="remove" ? "Supervisor Email Body (paste here)" : "Notification Email Body (paste here)",
+    bodyPlaceholder: action==="remove"
+      ? "Paste the full email you sent to your supervisor requesting removal of this property..."
+      : "Paste the full text of the notification email sent in relation to this action...",
+    confirmBtnText: action==="remove" ? "I have done this — Confirm Removal" : "I have sent this email — Confirm Action",
+    isSupervisor: action==="remove",
+    onConfirm(emailBody){
+      _doSubmitAdminAction({hotelId,hotelName,action,suspensionDuration,reReviewAt,comment,complaints,hotelNotified,hotelEmail,admChargesDisputed,admTotalLoss,emailBody});
+    }
+  });
+}
+
+function _doSubmitAdminAction({hotelId,hotelName,action,suspensionDuration,reReviewAt,comment,complaints,hotelNotified,hotelEmail,admChargesDisputed,admTotalLoss,emailBody}){
   showLoading([
     {text:"Processing administrative directive...",dur:900},
     {text:"Updating property status...",dur:800},
@@ -1441,7 +1523,8 @@ function submitAdminAction(hotelId){
       actionedAt:new Date().toISOString(),
       relatedComplaintIds:complaints.map(c=>c.id),
       hotelNotified,hotelEmail:hotelEmail||null,
-      chargesDisputed:admChargesDisputed,totalLoss:admTotalLoss
+      chargesDisputed:admChargesDisputed,totalLoss:admTotalLoss,
+      notificationEmailBody:emailBody||""
     };
     const actions=getActions();actions.push(act);saveActions(actions);
     const allComplaints=getComplaints();
@@ -1560,6 +1643,7 @@ function viewActionModal(id){
       <div class="review-row"><span class="review-label">Charges Disputed</span><span class="review-val">${a.chargesDisputed==="yes"?`Yes${a.totalLoss!=null?" — <strong style='color:#ef4444'>$"+Number(a.totalLoss).toFixed(2)+" total loss</strong>":" — amount not recorded"}`:"No"}</span></div>
       <div class="review-row" style="flex-direction:column;gap:6px"><span class="review-label">Administrative Comment</span><span class="review-val" style="line-height:1.6">${a.comment}</span></div>
     </div>
+    ${a.notificationEmailBody?`<div style="font-size:13px;font-weight:600;color:var(--muted);margin:16px 0 8px">${a.action==="remove"?"SUPERVISOR":"NOTIFICATION"} EMAIL (RECORDED)</div><div style="background:#0a1e30;border:1px solid rgba(35,227,239,.2);border-radius:8px;padding:14px;font-size:12px;color:var(--muted);white-space:pre-wrap;line-height:1.7;font-family:monospace;max-height:200px;overflow-y:auto">${a.notificationEmailBody.replace(/</g,'&lt;')}</div>`:""}
     ${relComplaints.length?`<div style="font-size:13px;font-weight:600;color:var(--muted);margin:16px 0 8px">RELATED COMPLAINTS (${relComplaints.length})</div>
     <table style="font-size:12px">
       <thead><tr><th>HCED ID</th><th>Date</th><th>Severity</th><th>Agent</th></tr></thead>
