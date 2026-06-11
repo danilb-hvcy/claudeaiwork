@@ -4,6 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>HCED Portal — HeyVacay</title>
+<!-- Firebase Compat SDK (no bundler needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#0D2137;color:#fff;min-height:100vh;font-size:14px}
@@ -273,13 +276,79 @@ const SEV_COLORS=["#94a3b8","#60a5fa","#ca8a04","#f97316","#ef4444","#dc2626"];
 const CATEGORIES=["Room Cleanliness / Housekeeping Failure","Air Conditioning / Heating Malfunction","Plumbing / Water Issue","Electrical Issue / Safety Hazard","Noise Complaint","Misleading Room Description / Category Mismatch","Staff Conduct / Unprofessional Behavior","Check-In / Check-Out Process Failure","Amenity Not Available As Advertised","Billing / Overcharge Issue","Security Concern","Food & Beverage Quality Issue","Pest / Infestation Report","Other (specify in summary)"];
 const IMPACT_LEVELS=["Minor inconvenience — no meaningful stay disruption","Moderate impact — one or more aspects of stay affected","Significant impact — majority of stay negatively affected","Severe impact — stay cut short or guest required relocation","Safety risk — guest physical safety was compromised"];
 
-function getComplaints(){try{return JSON.parse(localStorage.getItem("hced_complaints")||"[]")}catch(e){return []}}
-function saveComplaints(c){localStorage.setItem("hced_complaints",JSON.stringify(c))}
-function getActions(){try{return JSON.parse(localStorage.getItem("hced_admin_actions")||"[]")}catch(e){return []}}
-function saveActions(a){localStorage.setItem("hced_admin_actions",JSON.stringify(a))}
+// ===== FIREBASE =====
+const firebaseConfig={
+  apiKey:"AIzaSyAuN5M83Yb-nBSntVeyz98otGK4XlXVKB0",
+  authDomain:"heyvacay-hced.firebaseapp.com",
+  projectId:"heyvacay-hced",
+  storageBucket:"heyvacay-hced.firebasestorage.app",
+  messagingSenderId:"394960704409",
+  appId:"1:394960704409:web:e72ec7fd62d92bbab43908",
+  measurementId:"G-GD0852GB6S"
+};
+const fbApp=firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
+
+// In-memory cache — all reads are synchronous against this
+let _complaints=[];
+let _actions=[];
+
+function getComplaints(){return _complaints;}
+function getActions(){return _actions;}
+
+function saveComplaints(arr){
+  _complaints=arr;
+  // Write every doc — Firestore ignores unchanged docs efficiently
+  arr.forEach(c=>{db.collection("hced_complaints").doc(c.id).set(c).catch(console.error);});
+}
+function saveActions(arr){
+  _actions=arr;
+  arr.forEach(a=>{db.collection("hced_admin_actions").doc(a.id).set(a).catch(console.error);});
+}
+
+// Single-document write (used when adding one new item)
+function addComplaint(c){
+  _complaints.push(c);
+  db.collection("hced_complaints").doc(c.id).set(c).catch(console.error);
+}
+function addAction(a){
+  _actions.push(a);
+  db.collection("hced_admin_actions").doc(a.id).set(a).catch(console.error);
+}
+
+// Bulk update (e.g. status changes across multiple docs)
+function updateComplaintsBulk(arr){
+  _complaints=arr;
+  const batch=db.batch();
+  arr.forEach(c=>{batch.set(db.collection("hced_complaints").doc(c.id),c);});
+  batch.commit().catch(console.error);
+}
+
+// Real-time listeners — keep in-memory cache in sync for other users' changes
+function startRealtimeListeners(){
+  db.collection("hced_complaints").onSnapshot(snap=>{
+    _complaints=snap.docs.map(d=>d.data());
+    // Re-render current page silently if we're viewing a data page
+    const dataPages=["dashboard","my_complaints","hotel_lookup","complaint_registry","admin_panel","completed_actions"];
+    if(dataPages.includes(currentPage))navigate(currentPage);
+  });
+  db.collection("hced_admin_actions").onSnapshot(snap=>{
+    _actions=snap.docs.map(d=>d.data());
+  });
+}
+
+// Load all data once from Firestore, then start listeners
+async function loadFirestoreData(){
+  const [cs,as]=await Promise.all([
+    db.collection("hced_complaints").get(),
+    db.collection("hced_admin_actions").get()
+  ]);
+  _complaints=cs.docs.map(d=>d.data());
+  _actions=as.docs.map(d=>d.data());
+}
 
 function seedData(){
-  if(getComplaints().length>0)return;
+  if(_complaints.length>0)return;
   const base=new Date("2026-05-15").toISOString();
   const c=[
     {id:"HCED-20260515-1001",filedBy:{id:"U001",name:"Danil Babadjanov",title:"System Administrator"},filedAt:"2026-05-15T09:00:00.000Z",notificationConfirmed:true,guest:{name:"John Smith",email:"john@example.com",phone:"",reservationId:"RES-001",checkIn:"2026-05-10",checkOut:"2026-05-14",roomType:"Standard",numGuests:2},property:{hotelId:"HV-TEST-001",hotelName:"Test Grand Hotel",city:"Dubai",country:"UAE",hotelEmail:"info@testgrand.com",supplier:"RateHawk"},complaint:{categories:["Room Cleanliness / Housekeeping Failure","Noise Complaint"],summary:"Guest reported severe cleanliness issues with the room. Dirty towels were found on arrival and housekeeping did not respond to multiple requests. Noise from adjacent room was excessive throughout the night.",reportedToStaff:"yes",staffResponse:"Staff acknowledged but took no action.",impactLevel:"Moderate impact — one or more aspects of stay affected",evidenceAvailable:"yes",evidenceDescription:"Photos of dirty room, email exchanges with front desk"},severity:2,status:"open",certificationConfirmed:true},
@@ -287,7 +356,13 @@ function seedData(){
     {id:"HCED-20260601-3003",filedBy:{id:"U001",name:"Danil Babadjanov",title:"System Administrator"},filedAt:"2026-06-01T14:00:00.000Z",notificationConfirmed:true,guest:{name:"Robert Chen",email:"rchen@example.com",phone:"+9876543210",reservationId:"RES-003",checkIn:"2026-05-29",checkOut:"2026-06-01",roomType:"Suite",numGuests:3},property:{hotelId:"HV-TEST-001",hotelName:"Test Grand Hotel",city:"Dubai",country:"UAE",hotelEmail:"info@testgrand.com",supplier:"RateHawk"},complaint:{categories:["Misleading Room Description / Category Mismatch","Billing / Overcharge Issue","Amenity Not Available As Advertised"],summary:"The booked suite was substantially smaller than described online. Pool access listed as included was not available. Upon checkout, the bill included multiple unexplained charges totaling over $200 above the agreed price.",reportedToStaff:"yes",staffResponse:"Manager offered a 10% discount but refused to remove fraudulent charges.",impactLevel:"Severe impact — stay cut short or guest required relocation",evidenceAvailable:"yes",evidenceDescription:"Booking screenshots, itemized bill, photo comparisons"},severity:4,status:"open",certificationConfirmed:true},
     {id:"HCED-20260605-4004",filedBy:{id:"U004",name:"Support Agent",title:"Support Agent"},filedAt:"2026-06-05T10:00:00.000Z",notificationConfirmed:true,guest:{name:"Lisa Brown",email:"lbrown@example.com",phone:"",reservationId:"RES-004",checkIn:"2026-06-02",checkOut:"2026-06-04",roomType:"Standard",numGuests:1},property:{hotelId:"HV-TEST-002",hotelName:"Seaside Inn",city:"Bali",country:"Indonesia",hotelEmail:"",supplier:"LiteAPI"},complaint:{categories:["Plumbing / Water Issue"],summary:"Hot water was unavailable in the room for the entire 2-night stay. Despite contacting reception on both days, no resolution was provided and no alternative accommodation was offered.",reportedToStaff:"yes",staffResponse:"Reception said they were aware of the issue but could not resolve it.",impactLevel:"Minor inconvenience — no meaningful stay disruption",evidenceAvailable:"no",evidenceDescription:""},severity:1,status:"open",certificationConfirmed:true}
   ];
-  saveComplaints(c);
+  // Write seed data directly to Firestore
+  const batch=db.batch();
+  c.forEach(complaint=>{
+    _complaints.push(complaint);
+    batch.set(db.collection("hced_complaints").doc(complaint.id),complaint);
+  });
+  batch.commit().catch(console.error);
 }
 
 // ===== SESSION =====
@@ -1036,16 +1111,17 @@ function _doSubmitComplaint(d, notificationEmailBody){
     {text:"Checking hotel threshold status...",dur:700},
     {text:"Complaint filed successfully.",dur:800}
   ],3000,()=>{
-    const complaints=getComplaints();
-    complaints.push(complaint);
-    const hotelComplaints=complaints.filter(c=>c.property.hotelId===complaint.property.hotelId);
-    // mark under_review if initial threshold OR re-review threshold hit
+    // Add to cache + Firestore
+    addComplaint(complaint);
+    const hotelComplaints=_complaints.filter(c=>c.property.hotelId===complaint.property.hotelId);
+    // Mark under_review if threshold hit — bulk update
+    let needsBulk=false;
     if(hotelNeedsAdminReview(complaint.property.hotelId)){
-      hotelComplaints.forEach(c=>{if(c.status==="open"||c.status==="action_taken")c.status="under_review";});
+      hotelComplaints.forEach(c=>{if(c.status==="open"||c.status==="action_taken"){c.status="under_review";needsBulk=true;}});
     } else if(hotelComplaints.length>=5&&!hotelHasAction(complaint.property.hotelId)){
-      hotelComplaints.forEach(c=>{if(c.status==="open")c.status="under_review";});
+      hotelComplaints.forEach(c=>{if(c.status==="open"){c.status="under_review";needsBulk=true;}});
     }
-    saveComplaints(complaints);
+    if(needsBulk)updateComplaintsBulk(_complaints);
     showConfirmation(complaint,hotelComplaints.length);
   });
 }
@@ -1526,10 +1602,9 @@ function _doSubmitAdminAction({hotelId,hotelName,action,suspensionDuration,reRev
       chargesDisputed:admChargesDisputed,totalLoss:admTotalLoss,
       notificationEmailBody:emailBody||""
     };
-    const actions=getActions();actions.push(act);saveActions(actions);
-    const allComplaints=getComplaints();
-    allComplaints.forEach(c=>{if(c.property.hotelId===hotelId)c.status="action_taken";});
-    saveComplaints(allComplaints);
+    addAction(act);
+    _complaints.forEach(c=>{if(c.property.hotelId===hotelId)c.status="action_taken";});
+    updateComplaintsBulk(_complaints);
     navigate("admin_panel");
   });
 }
@@ -1665,14 +1740,35 @@ function paginator(page,pages,cbName){
 }
 
 // ===== BOOT =====
-seedData();
-const sess=getSession();
-if(sess){
-  currentUser=sess;
+(async()=>{
+  // Show a minimal "connecting" state while Firestore loads
   document.getElementById("login-page").style.display="none";
-  document.getElementById("app").style.display="block";
-  initApp();
-}
+  document.getElementById("loading-overlay").style.display="flex";
+  document.getElementById("loading-text").textContent="Connecting to database...";
+  document.getElementById("loading-progress").style.width="40%";
+  try{
+    await loadFirestoreData();
+    seedData(); // no-op if data already exists
+    startRealtimeListeners();
+  }catch(e){
+    console.error("Firestore load failed:",e);
+    document.getElementById("loading-text").textContent="Database connection failed. Please refresh.";
+    return;
+  }
+  document.getElementById("loading-progress").style.width="100%";
+  setTimeout(()=>{
+    document.getElementById("loading-overlay").style.display="none";
+    const sess=getSession();
+    if(sess){
+      currentUser=sess;
+      document.getElementById("login-page").style.display="none";
+      document.getElementById("app").style.display="block";
+      initApp();
+    } else {
+      document.getElementById("login-page").style.display="flex";
+    }
+  },300);
+})();
 </script>
 </body>
 </html>
