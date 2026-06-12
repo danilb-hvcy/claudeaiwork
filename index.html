@@ -900,14 +900,20 @@ function step3HTML(){
   return `<div class="form-section">
     <h3>Property Identification</h3>
     <p>Identify the hotel property this complaint is filed against.</p>
-    <div class="form-group"><label>Hotel ID *</label><input type="text" id="p-hid" placeholder="e.g. HV-12345"/><div class="helper-text">Enter the RateHawk or supplier-assigned Hotel ID. This is the primary identifier used for all complaint tracking and threshold monitoring across the system.</div><div class="field-error" id="e-p-hid">Required</div></div>
+    <div class="form-group">
+      <label>Hotel ID *</label>
+      <input type="text" id="p-hid" placeholder="e.g. HV-12345" onblur="checkHotelIdLookup()"/>
+      <div class="helper-text">Enter the RateHawk or supplier-assigned Hotel ID.</div>
+      <div class="field-error" id="e-p-hid">Required</div>
+    </div>
+    <div id="hotel-lookup-status"></div>
     <div class="form-row">
-      <div class="form-group"><label>Hotel Name (Optional)</label><input type="text" id="p-hname" placeholder="Hotel name for reference"/><div class="helper-text">Not required for tracking, but helpful for reference.</div></div>
-      <div class="form-group"><label>Hotel City</label><input type="text" id="p-city" placeholder="City"/></div>
+      <div class="form-group"><label id="lbl-hname">Hotel Name</label><input type="text" id="p-hname" placeholder="Hotel name for reference"/></div>
+      <div class="form-group"><label id="lbl-city">Hotel City</label><input type="text" id="p-city" placeholder="City"/></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Hotel Country</label><input type="text" id="p-country" placeholder="Country"/></div>
-      <div class="form-group"><label>Hotel Email (if known)</label><input type="email" id="p-email" placeholder="hotel@example.com"/><div class="helper-text">If you have the hotel's contact email, enter it here.</div></div>
+      <div class="form-group"><label id="lbl-country">Hotel Country</label><input type="text" id="p-country" placeholder="Country"/></div>
+      <div class="form-group"><label id="lbl-email">Hotel Email (if known)</label><input type="email" id="p-email" placeholder="hotel@example.com"/></div>
     </div>
     <div class="form-group"><label>Inventory Supplier</label>
       <select id="p-supplier"><option value="">Unknown</option><option value="RateHawk">RateHawk</option><option value="LiteAPI">LiteAPI</option><option value="Other">Other</option><option value="Unknown">Unknown</option></select>
@@ -919,8 +925,52 @@ function step3HTML(){
   </div>`;
 }
 
+function checkHotelIdLookup(){
+  const hotelId=v("p-hid").trim();
+  if(!hotelId)return;
+  const statusEl=document.getElementById("hotel-lookup-status");
+  statusEl.innerHTML=`<div class="inline-spinner" style="margin-bottom:12px"><span class="loading-spinner"></span>Looking up hotel records...</div>`;
+  setTimeout(()=>{
+    const complaints=getComplaints().filter(c=>c.property.hotelId.toLowerCase()===hotelId.toLowerCase());
+    if(!complaints.length){
+      // No record — show warning and make fields required
+      statusEl.innerHTML=`<div style="background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.4);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:var(--orange);font-size:13px">
+        ⚠ No HCED has yet been filed for this hotel ID. Please enter all hotel information below — fields are now required.
+      </div>`;
+      ["lbl-hname","lbl-city","lbl-country","lbl-email"].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el&&!el.textContent.includes("*"))el.textContent=el.textContent.replace(" (if known)","")+(" *");
+      });
+      wizardState.data._newHotel=true;
+    } else {
+      // Found — autofill from most recent complaint that has the data
+      const src=complaints.sort((a,b)=>b.filedAt.localeCompare(a.filedAt));
+      const name=src.find(c=>c.property.hotelName)?.property.hotelName||"";
+      const city=src.find(c=>c.property.city)?.property.city||"";
+      const country=src.find(c=>c.property.country)?.property.country||"";
+      const email=src.find(c=>c.property.hotelEmail)?.property.hotelEmail||"";
+      const supplier=src.find(c=>c.property.supplier)?.property.supplier||"";
+      setVal("p-hname",name);setVal("p-city",city);setVal("p-country",country);
+      setVal("p-email",email);setVal("p-supplier",supplier);
+      statusEl.innerHTML=`<div style="background:rgba(35,227,239,.08);border:1px solid rgba(35,227,239,.25);border-radius:8px;padding:12px 16px;margin-bottom:16px;color:var(--cyan);font-size:13px">
+        ✓ Hotel found — ${complaints.length} existing complaint${complaints.length!==1?"s":""} on record. Details auto-filled from previous filings.
+      </div>`;
+      wizardState.data._newHotel=false;
+    }
+  },600);
+}
+
 function step3Next(){
   if(!validateFields([["p-hid","e-p-hid"]]))return;
+  // If new hotel, require all info fields
+  if(wizardState.data._newHotel){
+    const extra=[["p-hname","e-p-hname"],["p-city","e-p-city"],["p-country","e-p-country"],["p-email","e-p-email"]];
+    extra.forEach(([fid,eid])=>{
+      let errEl=document.getElementById(eid);
+      if(!errEl){errEl=document.createElement("div");errEl.id=eid;errEl.className="field-error";errEl.textContent="Required for new hotel";document.getElementById(fid)?.after(errEl);}
+    });
+    if(!validateFields(extra))return;
+  }
   const d=wizardState.data;
   d.hotelId=v("p-hid");d.hotelName=v("p-hname");d.city=v("p-city");
   d.country=v("p-country");d.hotelEmail=v("p-email");d.supplier=v("p-supplier");
@@ -1289,10 +1339,10 @@ function renderHotelLookup(prefill){
   mc.innerHTML=`
     <div class="page-header"><h1 class="page-title">Hotel Lookup</h1></div>
     <div class="card" style="max-width:600px;margin:0 auto 24px">
-      <label style="font-size:16px;font-weight:600;margin-bottom:8px;display:block">Hotel ID Lookup</label>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Search for all complaints filed against a specific hotel property using its Hotel ID.</p>
+      <label style="font-size:16px;font-weight:600;margin-bottom:8px;display:block">Hotel Lookup</label>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Search by Hotel ID or hotel name to view all complaints on record.</p>
       <div style="display:flex;gap:10px">
-        <input type="text" id="hl-search" placeholder="e.g. HV-TEST-001" value="${prefill||""}"/>
+        <input type="text" id="hl-search" placeholder="Hotel ID or hotel name..." value="${prefill||""}"/>
         <button class="btn btn-primary" onclick="doHotelSearch()">Search</button>
       </div>
     </div>
@@ -1307,8 +1357,33 @@ function doHotelSearch(){
   const res=document.getElementById("hl-results");
   res.innerHTML=`<div class="inline-spinner"><span class="loading-spinner"></span>Searching records...</div>`;
   setTimeout(()=>{
-    const complaints=getComplaints().filter(c=>c.property.hotelId.toLowerCase()===q.toLowerCase());
-    if(!complaints.length){res.innerHTML=`<div class="card" style="text-align:center;color:var(--muted)">No records found for Hotel ID: <strong>${q}</strong></div>`;return;}
+    const ql=q.toLowerCase();
+    // Match on hotel ID (exact) OR hotel name (contains)
+    const allComplaints=getComplaints();
+    const idMatch=allComplaints.filter(c=>c.property.hotelId.toLowerCase()===ql);
+    const nameMatch=allComplaints.filter(c=>c.property.hotelName&&c.property.hotelName.toLowerCase().includes(ql)&&c.property.hotelId.toLowerCase()!==ql);
+    // If name search returns multiple hotels, show a pick list
+    if(!idMatch.length&&nameMatch.length){
+      const hotelIds=[...new Set(nameMatch.map(c=>c.property.hotelId))];
+      if(hotelIds.length>1){
+        res.innerHTML=`<div class="card">
+          <div style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--muted)">Multiple hotels found matching "${q}" — select one:</div>
+          ${hotelIds.map(id=>{
+            const hc=allComplaints.filter(c=>c.property.hotelId===id);
+            const name=hc.find(c=>c.property.hotelName)?.property.hotelName||id;
+            return `<div style="padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="document.getElementById('hl-search').value='${id}';doHotelSearch()">
+              <div><div style="font-weight:600">${name}</div><div style="font-size:12px;color:var(--muted);font-family:monospace">${id}</div></div>
+              <span class="badge badge-cyan">${hc.length} complaint${hc.length!==1?"s":""}</span>
+            </div>`;
+          }).join("")}
+        </div>`;
+        return;
+      }
+      // Single hotel by name — use its ID
+      document.getElementById("hl-search").value=hotelIds[0];
+    }
+    const complaints=getComplaints().filter(c=>c.property.hotelId.toLowerCase()===(document.getElementById("hl-search").value.trim().toLowerCase()));
+    if(!complaints.length){res.innerHTML=`<div class="card" style="text-align:center;padding:32px;color:var(--muted)">No records found for: <strong style="color:#fff">${q}</strong></div>`;return;}
     complaints.sort((a,b)=>b.filedAt.localeCompare(a.filedAt));
     const hotelName=complaints.find(c=>c.property.hotelName)?.property.hotelName||"Not on record";
     const hotelEmail=complaints.find(c=>c.property.hotelEmail)?.property.hotelEmail||"Not on record";
