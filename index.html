@@ -211,6 +211,9 @@ input.invalid,textarea.invalid,select.invalid{border-color:#ef4444}
 .no-action-msg{text-align:center;padding:40px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:12px}
 th.sortable{cursor:pointer;user-select:none}
 th.sortable:hover{color:#fff}
+.badge-call{background:rgba(239,68,68,.18);color:#ef4444;border:1px solid rgba(239,68,68,.5);animation:pulse-red 2s infinite}
+.response-logged-box{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:8px;padding:14px 16px;margin-top:16px}
+.response-overdue-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:14px 16px;margin-top:16px}
 </style>
 </head>
 <body>
@@ -555,6 +558,24 @@ function hotelNeedsAdminReview(hotelId){
   return newComplaints.length>=last.reReviewAt;
 }
 
+function isResponseOverdue(c){
+  if(c.hotelResponseLog)return false;
+  if(c.status==="action_taken"||c.status==="closed")return false;
+  const filed=new Date(c.filedAt);
+  const daysDiff=(Date.now()-filed.getTime())/(1000*60*60*24);
+  return daysDiff>12;
+}
+function callHotelBadge(c){
+  return isResponseOverdue(c)?`<span class="badge badge-call" style="margin-left:6px;font-size:11px" title="No hotel response logged — over 12 days">📞 Call Hotel</span>`:"";
+}
+function daysUntilOverdue(c){
+  if(c.hotelResponseLog||c.status==="action_taken"||c.status==="closed")return null;
+  const filed=new Date(c.filedAt);
+  const daysElapsed=(Date.now()-filed.getTime())/(1000*60*60*24);
+  const remaining=12-daysElapsed;
+  return remaining;
+}
+
 function getHotelStatus(hotelId){
   const acts=getActions().filter(a=>a.hotelId===hotelId);
   if(!acts.length)return "Monitoring";
@@ -656,8 +677,77 @@ function viewComplaintModal(id){
       <div class="review-row"><span class="review-label">Charges Disputed</span><span class="review-val">${c.chargesDisputed==="yes"?`Yes${c.totalLoss!=null?" — <strong style='color:#ef4444'>$"+Number(c.totalLoss).toFixed(2)+" total loss</strong>":" — amount not recorded"}`:"No"}</span></div>
       <div class="review-row" style="flex-direction:column;gap:6px"><span class="review-label">Incident Summary</span><span class="review-val" style="line-height:1.6">${c.complaint.summary}</span></div>
     </div>
-    ${c.notificationEmailBody?`<div style="font-size:13px;font-weight:600;color:var(--muted);margin:16px 0 8px">HOTEL NOTIFICATION EMAIL (RECORDED)</div><div style="background:#0a1e30;border:1px solid rgba(35,227,239,.2);border-radius:8px;padding:14px;font-size:12px;color:var(--muted);white-space:pre-wrap;line-height:1.7;font-family:monospace;max-height:200px;overflow-y:auto">${c.notificationEmailBody.replace(/</g,'&lt;')}</div>`:""}`;
+    ${c.notificationEmailBody?`<div style="font-size:13px;font-weight:600;color:var(--muted);margin:16px 0 8px">HOTEL NOTIFICATION EMAIL (RECORDED)</div><div style="background:#0a1e30;border:1px solid rgba(35,227,239,.2);border-radius:8px;padding:14px;font-size:12px;color:var(--muted);white-space:pre-wrap;line-height:1.7;font-family:monospace;max-height:200px;overflow-y:auto">${c.notificationEmailBody.replace(/</g,'&lt;')}</div>`:""}
+    <div style="font-size:13px;font-weight:600;color:var(--muted);margin:16px 0 8px">HOTEL RESPONSE</div>
+    ${c.hotelResponseLog
+      ?`<div class="response-logged-box">
+          <div style="color:#22c55e;font-weight:600;margin-bottom:6px">✓ Response logged</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:4px">Date: <span style="color:#fff">${c.hotelResponseLog.responseDate||"—"}</span> &nbsp;·&nbsp; Method: <span style="color:#fff">${c.hotelResponseLog.method||"—"}</span></div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Logged by <span style="color:#fff">${c.hotelResponseLog.loggedBy?.name||"—"}</span> on ${fmtDate(c.hotelResponseLog.loggedAt)}</div>
+          <div style="background:#0a1e30;border-radius:6px;padding:10px;font-size:13px;line-height:1.6;white-space:pre-wrap">${c.hotelResponseLog.body.replace(/</g,'&lt;')}</div>
+        </div>`
+      :(()=>{
+          const rem=daysUntilOverdue(c);
+          if(rem===null)return `<div style="color:var(--muted);font-size:13px">No response required (complaint resolved).</div>`;
+          if(rem<=0)return `<div class="response-overdue-box">
+            <div style="color:#ef4444;font-weight:600;margin-bottom:6px">⚠ Overdue — Hotel has not responded</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:12px">It has been more than 12 days since this complaint was filed. Please call the hotel to follow up.</div>
+            <button class="btn btn-sm btn-primary" onclick="closeModal();openLogResponseModal('${c.id}')">Log Hotel Response</button>
+          </div>`;
+          return `<div style="background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:8px;padding:14px 16px">
+            <div style="color:var(--orange);font-weight:600;margin-bottom:6px">Awaiting hotel response</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Response deadline: <strong style="color:#fff">${Math.ceil(rem)} day${Math.ceil(rem)!==1?"s":""} remaining</strong> (12-day window from filing date).</div>
+            <button class="btn btn-sm btn-secondary" onclick="closeModal();openLogResponseModal('${c.id}')">Log Response Now</button>
+          </div>`;
+        })()
+    }`;
   openModal("Complaint — "+c.id,html);
+}
+
+// ===== LOG HOTEL RESPONSE =====
+function openLogResponseModal(id){
+  const c=getComplaints().find(x=>x.id===id);
+  if(!c)return;
+  openModal("Log Hotel Response — "+id,`
+    <p style="color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:18px">Record the hotel's response to this complaint. Once logged, the overdue flag will be cleared.</p>
+    <div class="form-group">
+      <label>Response Date *</label>
+      <input type="date" id="lr-date" value="${new Date().toISOString().slice(0,10)}"/>
+      <div class="field-error" id="e-lr-date">Required</div>
+    </div>
+    <div class="form-group">
+      <label>Response Method</label>
+      <select id="lr-method">
+        <option value="Email">Email</option>
+        <option value="Phone Call">Phone Call</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Response Details *</label>
+      <textarea id="lr-body" rows="5" placeholder="Describe the hotel's response in detail — what they said, any actions they committed to, resolution offered, etc."></textarea>
+      <div class="field-error" id="e-lr-body">Required</div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitLogResponse('${id}')">Save Response</button>
+    </div>`,{noClickClose:false});
+}
+
+function submitLogResponse(id){
+  const date=document.getElementById("lr-date").value;
+  const body=document.getElementById("lr-body").value.trim();
+  const method=document.getElementById("lr-method").value;
+  let ok=true;
+  if(!date){document.getElementById("e-lr-date").style.display="block";ok=false;}else{document.getElementById("e-lr-date").style.display="none";}
+  if(!body){document.getElementById("e-lr-body").style.display="block";ok=false;}else{document.getElementById("e-lr-body").style.display="none";}
+  if(!ok)return;
+  const idx=_complaints.findIndex(c=>c.id===id);
+  if(idx<0)return;
+  _complaints[idx].hotelResponseLog={loggedAt:new Date().toISOString(),responseDate:date,method,body,loggedBy:{id:currentUser.id,name:currentUser.name}};
+  db.collection("hced_complaints").doc(id).update({hotelResponseLog:_complaints[idx].hotelResponseLog}).catch(console.error);
+  closeModal();
+  navigate(currentPage);
 }
 
 // ===== DASHBOARD =====
@@ -670,6 +760,7 @@ function renderDashboard(){
     const mine=complaints.filter(c=>c.filedBy.id===currentUser.id);
     const mineMonth=mine.filter(c=>c.filedAt>=monthStart);
     const mineOpen=mine.filter(c=>c.status==="open"||c.status==="under_review");
+    const mineOverdue=mine.filter(c=>isResponseOverdue(c));
     const avgSev=mine.length?((mine.reduce((a,c)=>a+c.severity,0)/mine.length).toFixed(1)):"—";
     const recent=mine.slice().sort((a,b)=>b.filedAt.localeCompare(a.filedAt)).slice(0,5);
     mc.innerHTML=`
@@ -680,15 +771,17 @@ function renderDashboard(){
       <div class="stat-grid">
         <div class="stat-card"><div class="stat-label">My Complaints This Month</div><div class="stat-value">${mineMonth.length}</div></div>
         <div class="stat-card"><div class="stat-label">Open Complaints</div><div class="stat-value">${mineOpen.length}</div></div>
-        <div class="stat-card"><div class="stat-label">Average Severity</div><div class="stat-value">${avgSev}</div></div>
+        <div class="stat-card"><div class="stat-label">Awaiting Hotel Response</div><div class="stat-value" style="color:${mineOverdue.length>0?"#ef4444":"#fff"}">${mineOverdue.length}</div>${mineOverdue.length>0?`<div class="stat-sub" style="color:#ef4444">Call hotel — no response logged</div>`:""}</div>
         <div class="stat-card"><div class="stat-label">Total Filed (All Time)</div><div class="stat-value">${mine.length}</div></div>
       </div>
+      ${mineOverdue.length>0?`<div class="alert-banner"><span class="alert-banner-text">📞 ${mineOverdue.length} complaint${mineOverdue.length!==1?"s":""} have passed the 12-day response window. Please call the hotel(s) to follow up.</span><button class="btn btn-sm" style="background:#ef4444;color:#fff;border:none;cursor:pointer" onclick="navigate('my_complaints')">View My Complaints</button></div>`:""}
       <div class="section-title">Recent Complaints</div>
       ${recentTable(recent,false)}`;
   } else {
     const actions=getActions();
     const actionsMonth=actions.filter(a=>a.actionedAt>=monthStart);
     const allOpen=complaints.filter(c=>c.status==="open"||c.status==="under_review");
+    const overdueAll=complaints.filter(c=>isResponseOverdue(c));
     const hotelIds=[...new Set(complaints.map(c=>c.property.hotelId))];
     const atThreshold=hotelIds.filter(id=>hotelNeedsAdminReview(id));
     const nearing=hotelIds.filter(id=>{
@@ -702,9 +795,10 @@ function renderDashboard(){
         <div class="stat-card"><div class="stat-label">Total Complaints</div><div class="stat-value">${complaints.length}</div></div>
         <div class="stat-card"><div class="stat-label">Open / Pending Review</div><div class="stat-value">${allOpen.length}</div></div>
         <div class="stat-card"><div class="stat-label">Properties at Threshold</div><div class="stat-value" style="color:${atThreshold.length>0?"#ef4444":"#fff"}">${atThreshold.length}</div></div>
-        <div class="stat-card"><div class="stat-label">Actions Taken This Month</div><div class="stat-value">${actionsMonth.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Awaiting Hotel Response</div><div class="stat-value" style="color:${overdueAll.length>0?"#ef4444":"#fff"}">${overdueAll.length}</div>${overdueAll.length>0?`<div class="stat-sub" style="color:#ef4444">Over 12-day window</div>`:""}</div>
       </div>
       ${atThreshold.length>0?`<div class="alert-banner"><span class="alert-banner-text">⚠ ${atThreshold.length} hotel(s) have reached the review threshold and require admin action.</span><button class="btn btn-sm" style="background:var(--orange);color:#0D2137;border:none;cursor:pointer" onclick="navigate('admin_panel')">Go to Admin Panel</button></div>`:""}
+      ${overdueAll.length>0?`<div class="alert-banner" style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.4)"><span class="alert-banner-text" style="color:#ef4444">📞 ${overdueAll.length} complaint${overdueAll.length!==1?"s":""} have passed the 12-day hotel response window and need follow-up calls.</span><button class="btn btn-sm" style="background:#ef4444;color:#fff;border:none;cursor:pointer" onclick="navigate('complaint_registry')">View in Registry</button></div>`:""}
       <div class="section-title">Recent Complaints</div>
       ${recentTable(recent,true)}
       ${nearing.length>0?`<div class="section-title" style="margin-top:24px">Properties Nearing Threshold</div>${nearingTable(nearing)}`:""}`;
@@ -722,7 +816,7 @@ function recentTable(arr,showAgent){
       ${showAgent?`<td>${c.filedBy.name}</td>`:""}
       <td>${fmtDate(c.filedAt)}</td>
       <td>${sevBadgeShort(c.severity)}</td>
-      <td>${statusBadge(c.status)}</td>
+      <td>${statusBadge(c.status)}${callHotelBadge(c)}</td>
     </tr>`).join("")}</tbody>
   </table>`;
 }
@@ -1325,7 +1419,7 @@ function renderMCTable(){
       <td>${c.property.hotelId}</td><td>${c.property.hotelName||"—"}</td>
       <td>${fmtDate(c.filedAt)}</td><td>${sevBadgeShort(c.severity)}</td>
       <td style="max-width:200px;font-size:12px">${c.complaint.categories.slice(0,2).join(", ")}${c.complaint.categories.length>2?`...`:""}</td>
-      <td>${statusBadge(c.status)}</td>
+      <td>${statusBadge(c.status)}${callHotelBadge(c)}</td>
       <td><button class="btn btn-sm btn-secondary" onclick="viewComplaintModal('${c.id}')">View</button></td>
     </tr>`).join("")}</tbody>
   </table>
@@ -1427,7 +1521,7 @@ function doHotelSearch(){
           <td>${sevBadgeShort(c.severity)}</td>
           <td style="font-size:12px">${c.complaint.impactLevel?.split("—")[0]?.trim()||"-"}</td>
           <td style="font-size:13px">${c.chargesDisputed==="yes"&&c.totalLoss!=null?`<span style="color:#ef4444;font-weight:600">$${Number(c.totalLoss).toFixed(2)}</span>`:"—"}</td>
-          <td>${statusBadge(c.status)}</td>
+          <td>${statusBadge(c.status)}${callHotelBadge(c)}</td>
           <td><button class="btn btn-sm btn-secondary" onclick="viewComplaintModal('${c.id}')">View</button></td>
         </tr>`).join("")}</tbody>
       </table>`;
@@ -1518,7 +1612,7 @@ function renderCRTable(){
       <td>${c.filedBy.name}</td><td>${fmtDate(c.filedAt)}</td>
       <td>${sevBadgeShort(c.severity)}</td>
       <td style="font-size:12px">${c.complaint.impactLevel?.split("—")[0]?.trim()||"-"}</td>
-      <td>${statusBadge(c.status)}</td>
+      <td>${statusBadge(c.status)}${callHotelBadge(c)}</td>
       <td><button class="btn btn-sm btn-secondary" onclick="viewComplaintModal('${c.id}')">View</button></td>
     </tr>`).join("")}</tbody>
   </table>
