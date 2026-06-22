@@ -29,43 +29,25 @@ export const api = {
   callsToday: () => request('/api/calls/today'),
   getCall: (callId) => request(`/api/call/${encodeURIComponent(callId)}`),
   saveNotes: (callId, notes) => request('/api/call-notes', { method: 'POST', body: JSON.stringify({ callId, notes }) }),
+  // Real-time client -> server actions (SSE is server -> client only)
+  acceptCall: (callId, agentId) => request('/api/call-accepted', { method: 'POST', body: JSON.stringify({ callId, agentId }) }),
+  acceptChat: (chatId, agentId) => request('/api/chat-accepted', { method: 'POST', body: JSON.stringify({ chatId, agentId }) }),
   // Stats
   statistics: () => request('/api/statistics'),
   health: () => request('/health'),
 };
 
 /**
- * Auto-reconnecting WebSocket. Calls onMessage(parsedEvent) for each frame
- * and onStatus('open'|'closed') on connection state changes.
+ * Real-time stream via Server-Sent Events. Works through any proxy/CDN (no
+ * WebSocket upgrade needed). EventSource reconnects automatically.
+ * Calls onMessage(parsedEvent) per event and onStatus('open'|'closed').
  */
-export function connectWebSocket({ agentId, onMessage, onStatus }) {
-  let ws;
-  let closedByUser = false;
-  let retry = 0;
-
-  function open() {
-    ws = new WebSocket(WS_URL);
-    ws.onopen = () => {
-      retry = 0;
-      onStatus?.('open');
-      ws.send(JSON.stringify({ type: 'AGENT_CONNECTED', agentId }));
-    };
-    ws.onmessage = (e) => {
-      try { onMessage?.(JSON.parse(e.data)); } catch { /* ignore malformed */ }
-    };
-    ws.onclose = () => {
-      onStatus?.('closed');
-      if (!closedByUser) {
-        retry += 1;
-        setTimeout(open, Math.min(1000 * 2 ** retry, 16000)); // exp backoff, cap 16s
-      }
-    };
-    ws.onerror = () => ws.close();
-  }
-  open();
-
-  return {
-    send: (msg) => ws?.readyState === WebSocket.OPEN && ws.send(JSON.stringify(msg)),
-    close: () => { closedByUser = true; ws?.close(); },
+export function connectStream({ onMessage, onStatus }) {
+  const es = new EventSource(`${API_URL}/api/stream`);
+  es.onopen = () => onStatus?.('open');
+  es.onmessage = (e) => {
+    try { onMessage?.(JSON.parse(e.data)); } catch { /* heartbeat / malformed */ }
   };
+  es.onerror = () => onStatus?.('closed'); // EventSource retries on its own
+  return { close: () => es.close() };
 }

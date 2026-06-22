@@ -10,7 +10,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, connectWebSocket } from './api.js';
+import { api, connectStream } from './api.js';
 
 const SITE = 'https://nova.heyvacay.co';
 const initials = (name = '') => name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase() || '?';
@@ -114,10 +114,9 @@ export default function Portal() {
     return () => clearInterval(t);
   }, [refreshStats]);
 
-  // ---- WebSocket ---------------------------------------------------------
+  // ---- Real-time stream (SSE) -------------------------------------------
   useEffect(() => {
-    const conn = connectWebSocket({
-      agentId: meRef.current,
+    const conn = connectStream({
       onStatus: setWsStatus,
       onMessage: (msg) => {
         switch (msg.type) {
@@ -172,7 +171,7 @@ export default function Portal() {
   function acceptCall(agentId) {
     if (!incomingCall) return;
     const agent = agents.find((a) => a.id === agentId);
-    wsRef.current?.send({ type: 'CALL_ACCEPTED', callId: incomingCall.callId });
+    api.acceptCall(incomingCall.callId, agentId).catch((e) => push(`Accept failed: ${e.message}`, 'error'));
     setActiveCall({
       callId: incomingCall.callId,
       customer: incomingCall.customer,
@@ -187,7 +186,7 @@ export default function Portal() {
   }
 
   function acceptChat(chat, agentId) {
-    wsRef.current?.send({ type: 'CHAT_ACCEPTED', chatId: chat.chatId });
+    api.acceptChat(chat.chatId, agentId).catch((e) => push(`Accept failed: ${e.message}`, 'error'));
     setPendingChats((c) => c.filter((x) => x.chatId !== chat.chatId));
     alarm.stop();
     push(`Chat assigned to ${agents.find((a) => a.id === agentId)?.name || 'agent'}`);

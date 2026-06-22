@@ -131,6 +131,11 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 /** Map<agentId, WebSocket> of currently-connected agents. */
 const connectedAgents = new Map();
+/**
+ * Set of open SSE responses (the primary real-time channel — works through
+ * every proxy/CDN, unlike WebSockets which some hosts don't upgrade).
+ */
+const sseClients = new Set();
 
 wss.on('connection', (ws) => {
   let agentId = null;
@@ -170,11 +175,15 @@ wss.on('connection', (ws) => {
   ws.on('error', (e) => console.error('[ws] client error', e.message));
 });
 
-/** Send a JSON message to every connected agent socket. */
+/** Fan a JSON message out to every connected agent (SSE + any WebSocket). */
 function broadcastToAgents(message) {
   const payload = JSON.stringify(message);
   for (const ws of connectedAgents.values()) {
     if (ws.readyState === WebSocket.OPEN) ws.send(payload);
+  }
+  const frame = `data: ${payload}\n\n`;
+  for (const res of sseClients) {
+    try { res.write(frame); } catch { sseClients.delete(res); }
   }
 }
 
@@ -679,11 +688,51 @@ app.get('/api/statistics', async (_req, res) => {
   }
 });
 
+// --- Real-time stream (SSE) ------------------------------------------------
+// The portal opens this once and receives all push events (incoming calls,
+// chats, transcription-complete, agent/alarm updates).
+app.get('/api/stream', (req, res) => {
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.flushHeaders?.();
+  res.write('retry: 3000\n\n');
+  res.write(`data: ${JSON.stringify({ type: 'CONNECTED' })}\n\n`);
+  sseClients.add(res);
+
+  // Heartbeat keeps proxies from closing an idle connection.
+  const heartbeat = setInterval(() => {
+    try { res.write(':hb\n\n'); } catch { /* closed */ }
+  }, 25000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+});
+
+// --- Client -> server actions (replaces the old WebSocket messages) --------
+app.post('/api/call-accepted', (req, res) => {
+  const { callId, agentId } = req.body || {};
+  broadcastToAgents({ type: 'CALL_ASSIGNED', data: { callId, assignedTo: agentId } });
+  res.json({ success: true });
+});
+
+app.post('/api/chat-accepted', async (req, res) => {
+  const { chatId, agentId } = req.body || {};
+  try { await assignChatToAgent(chatId, agentId); } catch (e) { console.error('assignChat', e.message); }
+  broadcastToAgents({ type: 'STOP_ALARM' });
+  res.json({ success: true });
+});
+
 // --- Health ----------------------------------------------------------------
 app.get('/health', (_req, res) => {
   res.json({
     status: 'healthy',
-    connectedAgents: connectedAgents.size,
+    connectedAgents: sseClients.size + connectedAgents.size,
     services: {
       supabase: !!supabase,
       assemblyai: !!assemblyAI,
