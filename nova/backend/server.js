@@ -82,8 +82,13 @@ const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY 
 // ---------------------------------------------------------------------------
 const app = express();
 
-// Allow the configured frontend plus localhost during development.
-const allowedOrigins = new Set([FRONTEND_URL, 'http://localhost:5173', 'http://localhost:3000']);
+// Allow one or more frontend origins (comma-separated in FRONTEND_URL) plus
+// localhost during development.
+const allowedOrigins = new Set([
+  ...String(FRONTEND_URL).split(',').map((s) => s.trim()).filter(Boolean),
+  'http://localhost:5173',
+  'http://localhost:3000',
+]);
 app.use(cors({
   origin(origin, cb) {
     // Non-browser callers (curl, server-to-server webhooks) send no origin.
