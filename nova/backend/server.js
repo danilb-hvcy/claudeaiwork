@@ -82,24 +82,31 @@ const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY 
 // ---------------------------------------------------------------------------
 const app = express();
 
-// Allow one or more frontend origins (comma-separated in FRONTEND_URL) plus
-// localhost during development.
+// Allow one or more frontend origins (comma-separated in FRONTEND_URL), any
+// *.vercel.app deployment, plus localhost during development.
 const allowedOrigins = new Set([
   ...String(FRONTEND_URL).split(',').map((s) => s.trim()).filter(Boolean),
   'http://localhost:5173',
   'http://localhost:3000',
 ]);
+
+function isAllowedOrigin(origin) {
+  // Non-browser callers (curl, server-to-server webhooks) send no Origin.
+  if (!origin) return true;
+  if (allowedOrigins.has(origin)) return true;
+  try {
+    if (new URL(origin).hostname.endsWith('.vercel.app')) return true;
+  } catch { /* malformed origin */ }
+  return false;
+}
+
 app.use(cors({
-  origin(origin, cb) {
-    // Non-browser callers (curl, server-to-server webhooks) send no origin.
-    if (!origin || allowedOrigins.has(origin)) return cb(null, true);
-    return cb(new Error(`CORS: origin ${origin} not allowed`));
-  },
+  // cb(null, false) omits the CORS header (browser blocks) without throwing 500.
+  origin(origin, cb) { cb(null, isAllowedOrigin(origin)); },
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-
 // Capture the raw body for webhook routes so we can verify HMAC signatures
 // against the exact bytes Zoom/Crisp signed.
 app.use(express.json({
