@@ -64,7 +64,13 @@ checkEnv();
 // Service clients (guarded so the server still boots with partial config)
 // ---------------------------------------------------------------------------
 const supabase = SUPABASE_URL && SUPABASE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } })
+  ? createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: false },
+      // Node < 22 has no global WebSocket; supabase-realtime needs one. We
+      // never use realtime here, but createClient initializes it regardless,
+      // so hand it the `ws` implementation to avoid a startup crash.
+      realtime: { transport: WebSocket },
+    })
   : null;
 
 const assemblyAI = ASSEMBLYAI_API_KEY ? new AssemblyAI({ apiKey: ASSEMBLYAI_API_KEY }) : null;
