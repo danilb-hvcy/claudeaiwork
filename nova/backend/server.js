@@ -33,7 +33,6 @@ const axios = require('axios');
 const {
   NODE_ENV = 'development',
   PORT = 3000,
-  WS_PORT = 8080,
   FRONTEND_URL = 'http://localhost:5173',
   ZOOM_ACCOUNT_ID,
   ZOOM_CLIENT_ID,
@@ -108,7 +107,10 @@ app.use('/api', rateLimit({
 // WebSocket server — real-time fan-out to agent browsers
 // ---------------------------------------------------------------------------
 const server = http.createServer(app);
-const wss = new WebSocketServer({ port: Number(WS_PORT) });
+// Attach the WebSocket server to the same HTTP server so it shares one port.
+// This is required by single-port hosts (Railway, Render, Fly): clients connect
+// to wss://<api-domain> on the same port as the REST API.
+const wss = new WebSocketServer({ server });
 /** Map<agentId, WebSocket> of currently-connected agents. */
 const connectedAgents = new Map();
 
@@ -677,8 +679,7 @@ app.get('/health', (_req, res) => {
 // Start
 // ---------------------------------------------------------------------------
 server.listen(Number(PORT), () => {
-  console.log(`[nova] HTTP API on :${PORT} (${NODE_ENV})`);
-  console.log(`[nova] WebSocket on :${WS_PORT}`);
+  console.log(`[nova] HTTP API + WebSocket on :${PORT} (${NODE_ENV})`);
 });
 
 module.exports = { app, broadcastToAgents };

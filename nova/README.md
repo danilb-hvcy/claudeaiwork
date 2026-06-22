@@ -46,7 +46,7 @@ Open the Supabase dashboard → SQL Editor → paste and run
 cd backend
 cp .env.example .env      # fill in real values locally (never commit .env)
 npm install
-npm start                 # HTTP API on :3000, WebSocket on :8080
+npm start                 # HTTP API + WebSocket on :3000 (same port)
 ```
 Use the Supabase **service-role** key on the backend so it can write.
 
@@ -94,9 +94,10 @@ npm run dev                  # http://localhost:5173
 ## Deployment
 
 - **Frontend** → Vercel. Set `VITE_API_URL=https://api.nova.heyvacay.co` and
-  `VITE_WS_URL=wss://nova.heyvacay.co`. Add custom domain `nova.heyvacay.co`.
+  `VITE_WS_URL=wss://api.nova.heyvacay.co`. Add custom domain `nova.heyvacay.co`.
 - **Backend** → Railway/Render. Set all `.env` vars as project secrets. Point
-  `api.nova.heyvacay.co` at it. Proxy `wss://nova.heyvacay.co` → the WS port.
+  `api.nova.heyvacay.co` at it. The WebSocket shares the HTTP port, so
+  `wss://api.nova.heyvacay.co` works with no extra proxy config.
 - **Database** → Supabase (already created); run the schema and keep RLS on.
 
 ## Notes on the AI summary

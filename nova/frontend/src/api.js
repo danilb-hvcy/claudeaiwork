@@ -2,7 +2,7 @@
 // All endpoints/secrets stay server-side; the browser only knows public URLs.
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000';
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, {
