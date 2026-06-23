@@ -326,11 +326,18 @@ async function getPendingChatCount() {
 /** Send an operator reply into a Crisp conversation. */
 async function sendCrispMessage(sessionId, text, nickname = 'HeyVacay') {
   if (!CRISP_WEBSITE_ID || !CRISP_API_TOKEN) throw new Error('Crisp not configured');
-  await axios.post(
-    `https://api.crisp.chat/v1/website/${CRISP_WEBSITE_ID}/conversation/${sessionId}/message`,
-    { type: 'text', from: 'operator', origin: 'chat', content: text, user: { type: 'website', nickname } },
-    { headers: crispAuthHeader() },
-  );
+  try {
+    await axios.post(
+      `https://api.crisp.chat/v1/website/${CRISP_WEBSITE_ID}/conversation/${sessionId}/message`,
+      { type: 'text', from: 'operator', origin: 'chat', content: text, user: { type: 'website', nickname } },
+      { headers: crispAuthHeader() },
+    );
+  } catch (e) {
+    // Surface Crisp's own error reason (e.g. "not_allowed", "unauthorized").
+    const status = e.response?.status;
+    const reason = e.response?.data?.reason || e.response?.data?.message || e.message;
+    throw new Error(`Crisp ${status || ''} ${reason} (tier=${process.env.CRISP_API_TIER || 'user'})`);
+  }
 }
 
 /** Fetch the full message thread for a Crisp conversation, normalized. */
