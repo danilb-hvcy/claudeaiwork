@@ -32,6 +32,10 @@ export const api = {
   // Real-time client -> server actions (SSE is server -> client only)
   acceptCall: (callId, agentId) => request('/api/call-accepted', { method: 'POST', body: JSON.stringify({ callId, agentId }) }),
   acceptChat: (chatId, agentId) => request('/api/chat-accepted', { method: 'POST', body: JSON.stringify({ chatId, agentId }) }),
+  // Chat conversation
+  chatMessages: (sessionId) => request(`/api/chat/${encodeURIComponent(sessionId)}/messages`),
+  replyChat: (sessionId, text, agentName) => request(`/api/chat/${encodeURIComponent(sessionId)}/reply`, { method: 'POST', body: JSON.stringify({ text, agentName }) }),
+  summarizeChat: (sessionId) => request(`/api/chat/${encodeURIComponent(sessionId)}/summarize`, { method: 'POST' }),
   // Stats
   statistics: () => request('/api/statistics'),
   health: () => request('/health'),

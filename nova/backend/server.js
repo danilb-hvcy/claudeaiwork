@@ -321,6 +321,39 @@ async function getPendingChatCount() {
   return count || 0;
 }
 
+/** Send an operator reply into a Crisp conversation. */
+async function sendCrispMessage(sessionId, text, nickname = 'HeyVacay') {
+  if (!CRISP_WEBSITE_ID || !CRISP_API_TOKEN) throw new Error('Crisp not configured');
+  await axios.post(
+    `https://api.crisp.chat/v1/website/${CRISP_WEBSITE_ID}/conversation/${sessionId}/message`,
+    { type: 'text', from: 'operator', origin: 'chat', content: text, user: { type: 'website', nickname } },
+    { headers: crispAuthHeader() },
+  );
+}
+
+/** Fetch the full message thread for a Crisp conversation, normalized. */
+async function getCrispMessages(sessionId) {
+  if (!CRISP_WEBSITE_ID || !CRISP_API_TOKEN) return [];
+  const { data } = await axios.get(
+    `https://api.crisp.chat/v1/website/${CRISP_WEBSITE_ID}/conversation/${sessionId}/messages`,
+    { headers: crispAuthHeader() },
+  );
+  return (data.data || []).map((m) => ({
+    from: m.from === 'operator' ? 'agent' : 'customer',
+    text: typeof m.content === 'string' ? m.content : (m.content?.text || ''),
+    at: new Date(m.timestamp || Date.now()).toISOString(),
+  }));
+}
+
+/** Append a message object to a chat_history row's messages array. */
+async function appendChatMessage(sessionId, message) {
+  if (!supabase) return;
+  const { data: row } = await supabase
+    .from('chat_history').select('messages').eq('crisp_chat_id', sessionId).maybeSingle();
+  const messages = [...(row?.messages || []), message];
+  await supabase.from('chat_history').update({ messages }).eq('crisp_chat_id', sessionId);
+}
+
 // ---------------------------------------------------------------------------
 // Claude — call summarization
 // ---------------------------------------------------------------------------
@@ -351,6 +384,36 @@ ${transcript.slice(0, 6000)}
 
 Produce a clear, well-structured summary with these sections:
 1. Call Summary (2-3 sentences)
+2. Topics Discussed (bullets)
+3. Customer Sentiment (happy / neutral / upset)
+4. Recommended Actions (bullets)
+5. Suggested Upsells (bullets with rough $ value)`,
+    }],
+  });
+  return extractText(message);
+}
+
+async function generateChatSummary(messages, customer) {
+  if (!anthropic) throw new Error('Anthropic not configured');
+  const transcript = (messages || [])
+    .map((m) => `${m.from === 'agent' ? 'Agent' : 'Customer'}: ${m.text}`)
+    .join('\n');
+  const message = await anthropic.messages.create({
+    model: 'claude-opus-4-8',
+    max_tokens: 1024,
+    thinking: { type: 'adaptive' },
+    messages: [{
+      role: 'user',
+      content: `You are summarizing a HeyVacay travel-agency live chat.
+
+Customer: ${customer?.name || customer?.email || 'Unknown'}
+Conversation:
+"""
+${transcript.slice(0, 6000)}
+"""
+
+Produce a clear, well-structured summary with these sections:
+1. Chat Summary (2-3 sentences)
 2. Topics Discussed (bullets)
 3. Customer Sentiment (happy / neutral / upset)
 4. Recommended Actions (bullets)
@@ -505,6 +568,7 @@ app.post('/webhook/crisp-chat', async (req, res) => {
     const email = data.user?.email || null;
     const name = data.user?.nickname || null;
     const text = typeof data.content === 'string' ? data.content : (data.content?.text || '');
+    const message = { from: 'customer', text, at: new Date().toISOString() };
 
     let customer = null;
     if (email && supabase) {
@@ -512,25 +576,41 @@ app.post('/webhook/crisp-chat', async (req, res) => {
       customer = found || (await supabase.from('customers').insert({ email, name }).select().single()).data;
     }
 
+    // Is this a brand-new conversation (→ alarm + card) or a follow-up message
+    // in one we already know about (→ just stream it into the open thread)?
+    let existing = null;
     if (supabase) {
-      await supabase.from('chat_history').upsert({
-        crisp_chat_id: chatId,
-        customer_id: customer?.id || null,
-        customer_email: email,
-        customer_name: name,
-        messages: [{ from: 'customer', text, at: new Date().toISOString() }],
-        status: 'pending',
-      }, { onConflict: 'crisp_chat_id' });
+      const { data: row } = await supabase.from('chat_history')
+        .select('*').eq('crisp_chat_id', chatId).maybeSingle();
+      existing = row;
+      if (existing) {
+        await supabase.from('chat_history')
+          .update({ messages: [...(existing.messages || []), message] })
+          .eq('crisp_chat_id', chatId);
+      } else {
+        await supabase.from('chat_history').insert({
+          crisp_chat_id: chatId,
+          customer_id: customer?.id || null,
+          customer_email: email,
+          customer_name: name,
+          messages: [message],
+          status: 'pending',
+        });
+      }
     }
 
-    const pendingChatCount = await getPendingChatCount();
+    // Always stream the message into any open conversation view.
+    broadcastToAgents({ type: 'CHAT_MESSAGE', data: { chatId, message } });
 
-    broadcastToAgents({
-      type: 'INCOMING_CHAT',
-      shouldPlayAlarm: true,
-      pendingChatCount,
-      data: { chatId, customer, firstMessage: text, timestamp: Date.now() },
-    });
+    // Raise a new-chat alert + alarm only for a brand-new conversation.
+    if (!existing) {
+      broadcastToAgents({
+        type: 'INCOMING_CHAT',
+        shouldPlayAlarm: true,
+        pendingChatCount: await getPendingChatCount(),
+        data: { chatId, customer, firstMessage: text, timestamp: Date.now() },
+      });
+    }
   } catch (err) {
     console.error('[crisp-webhook] handler error:', err.message);
   }
@@ -653,6 +733,65 @@ app.post('/api/call-notes', async (req, res) => {
       .eq('zoom_call_id', callId);
     if (error) throw error;
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// --- Chats -----------------------------------------------------------------
+// Full message thread for a conversation (from our DB, falling back to Crisp).
+app.get('/api/chat/:sessionId/messages', async (req, res) => {
+  try {
+    const sessionId = req.params.sessionId;
+    let row = null;
+    if (supabase) {
+      const { data } = await supabase.from('chat_history')
+        .select('*').eq('crisp_chat_id', sessionId).maybeSingle();
+      row = data;
+    }
+    let messages = row?.messages || [];
+    if (messages.length === 0) {
+      messages = await getCrispMessages(sessionId).catch(() => []);
+    }
+    res.json({ messages, customer: { name: row?.customer_name, email: row?.customer_email }, status: row?.status });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Agent reply → sent to the customer via Crisp, logged, and streamed back.
+app.post('/api/chat/:sessionId/reply', async (req, res) => {
+  try {
+    const sessionId = req.params.sessionId;
+    const { text, agentName } = req.body || {};
+    if (!text || !text.trim()) return res.status(400).json({ error: 'text required' });
+    await sendCrispMessage(sessionId, text, agentName || 'HeyVacay');
+    const message = { from: 'agent', text, at: new Date().toISOString() };
+    await appendChatMessage(sessionId, message);
+    broadcastToAgents({ type: 'CHAT_MESSAGE', data: { chatId: sessionId, message } });
+    res.json({ success: true, message });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// AI summary of a conversation (Claude).
+app.post('/api/chat/:sessionId/summarize', async (req, res) => {
+  try {
+    const sessionId = req.params.sessionId;
+    let row = null;
+    if (supabase) {
+      const { data } = await supabase.from('chat_history')
+        .select('*').eq('crisp_chat_id', sessionId).maybeSingle();
+      row = data;
+    }
+    let messages = row?.messages || [];
+    if (messages.length === 0) messages = await getCrispMessages(sessionId).catch(() => []);
+    const summary = await generateChatSummary(messages, { name: row?.customer_name, email: row?.customer_email });
+    if (supabase) {
+      await supabase.from('chat_history').update({ resolution_notes: summary }).eq('crisp_chat_id', sessionId);
+    }
+    res.json({ success: true, summary });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

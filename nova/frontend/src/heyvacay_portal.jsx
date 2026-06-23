@@ -89,6 +89,7 @@ export default function Portal() {
   const [stats, setStats] = useState({ totalCalls: 0, avgDuration: 0, repeatRate: 0, sentimentPct: 0 });
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showAddAgent, setShowAddAgent] = useState(false);
+  const [openChat, setOpenChat] = useState(null); // { chatId, customer, messages[], loading, summary, summarizing }
 
   const alarm = useAlarm();
   const { push, view: toastView } = useToasts();
@@ -125,8 +126,18 @@ export default function Portal() {
             setSelectedCustomer(buildContextFromCall(msg.data));
             break;
           case 'INCOMING_CHAT':
-            setPendingChats((c) => [{ ...msg.data, waitStart: Date.now() }, ...c]);
+            setPendingChats((c) => (
+              c.some((x) => x.chatId === msg.data.chatId)
+                ? c
+                : [{ ...msg.data, waitStart: Date.now() }, ...c]));
             if (msg.shouldPlayAlarm) alarm.start();
+            break;
+          case 'CHAT_MESSAGE':
+            // Stream into the currently-open conversation.
+            setOpenChat((oc) => (
+              oc && oc.chatId === msg.data.chatId
+                ? { ...oc, messages: [...oc.messages, msg.data.message] }
+                : oc));
             break;
           case 'STOP_ALARM':
             alarm.stop();
@@ -190,6 +201,37 @@ export default function Portal() {
     setPendingChats((c) => c.filter((x) => x.chatId !== chat.chatId));
     alarm.stop();
     push(`Chat assigned to ${agents.find((a) => a.id === agentId)?.name || 'agent'}`);
+    openChatThread(chat); // open the conversation so the agent can reply
+  }
+
+  async function openChatThread(chat) {
+    alarm.stop();
+    setOpenChat({ chatId: chat.chatId, customer: chat.customer, messages: [], loading: true });
+    try {
+      const data = await api.chatMessages(chat.chatId);
+      setOpenChat({ chatId: chat.chatId, customer: data.customer || chat.customer, messages: data.messages || [], loading: false });
+    } catch (e) {
+      push(`Open chat failed: ${e.message}`, 'error');
+      setOpenChat(null);
+    }
+  }
+
+  function sendReply(text) {
+    if (!openChat) return;
+    // The reply is echoed back over SSE as a CHAT_MESSAGE, so we don't append here.
+    api.replyChat(openChat.chatId, text, 'HeyVacay').catch((e) => push(`Send failed: ${e.message}`, 'error'));
+  }
+
+  async function summarizeOpenChat() {
+    if (!openChat) return;
+    setOpenChat((c) => ({ ...c, summarizing: true }));
+    try {
+      const { summary: s } = await api.summarizeChat(openChat.chatId);
+      setOpenChat((c) => ({ ...c, summary: s, summarizing: false }));
+    } catch (e) {
+      push(`Summarize failed: ${e.message}`, 'error');
+      setOpenChat((c) => ({ ...c, summarizing: false }));
+    }
   }
 
   // ===========================================================================
@@ -245,7 +287,9 @@ export default function Portal() {
               <CallsTab incomingCall={incomingCall} agents={agents} onAccept={acceptCall} onDecline={() => setIncomingCall(null)} />
             )}
             {tab === 'chats' && (
-              <ChatsTab chats={pendingChats} agents={agents} onAccept={acceptChat} />
+              openChat
+                ? <ChatConversation chat={openChat} onBack={() => setOpenChat(null)} onSend={sendReply} onSummarize={summarizeOpenChat} />
+                : <ChatsTab chats={pendingChats} agents={agents} onAccept={acceptChat} onOpen={openChatThread} />
             )}
             {tab === 'active' && (
               <ActiveTab activeCall={activeCall} summary={summary} onSaveNotes={async (notes) => {
@@ -385,7 +429,7 @@ function CallsTab({ incomingCall, agents, onAccept, onDecline }) {
 // ===========================================================================
 // Tab: Chats
 // ===========================================================================
-function ChatsTab({ chats, agents, onAccept }) {
+function ChatsTab({ chats, agents, onAccept, onOpen }) {
   const [, force] = useState(0);
   useEffect(() => { const t = setInterval(() => force((n) => n + 1), 1000); return () => clearInterval(t); }, []);
   const available = agents.filter((a) => a.status === 'available');
@@ -408,6 +452,7 @@ function ChatsTab({ chats, agents, onAccept }) {
             <div style={{ fontStyle: 'italic', color: 'var(--muted)', margin: '6px 0' }}>"{chat.firstMessage}"</div>
             <div className="alarm"><span className="bell">🔔</span> ALARM ACTIVE</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+              <button className="btn ghost" onClick={() => onOpen(chat)}>Open</button>
               {available.length === 0 && <span style={{ color: 'var(--muted)', fontSize: 13 }}>No available agents</span>}
               {available.map((a) => (
                 <button key={a.id} className="btn" onClick={() => onAccept(chat, a.id)}>Accept: {a.name}</button>
@@ -417,6 +462,63 @@ function ChatsTab({ chats, agents, onAccept }) {
         );
       })}
     </>
+  );
+}
+
+// ===========================================================================
+// Chat conversation (open thread + reply + AI summary)
+// ===========================================================================
+function ChatConversation({ chat, onBack, onSend, onSummarize }) {
+  const [text, setText] = useState('');
+  const endRef = useRef(null);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chat.messages.length]);
+
+  function submit() {
+    const t = text.trim();
+    if (!t) return;
+    onSend(t);
+    setText('');
+  }
+
+  return (
+    <div className="card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <button className="btn ghost" onClick={onBack}>← Back</button>
+        <b>{chat.customer?.name || chat.customer?.email || 'Visitor'}</b>
+        <button className="btn" onClick={onSummarize} disabled={chat.summarizing}>
+          {chat.summarizing ? <><span className="spinner" /> Summarizing…</> : '✨ Summarize'}
+        </button>
+      </div>
+
+      {chat.summary && (
+        <div className="card cyan-border summary" style={{ marginBottom: 12 }}>
+          <div style={{ color: 'var(--cyan)', fontWeight: 800, marginBottom: 8 }}>✨ AI CHAT SUMMARY</div>
+          {chat.summary}
+        </div>
+      )}
+
+      <div className="transcript" style={{ maxHeight: 360 }}>
+        {chat.loading
+          ? <div style={{ color: 'var(--muted)' }}><span className="spinner" /> Loading conversation…</div>
+          : chat.messages.length === 0
+            ? <div style={{ color: 'var(--muted)' }}>No messages yet.</div>
+            : chat.messages.map((m, i) => (
+              <div key={i} className={`line ${m.from === 'agent' ? 'agent' : 'customer'}`}>
+                <span className="speaker">{m.from === 'agent' ? 'You' : 'Customer'}:</span>{m.text}
+              </div>
+            ))}
+        <div ref={endRef} />
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <input
+          className="field" style={{ flex: 1 }} placeholder="Type a reply…"
+          value={text} onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+        />
+        <button className="btn" onClick={submit}>Send</button>
+      </div>
+    </div>
   );
 }
 
