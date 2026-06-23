@@ -293,7 +293,9 @@ function verifyZoomSignature(req) {
 // ---------------------------------------------------------------------------
 function crispAuthHeader() {
   const basic = Buffer.from(`${CRISP_API_USER_ID}:${CRISP_API_TOKEN}`).toString('base64');
-  return { Authorization: `Basic ${basic}`, 'X-Crisp-Tier': 'plugin' };
+  // Crisp tokens are either "user" (personal/account) or "plugin" (marketplace).
+  // The credentials here are a user token; override with CRISP_API_TIER if needed.
+  return { Authorization: `Basic ${basic}`, 'X-Crisp-Tier': process.env.CRISP_API_TIER || 'user' };
 }
 
 /** Assign a Crisp conversation to an agent (stops the alarm everywhere). */
