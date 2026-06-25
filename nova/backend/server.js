@@ -26,6 +26,8 @@ const { createClient } = require('@supabase/supabase-js');
 const { AssemblyAI } = require('assemblyai');
 const Anthropic = require('@anthropic-ai/sdk');
 const axios = require('axios');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 // ---------------------------------------------------------------------------
 // Configuration & startup validation
@@ -46,6 +48,13 @@ const {
   SUPABASE_KEY,
   ANTHROPIC_API_KEY,
 } = process.env;
+
+// Token signing secret. Falls back to a per-boot random value (logins won't
+// survive restarts) — set JWT_SECRET in production so sessions persist.
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
+if (!process.env.JWT_SECRET) {
+  console.warn('[startup] JWT_SECRET not set — using a random secret (sessions reset on restart)');
+}
 
 /** Warn loudly about anything missing instead of failing silently later. */
 function checkEnv() {
@@ -120,6 +129,41 @@ app.use('/api', rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 }));
+
+// --- Auth guard ------------------------------------------------------------
+// Every /api/* route requires a valid login token, EXCEPT /api/auth/* (login,
+// bootstrap, needs-bootstrap). Webhooks (/webhook/*) and /health are public.
+// The SSE stream passes its token as a query param (EventSource can't set headers).
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api/')) return next();
+  if (req.path.startsWith('/api/auth/')) return next();
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || req.query.token;
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    return next();
+  } catch {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+});
+
+function adminOnly(req, res, next) {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'admin only' });
+  return next();
+}
+
+/** Token payload + signing. */
+function signToken(user) {
+  return jwt.sign({ id: user.id, username: user.username, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '12h' });
+}
+
+/** Public-safe view of a user/agent row (never leaks password_hash). */
+function pubUser(u) {
+  return {
+    id: u.id, name: u.name, username: u.username, role: u.role,
+    email: u.email, phone_number: u.phone_number, status: u.status,
+    must_change_password: u.must_change_password,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // WebSocket server — real-time fan-out to agent browsers
@@ -628,6 +672,120 @@ app.post('/webhook/crisp-chat', async (req, res) => {
 // ===========================================================================
 // REST API
 // ===========================================================================
+
+// --- Auth (public) ---------------------------------------------------------
+/** Number of existing login accounts (username set). */
+async function loginAccountCount() {
+  const db = requireSupabase();
+  const { count } = await db.from('agents')
+    .select('*', { count: 'exact', head: true })
+    .not('username', 'is', null);
+  return count || 0;
+}
+
+// True only before the very first admin exists — drives the first-run setup UI.
+app.get('/api/auth/needs-bootstrap', async (_req, res) => {
+  try { res.json({ needed: (await loginAccountCount()) === 0 }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Create the first admin (only works while no accounts exist).
+app.post('/api/auth/bootstrap', async (req, res) => {
+  try {
+    if ((await loginAccountCount()) > 0) return res.status(403).json({ error: 'Already initialized' });
+    const { name, username, password, email, phone } = req.body || {};
+    if (!name || !username || !password) return res.status(400).json({ error: 'name, username, password required' });
+    const db = requireSupabase();
+    const { data, error } = await db.from('agents').insert({
+      name, username, password_hash: bcrypt.hashSync(password, 10), role: 'admin',
+      email: email || `${username}@heyvacay.co`, phone_number: phone || '', status: 'available',
+    }).select().single();
+    if (error) throw error;
+    res.json({ token: signToken(data), user: pubUser(data) });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    const db = requireSupabase();
+    const { data: user } = await db.from('agents').select('*').eq('username', username).maybeSingle();
+    if (!user || !user.password_hash || !bcrypt.compareSync(password || '', user.password_hash)) {
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+    res.json({ token: signToken(user), user: pubUser(user) });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- Account (any logged-in user) ------------------------------------------
+app.get('/api/me', (req, res) => res.json({ user: req.user }));
+
+app.post('/api/change-password', async (req, res) => {
+  try {
+    const { newPassword } = req.body || {};
+    if (!newPassword || newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    const db = requireSupabase();
+    await db.from('agents')
+      .update({ password_hash: bcrypt.hashSync(newPassword, 10), must_change_password: false })
+      .eq('id', req.user.id);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- Users (admin only) ----------------------------------------------------
+app.get('/api/users', adminOnly, async (_req, res) => {
+  try {
+    const db = requireSupabase();
+    const { data, error } = await db.from('agents')
+      .select('id,name,username,role,status,email,phone_number,must_change_password,total_calls_today')
+      .not('username', 'is', null).order('name');
+    if (error) throw error;
+    res.json(data);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/users', adminOnly, async (req, res) => {
+  try {
+    const { name, username, password, role = 'agent', email, phone, must_change_password = true } = req.body || {};
+    if (!name || !username || !password || !email) {
+      return res.status(400).json({ error: 'name, username, email, password required' });
+    }
+    const db = requireSupabase();
+    const { data, error } = await db.from('agents').insert({
+      name, username, password_hash: bcrypt.hashSync(password, 10), role,
+      email, phone_number: phone || '', must_change_password, status: 'offline',
+    }).select().single();
+    if (error) throw error;
+    broadcastToAgents({ type: 'AGENT_ADDED', data: pubUser(data) });
+    res.json({ success: true, user: pubUser(data) });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.patch('/api/users/:id', adminOnly, async (req, res) => {
+  try {
+    const update = {};
+    if (req.body.password) { update.password_hash = bcrypt.hashSync(req.body.password, 10); }
+    if (req.body.must_change_password !== undefined) update.must_change_password = req.body.must_change_password;
+    if (req.body.role) update.role = req.body.role;
+    if (req.body.status) update.status = req.body.status;
+    if (req.body.name) update.name = req.body.name;
+    update.updated_at = new Date().toISOString();
+    const db = requireSupabase();
+    const { data, error } = await db.from('agents').update(update).eq('id', req.params.id).select().single();
+    if (error) throw error;
+    res.json({ success: true, user: pubUser(data) });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.delete('/api/users/:id', adminOnly, async (req, res) => {
+  try {
+    const db = requireSupabase();
+    const { error } = await db.from('agents').delete().eq('id', req.params.id);
+    if (error) throw error;
+    broadcastToAgents({ type: 'AGENT_DELETED', data: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
 
 // --- Customers -------------------------------------------------------------
 app.get('/api/customer/:phone', async (req, res) => {

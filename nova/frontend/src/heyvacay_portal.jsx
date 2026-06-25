@@ -10,11 +10,12 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, connectStream } from './api.js';
+import { api, auth, connectStream } from './api.js';
 
 const SITE = 'https://nova.heyvacay.co';
 const initials = (name = '') => name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase() || '?';
 const fmtDuration = (s) => (s == null ? '—' : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`);
+const fmtTime = (iso) => { try { return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); } catch { return ''; } };
 const sentimentEmoji = (s) => ({ POSITIVE: '😊', happy: '😊', NEGATIVE: '😟', upset: '😟' }[s] || '😐');
 
 // ---------------------------------------------------------------------------
@@ -74,9 +75,140 @@ function useToasts() {
 }
 
 // ===========================================================================
+// App shell — auth gate (login / first-run setup / forced password change)
+// ===========================================================================
+export default function App() {
+  const [user, setUser] = useState(auth.user());
+  const [needsBootstrap, setNeedsBootstrap] = useState(null);
+
+  useEffect(() => {
+    const onLogout = () => setUser(null);
+    window.addEventListener('nova-logout', onLogout);
+    return () => window.removeEventListener('nova-logout', onLogout);
+  }, []);
+
+  useEffect(() => {
+    if (!user) api.needsBootstrap().then((r) => setNeedsBootstrap(r.needed)).catch(() => setNeedsBootstrap(false));
+  }, [user]);
+
+  const onAuthed = (token, u) => { auth.set(token, u); setUser(u); };
+  const logout = () => { auth.clear(); setUser(null); };
+
+  if (!user) {
+    if (needsBootstrap === null) {
+      return <div className="auth-wrap"><span className="spinner" /></div>;
+    }
+    return needsBootstrap
+      ? <BootstrapScreen onAuthed={onAuthed} />
+      : <LoginScreen onAuthed={onAuthed} />;
+  }
+  if (user.must_change_password) {
+    return <ChangePasswordScreen onDone={() => { const u = { ...user, must_change_password: false }; auth.set(auth.token(), u); setUser(u); }} />;
+  }
+  return <Portal user={user} onLogout={logout} />;
+}
+
+// ---------------------------------------------------------------------------
+// Auth screens
+// ---------------------------------------------------------------------------
+function AuthCard({ title, subtitle, children }) {
+  return (
+    <div className="auth-wrap">
+      <div className="auth-card">
+        <div className="auth-brand"><span className="logo-badge">HV</span><span>HeyVacay <b>Nova</b></span></div>
+        <h2>{title}</h2>
+        {subtitle && <p className="auth-sub">{subtitle}</p>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function LoginScreen({ onAuthed }) {
+  const [username, setU] = useState('');
+  const [password, setP] = useState('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e) {
+    e?.preventDefault();
+    setBusy(true); setErr('');
+    try { const r = await api.login(username, password); onAuthed(r.token, r.user); }
+    catch (e2) { setErr(e2.message); } finally { setBusy(false); }
+  }
+
+  return (
+    <AuthCard title="Sign in" subtitle="Service Command Center">
+      <form onSubmit={submit}>
+        <div className="field"><label>Username</label>
+          <input autoFocus value={username} onChange={(e) => setU(e.target.value)} /></div>
+        <div className="field"><label>Password</label>
+          <input type="password" value={password} onChange={(e) => setP(e.target.value)} /></div>
+        {err && <div className="auth-err">{err}</div>}
+        <button className="btn block" disabled={busy}>{busy ? <span className="spinner" /> : 'Sign in'}</button>
+      </form>
+    </AuthCard>
+  );
+}
+
+function BootstrapScreen({ onAuthed }) {
+  const [form, setForm] = useState({ name: '', username: '', email: '', password: '' });
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function submit(e) {
+    e?.preventDefault();
+    setBusy(true); setErr('');
+    try { const r = await api.bootstrap(form); onAuthed(r.token, r.user); }
+    catch (e2) { setErr(e2.message); } finally { setBusy(false); }
+  }
+
+  return (
+    <AuthCard title="Create admin account" subtitle="First-time setup — this becomes your administrator login.">
+      <form onSubmit={submit}>
+        <div className="field"><label>Full name</label><input autoFocus value={form.name} onChange={(e) => set('name', e.target.value)} /></div>
+        <div className="field"><label>Username</label><input value={form.username} onChange={(e) => set('username', e.target.value)} /></div>
+        <div className="field"><label>Email</label><input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} /></div>
+        <div className="field"><label>Password</label><input type="password" value={form.password} onChange={(e) => set('password', e.target.value)} /></div>
+        {err && <div className="auth-err">{err}</div>}
+        <button className="btn block" disabled={busy}>{busy ? <span className="spinner" /> : 'Create admin & continue'}</button>
+      </form>
+    </AuthCard>
+  );
+}
+
+function ChangePasswordScreen({ onDone }) {
+  const [p1, setP1] = useState('');
+  const [p2, setP2] = useState('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e) {
+    e?.preventDefault();
+    if (p1.length < 6) return setErr('Password must be at least 6 characters');
+    if (p1 !== p2) return setErr('Passwords do not match');
+    setBusy(true); setErr('');
+    try { await api.changePassword(p1); onDone(); }
+    catch (e2) { setErr(e2.message); setBusy(false); }
+  }
+
+  return (
+    <AuthCard title="Set a new password" subtitle="You're required to choose a new password before continuing.">
+      <form onSubmit={submit}>
+        <div className="field"><label>New password</label><input autoFocus type="password" value={p1} onChange={(e) => setP1(e.target.value)} /></div>
+        <div className="field"><label>Confirm password</label><input type="password" value={p2} onChange={(e) => setP2(e.target.value)} /></div>
+        {err && <div className="auth-err">{err}</div>}
+        <button className="btn block" disabled={busy}>{busy ? <span className="spinner" /> : 'Save password'}</button>
+      </form>
+    </AuthCard>
+  );
+}
+
+// ===========================================================================
 // Main component
 // ===========================================================================
-export default function Portal() {
+function Portal({ user, onLogout }) {
   const [agents, setAgents] = useState([]);
   const [tab, setTab] = useState('calls');
   const [wsStatus, setWsStatus] = useState('closed');
@@ -88,7 +220,6 @@ export default function Portal() {
   const [callsToday, setCallsToday] = useState([]);
   const [stats, setStats] = useState({ totalCalls: 0, avgDuration: 0, repeatRate: 0, sentimentPct: 0 });
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [showAddAgent, setShowAddAgent] = useState(false);
   const [openChat, setOpenChat] = useState(null); // { chatId, customer, messages[], loading, summary, summarizing }
 
   const alarm = useAlarm();
@@ -243,6 +374,8 @@ export default function Portal() {
         pendingChats={pendingChats.length}
         callsToday={stats.totalCalls}
         wsStatus={wsStatus}
+        user={user}
+        onLogout={onLogout}
       />
 
       <div className="body">
@@ -261,7 +394,9 @@ export default function Portal() {
             </div>
           ))}
 
-          <button className="btn block" style={{ marginTop: 8 }} onClick={() => setShowAddAgent(true)}>+ Add Agent</button>
+          {user.role === 'admin' && (
+            <button className="btn block" style={{ marginTop: 8 }} onClick={() => setTab('users')}>Manage Users</button>
+          )}
 
           <div className="section-title">TODAY'S METRICS</div>
           <div className="card">
@@ -280,6 +415,7 @@ export default function Portal() {
             <TabButton id="active" tab={tab} setTab={setTab} label="Active" />
             <TabButton id="history" tab={tab} setTab={setTab} label="History" />
             <TabButton id="stats" tab={tab} setTab={setTab} label="Stats" />
+            {user.role === 'admin' && <TabButton id="users" tab={tab} setTab={setTab} label="Users" />}
           </nav>
 
           <div className="tab-content">
@@ -299,6 +435,7 @@ export default function Portal() {
             )}
             {tab === 'history' && <HistoryTab calls={callsToday} onSelect={setSelectedCustomer} />}
             {tab === 'stats' && <StatsTab stats={stats} />}
+            {tab === 'users' && user.role === 'admin' && <UsersTab push={push} />}
           </div>
         </main>
 
@@ -312,13 +449,6 @@ export default function Portal() {
         </aside>
       </div>
 
-      {showAddAgent && (
-        <AddAgentModal
-          onClose={() => setShowAddAgent(false)}
-          onSaved={(a) => { push('Agent added successfully!'); refreshAgents(); setShowAddAgent(false); }}
-          onError={(m) => push(m, 'error')}
-        />
-      )}
       {toastView}
     </div>
   );
@@ -337,7 +467,8 @@ function buildContextFromCall(data) {
 // ===========================================================================
 // Header
 // ===========================================================================
-function Header({ availableCount, busyCount, pendingChats, callsToday, wsStatus }) {
+function Header({ availableCount, busyCount, pendingChats, callsToday, wsStatus, user, onLogout }) {
+  const [menu, setMenu] = useState(false);
   return (
     <header className="header">
       <a className="logo" href={SITE}>
@@ -350,10 +481,18 @@ function Header({ availableCount, busyCount, pendingChats, callsToday, wsStatus 
         <span className="stat red"><b>{busyCount}</b> Busy</span>
         <span className="stat">Pending Chats<span className="badge">{pendingChats}</span></span>
         <span className="stat"><b>{callsToday}</b> Calls Today</span>
-        <span className="nova-badge" title={`WebSocket ${wsStatus}`}>
+        <span className={`nova-badge ${wsStatus === 'open' ? 'live' : ''}`} title={`Realtime ${wsStatus}`}>
           NOVA {wsStatus === 'open' ? '●' : '○'}
         </span>
-        <span className="profile">A</span>
+        <div className="profile-wrap">
+          <button className="profile" onClick={() => setMenu((m) => !m)} title={user?.name}>{initials(user?.name)}</button>
+          {menu && (
+            <div className="profile-menu" onMouseLeave={() => setMenu(false)}>
+              <div className="profile-name">{user?.name}<span className="role-pill">{user?.role}</span></div>
+              <button className="btn ghost block" onClick={onLogout}>Log out</button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
@@ -480,43 +619,51 @@ function ChatConversation({ chat, onBack, onSend, onSummarize }) {
     setText('');
   }
 
+  const name = chat.customer?.name || chat.customer?.email || 'Visitor';
   return (
-    <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <button className="btn ghost" onClick={onBack}>← Back</button>
-        <b>{chat.customer?.name || chat.customer?.email || 'Visitor'}</b>
-        <button className="btn" onClick={onSummarize} disabled={chat.summarizing}>
+    <div className="chat-view">
+      <div className="chat-view-head">
+        <button className="icon-btn" onClick={onBack} aria-label="Back">←</button>
+        <div className="avatar sm">{initials(name)}</div>
+        <div className="chat-view-who">
+          <div className="chat-view-name">{name}</div>
+          <div className="chat-view-sub">{chat.customer?.email || 'Live chat'}</div>
+        </div>
+        <button className="btn sm" onClick={onSummarize} disabled={chat.summarizing}>
           {chat.summarizing ? <><span className="spinner" /> Summarizing…</> : '✨ Summarize'}
         </button>
       </div>
 
       {chat.summary && (
-        <div className="card cyan-border summary" style={{ marginBottom: 12 }}>
+        <div className="card cyan-border summary" style={{ margin: '12px 0' }}>
           <div style={{ color: 'var(--cyan)', fontWeight: 800, marginBottom: 8 }}>✨ AI CHAT SUMMARY</div>
           {chat.summary}
         </div>
       )}
 
-      <div className="transcript" style={{ maxHeight: 360 }}>
+      <div className="bubbles">
         {chat.loading
-          ? <div style={{ color: 'var(--muted)' }}><span className="spinner" /> Loading conversation…</div>
+          ? <div className="empty"><span className="spinner" /> Loading conversation…</div>
           : chat.messages.length === 0
-            ? <div style={{ color: 'var(--muted)' }}>No messages yet.</div>
+            ? <div className="empty">No messages yet. Say hello 👋</div>
             : chat.messages.map((m, i) => (
-              <div key={i} className={`line ${m.from === 'agent' ? 'agent' : 'customer'}`}>
-                <span className="speaker">{m.from === 'agent' ? 'You' : 'Customer'}:</span>{m.text}
+              <div key={i} className={`bubble-row ${m.from === 'agent' ? 'me' : 'them'}`}>
+                <div className="bubble">
+                  {m.text}
+                  {m.at && <span className="bubble-time">{fmtTime(m.at)}</span>}
+                </div>
               </div>
             ))}
         <div ref={endRef} />
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+      <div className="composer">
         <input
-          className="field" style={{ flex: 1 }} placeholder="Type a reply…"
+          placeholder="Type a message…"
           value={text} onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
         />
-        <button className="btn" onClick={submit}>Send</button>
+        <button className="send-btn" onClick={submit} aria-label="Send">➤</button>
       </div>
     </div>
   );
@@ -755,42 +902,140 @@ function CustomerContext({ context, onLookup }) {
 }
 
 // ===========================================================================
-// Add Agent modal
+// Tab: Users (admin)
 // ===========================================================================
-function AddAgentModal({ onClose, onSaved, onError }) {
-  const [form, setForm] = useState({ name: '', email: '', phone_number: '', receives_sms: true, receives_calls: true, status: 'offline' });
+function UsersTab({ push }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [resetFor, setResetFor] = useState(null); // user being password-reset
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try { setUsers(await api.listUsers()); } catch (e) { push(`Users: ${e.message}`, 'error'); }
+    finally { setLoading(false); }
+  }, [push]);
+  useEffect(() => { load(); }, [load]);
+
+  async function remove(u) {
+    if (!confirm(`Delete ${u.name} (${u.username})? This removes their login.`)) return;
+    try { await api.deleteUser(u.id); push('User deleted'); load(); }
+    catch (e) { push(`Delete failed: ${e.message}`, 'error'); }
+  }
+
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <h3 style={{ margin: 0 }}>Users & access</h3>
+        <button className="btn" onClick={() => setShowCreate(true)}>+ New User</button>
+      </div>
+
+      {loading ? <div className="empty"><span className="spinner" /> Loading…</div> : (
+        <table>
+          <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            {users.map((u) => (
+              <tr key={u.id}>
+                <td>{u.name}</td>
+                <td>{u.username}</td>
+                <td><span className={`role-pill ${u.role}`}>{u.role}</span></td>
+                <td>
+                  <span className={`status-dot dot-${u.status}`} />{u.status}
+                  {u.must_change_password && <span className="warn-pill" title="Must set a new password at next login">must reset</span>}
+                </td>
+                <td>
+                  <button className="btn ghost sm" onClick={() => setResetFor(u)}>Reset password</button>{' '}
+                  <button className="btn ghost sm danger-text" onClick={() => remove(u)}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {showCreate && (
+        <CreateUserModal
+          onClose={() => setShowCreate(false)}
+          onSaved={() => { push('User created'); load(); setShowCreate(false); }}
+          onError={(m) => push(m, 'error')}
+        />
+      )}
+      {resetFor && (
+        <ResetPasswordModal
+          user={resetFor}
+          onClose={() => setResetFor(null)}
+          onSaved={() => { push('Password reset'); load(); setResetFor(null); }}
+          onError={(m) => push(m, 'error')}
+        />
+      )}
+    </>
+  );
+}
+
+function CreateUserModal({ onClose, onSaved, onError }) {
+  const [form, setForm] = useState({ name: '', username: '', email: '', phone: '', password: '', role: 'agent', must_change_password: true });
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   async function submit() {
-    if (!form.name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) || !form.phone_number) {
-      onError('Please provide a name, valid email, and phone number'); return;
+    if (!form.name || !form.username || !form.password || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      onError('Name, username, valid email, and password are required'); return;
     }
     setSaving(true);
-    try { const r = await api.addAgent(form); onSaved(r.agent); }
-    catch (e) { onError(`Failed to add agent: ${e.message}`); }
+    try { await api.createUser(form); onSaved(); }
+    catch (e) { onError(`Failed to create user: ${e.message}`); }
     finally { setSaving(false); }
   }
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Add Agent</h3>
-        <div className="field"><label>Name *</label><input value={form.name} onChange={(e) => set('name', e.target.value)} /></div>
+        <h3>New user</h3>
+        <div className="field"><label>Full name *</label><input value={form.name} onChange={(e) => set('name', e.target.value)} /></div>
+        <div className="field"><label>Username *</label><input value={form.username} onChange={(e) => set('username', e.target.value)} /></div>
         <div className="field"><label>Email *</label><input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} /></div>
-        <div className="field"><label>Phone *</label><input placeholder="+1(555)555-5555" value={form.phone_number} onChange={(e) => set('phone_number', e.target.value)} /></div>
-        <div className="toggle-row"><span>Receive SMS Alerts</span>
-          <input type="checkbox" checked={form.receives_sms} onChange={(e) => set('receives_sms', e.target.checked)} /></div>
-        <div className="toggle-row"><span>Receive Call Alerts</span>
-          <input type="checkbox" checked={form.receives_calls} onChange={(e) => set('receives_calls', e.target.checked)} /></div>
-        <div className="field"><label>Status</label>
-          <select value={form.status} onChange={(e) => set('status', e.target.value)}>
-            <option value="offline">Offline</option><option value="available">Available</option>
+        <div className="field"><label>Phone</label><input placeholder="+1(555)555-5555" value={form.phone} onChange={(e) => set('phone', e.target.value)} /></div>
+        <div className="field"><label>Temporary password *</label><input value={form.password} onChange={(e) => set('password', e.target.value)} /></div>
+        <div className="field"><label>Role</label>
+          <select value={form.role} onChange={(e) => set('role', e.target.value)}>
+            <option value="agent">Agent</option><option value="admin">Admin</option>
           </select>
         </div>
+        <div className="toggle-row"><span>Require password change at next login</span>
+          <input type="checkbox" checked={form.must_change_password} onChange={(e) => set('must_change_password', e.target.checked)} /></div>
         <div className="modal-actions">
           <button className="btn ghost" onClick={onClose}>Cancel</button>
-          <button className="btn" onClick={submit} disabled={saving}>{saving ? <><span className="spinner" /> Saving…</> : 'Add Agent'}</button>
+          <button className="btn" onClick={submit} disabled={saving}>{saving ? <><span className="spinner" /> Saving…</> : 'Create user'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResetPasswordModal({ user, onClose, onSaved, onError }) {
+  const [password, setPassword] = useState('');
+  const [mustChange, setMustChange] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  async function submit() {
+    if (password.length < 6) { onError('Password must be at least 6 characters'); return; }
+    setSaving(true);
+    try { await api.updateUser(user.id, { password, must_change_password: mustChange }); onSaved(); }
+    catch (e) { onError(`Reset failed: ${e.message}`); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h3>Reset password</h3>
+        <p className="auth-sub">For <b>{user.name}</b> ({user.username})</p>
+        <div className="field"><label>New temporary password</label><input value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+        <div className="toggle-row"><span>Require password change at next login</span>
+          <input type="checkbox" checked={mustChange} onChange={(e) => setMustChange(e.target.checked)} /></div>
+        <div className="modal-actions">
+          <button className="btn ghost" onClick={onClose}>Cancel</button>
+          <button className="btn" onClick={submit} disabled={saving}>{saving ? <><span className="spinner" /> Saving…</> : 'Reset password'}</button>
         </div>
       </div>
     </div>

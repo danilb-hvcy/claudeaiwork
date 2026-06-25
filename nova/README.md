@@ -39,7 +39,18 @@ Crisp Chat ─┤── webhooks ──> Express ─┤─ Claude / claude-opus-
 
 ### 1. Database (Supabase)
 Open the Supabase dashboard → SQL Editor → paste and run
-[`backend/database.sql`](backend/database.sql).
+[`backend/database.sql`](backend/database.sql), then
+[`backend/auth.sql`](backend/auth.sql) (adds login accounts/roles to `agents`).
+
+### Auth & first-run
+- Set a stable **`JWT_SECRET`** env var on the backend (`openssl rand -hex 32`).
+- The first time you open the portal it shows a **first-run setup** screen to
+  create the initial **admin** account. After that, everyone signs in with a
+  username/password.
+- Admins get a **Users** tab: create accounts (with a temporary password and a
+  "require password change at next login" option), reset passwords, delete users.
+- Every `/api/*` route requires a valid login token; webhooks and `/health`
+  stay public.
 
 ### 2. Backend
 ```bash
