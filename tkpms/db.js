@@ -53,13 +53,16 @@ async function init() {
     createdAt TEXT NOT NULL
   )`);
 
+  // A booking row is one passenger+seat. Multiple rows can share a
+  // bookingReference (PNR) on the same flight — paxSeq orders them 1..N.
   await run(`CREATE TABLE bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     passengerId INTEGER NOT NULL,
     flightId INTEGER NOT NULL,
     seatAssigned TEXT,
     cabinClass TEXT NOT NULL,
-    bookingReference TEXT NOT NULL UNIQUE,
+    bookingReference TEXT NOT NULL,
+    paxSeq INTEGER NOT NULL DEFAULT 1,
     paymentMethod TEXT,
     paymentAmount REAL,
     paymentStatus TEXT DEFAULT 'paid',

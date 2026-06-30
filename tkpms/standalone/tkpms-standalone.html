@@ -218,6 +218,7 @@
         body * { visibility: hidden !important; }
         .print-doc, .print-doc * { visibility: visible !important; }
         .print-doc { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+        .bpass-print-block:not(:last-child) { page-break-after: always; }
         .no-print { display: none !important; }
         .modal-overlay { position: absolute; background: #fff; padding: 0; }
         .modal { box-shadow: none; max-width: 100%; }
@@ -792,6 +793,7 @@ function seedDB() {
     seatAssigned: '12A',
     cabinClass: 'Economy',
     bookingReference: 'TKDEMO',
+    paxSeq: 1,
     paymentMethod: 'credit_card',
     paymentAmount: 200,
     paymentStatus: 'paid',
@@ -827,6 +829,7 @@ function getBookingFull(bookingId) {
     seatAssigned: b.seatAssigned,
     cabinClass: b.cabinClass,
     bookingReference: b.bookingReference,
+    paxSeq: b.paxSeq || 1,
     paymentMethod: b.paymentMethod,
     paymentAmount: b.paymentAmount,
     paymentStatus: b.paymentStatus,
@@ -855,8 +858,38 @@ function getBookingFull(bookingId) {
   };
   row.isExitSeat = isExitSeat(row.aircraftType, row.seatAssigned);
   row.bcbp = buildBCBP(row);
+  row.scanCode = String(row.bookingReference) + String(row.paxSeq || 1);
   row.baggage = bags;
   return row;
+}
+
+// Resolve a scanned/typed code to a PNR + optional specific passenger.
+function resolveCode(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  const parsed = parseBCBP(s);
+  if (parsed && parsed.bookingReference) return {
+    ref: parsed.bookingReference.toUpperCase(),
+    seat: parsed.seat || null,
+    paxSeq: null
+  };
+  const up = s.toUpperCase();
+  if (up.length > 6) {
+    const tail = up.slice(6);
+    return {
+      ref: up.slice(0, 6),
+      seat: null,
+      paxSeq: /^\d+$/.test(tail) ? parseInt(tail, 10) : null
+    };
+  }
+  return {
+    ref: up,
+    seat: null,
+    paxSeq: null
+  };
+}
+function getGroup(ref) {
+  return DB.bookings.filter(b => b.bookingReference === ref).sort((a, b) => (a.paxSeq || 1) - (b.paxSeq || 1)).map(b => getBookingFull(b.id));
 }
 
 // ----- API dispatcher (same call signatures the UI already uses) -----
@@ -978,49 +1011,75 @@ async function api(path, opts = {}) {
     };
   }
 
-  // ---- bookings ----
+  // ---- bookings (one PNR, one or more passengers) ----
   if (pure === '/bookings' && method === 'POST') {
-    const r = data;
-    if (!r.flightId || !r.firstName || !r.lastName || !r.cabinClass || !r.seatAssigned) throw new Error('Flight, passenger name, cabin class and seat are required');
-    const flight = byId(DB.flights, r.flightId);
+    const flight = byId(DB.flights, data.flightId);
     if (!flight) throw new Error('Flight not found');
-    const seatDef = getAllSeats(flight.aircraftType).find(s => s.id === r.seatAssigned);
-    if (!seatDef) throw new Error('Invalid seat for aircraft');
-    if (seatDef.cabin !== r.cabinClass) throw new Error('Seat ' + r.seatAssigned + ' is not in ' + r.cabinClass + ' cabin');
-    if (DB.bookings.find(b => String(b.flightId) === String(r.flightId) && b.seatAssigned === r.seatAssigned)) throw new Error('Seat ' + r.seatAssigned + ' already booked');
-    const pid = nextId('passengers');
-    DB.passengers.push({
-      id: pid,
-      flightId: r.flightId,
-      firstName: r.firstName,
-      lastName: r.lastName,
-      email: r.email || '',
-      phone: r.phone || '',
-      passportNumber: r.passportNumber || '',
-      dateOfBirth: r.dateOfBirth || '',
-      nationality: r.nationality || '',
-      createdAt: nowISO()
+    let passengers = Array.isArray(data.passengers) ? data.passengers : [{
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      cabinClass: data.cabinClass,
+      seatAssigned: data.seatAssigned
+    }];
+    if (!passengers.length) throw new Error('At least one passenger is required');
+    const seen = new Set();
+    passengers.forEach(p => {
+      if (!p.firstName || !p.lastName || !p.cabinClass || !p.seatAssigned) throw new Error('Each passenger needs a name, cabin class and seat');
+      const seatDef = getAllSeats(flight.aircraftType).find(s => s.id === p.seatAssigned);
+      if (!seatDef) throw new Error('Invalid seat ' + p.seatAssigned);
+      if (seatDef.cabin !== p.cabinClass) throw new Error('Seat ' + p.seatAssigned + ' is not in ' + p.cabinClass + ' cabin');
+      if (seen.has(p.seatAssigned)) throw new Error('Duplicate seat ' + p.seatAssigned + ' in this booking');
+      seen.add(p.seatAssigned);
+      if (DB.bookings.find(b => String(b.flightId) === String(data.flightId) && b.seatAssigned === p.seatAssigned)) throw new Error('Seat ' + p.seatAssigned + ' already booked');
     });
     let ref;
     for (let i = 0; i < 20; i++) {
       ref = makeBookingRef();
       if (!DB.bookings.find(b => b.bookingReference === ref)) break;
     }
-    const bk = {
-      id: nextId('bookings'),
-      passengerId: pid,
-      flightId: r.flightId,
-      seatAssigned: r.seatAssigned,
-      cabinClass: r.cabinClass,
-      bookingReference: ref,
-      paymentMethod: r.paymentMethod || 'cash',
-      paymentAmount: SEAT_PRICE[r.cabinClass] || 0,
-      paymentStatus: 'paid',
-      createdAt: nowISO()
-    };
-    DB.bookings.push(bk);
+    const ids = [];
+    let seq = 1;
+    passengers.forEach(p => {
+      const pid = nextId('passengers');
+      DB.passengers.push({
+        id: pid,
+        flightId: data.flightId,
+        firstName: p.firstName,
+        lastName: p.lastName,
+        email: p.email || '',
+        phone: p.phone || '',
+        passportNumber: p.passportNumber || '',
+        dateOfBirth: p.dateOfBirth || '',
+        nationality: p.nationality || '',
+        createdAt: nowISO()
+      });
+      const bk = {
+        id: nextId('bookings'),
+        passengerId: pid,
+        flightId: data.flightId,
+        seatAssigned: p.seatAssigned,
+        cabinClass: p.cabinClass,
+        bookingReference: ref,
+        paxSeq: seq,
+        paymentMethod: data.paymentMethod || 'cash',
+        paymentAmount: SEAT_PRICE[p.cabinClass] || 0,
+        paymentStatus: 'paid',
+        createdAt: nowISO()
+      };
+      DB.bookings.push(bk);
+      ids.push(bk.id);
+      seq++;
+    });
     saveDB();
-    return getBookingFull(bk.id);
+    const fullList = ids.map(id => getBookingFull(id));
+    return {
+      bookingReference: ref,
+      flightId: data.flightId,
+      totalAmount: fullList.reduce((s, b) => s + (b.paymentAmount || 0), 0),
+      passengers: fullList
+    };
   }
   if (pure === '/bookings' && method === 'GET') {
     let rows = DB.bookings.slice();
@@ -1039,16 +1098,22 @@ async function api(path, opts = {}) {
     }).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   }
 
-  // ---- lookup (PNR or scanned BCBP) ----
+  // ---- lookup (PNR, short scan code, or scanned BCBP) -> PNR group ----
   if (pure === '/lookup') {
     const raw = String(query.code || '').trim();
     if (!raw) throw new Error('No lookup code provided');
-    let ref = raw.toUpperCase();
-    const parsed = parseBCBP(raw);
-    if (parsed && parsed.bookingReference) ref = parsed.bookingReference.toUpperCase();
-    const b = DB.bookings.find(x => x.bookingReference === ref);
-    if (!b) throw new Error('No booking for "' + ref + '"');
-    return getBookingFull(b.id);
+    const resolved = resolveCode(raw);
+    const passengers = getGroup(resolved.ref);
+    if (!passengers.length) throw new Error('No booking for "' + resolved.ref + '"');
+    let selected = null;
+    if (resolved.seat) selected = passengers.findIndex(p => p.seatAssigned === resolved.seat);else if (resolved.paxSeq) selected = passengers.findIndex(p => p.paxSeq === resolved.paxSeq);
+    if (selected === -1) selected = null;
+    return {
+      bookingReference: resolved.ref,
+      flightId: passengers[0].flightId,
+      passengers,
+      selected
+    };
   }
 
   // ---- baggage ----
@@ -1127,15 +1192,18 @@ async function api(path, opts = {}) {
       status: 'error',
       reason: 'No barcode scanned'
     };
-    let ref = raw.toUpperCase();
-    const parsed = parseBCBP(raw);
-    if (parsed && parsed.bookingReference) ref = parsed.bookingReference.toUpperCase();
-    const bk = DB.bookings.find(x => x.bookingReference === ref);
-    if (!bk) return {
+    const resolved = resolveCode(raw);
+    const group = getGroup(resolved.ref);
+    if (!group.length) return {
       status: 'error',
-      reason: 'Unknown boarding pass (' + ref + ')'
+      reason: 'Unknown boarding pass (' + resolved.ref + ')'
     };
-    const booking = getBookingFull(bk.id);
+    let booking = null;
+    if (resolved.seat) booking = group.find(p => p.seatAssigned === resolved.seat);else if (resolved.paxSeq) booking = group.find(p => p.paxSeq === resolved.paxSeq);else if (group.length === 1) booking = group[0];
+    if (!booking) return {
+      status: 'error',
+      reason: 'PNR ' + resolved.ref + ' has ' + group.length + ' passengers — scan the individual boarding pass'
+    };
     if (!booking.checkedInTime) return {
       status: 'error',
       reason: 'Passenger is NOT checked in',
@@ -1146,16 +1214,16 @@ async function api(path, opts = {}) {
       reason: 'Wrong flight (pass is for ' + booking.flightNumber + ')',
       booking
     };
-    if (DB.boarding.find(x => String(x.bookingId) === String(bk.id))) return {
+    if (DB.boarding.find(x => String(x.bookingId) === String(booking.id))) return {
       status: 'error',
       reason: 'Already boarded',
       booking
     };
-    const seq = DB.boarding.filter(x => String(x.flightId) === String(bk.flightId)).length + 1;
+    const seq = DB.boarding.filter(x => String(x.flightId) === String(booking.flightId)).length + 1;
     DB.boarding.push({
       id: nextId('boarding'),
-      bookingId: bk.id,
-      flightId: bk.flightId,
+      bookingId: booking.id,
+      flightId: booking.flightId,
       boardedTime: nowISO(),
       sequence: seq
     });
@@ -1750,6 +1818,14 @@ function SeatMapModal({
 }
 
 // ================= Sales Mode =================
+const emptyPax = () => ({
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  cabinClass: 'Economy',
+  seat: null
+});
 function Sales({
   flights,
   aircraftData,
@@ -1757,14 +1833,8 @@ function Sales({
 }) {
   const [flightId, setFlightId] = useState('');
   const [detail, setDetail] = useState(null);
-  const [pax, setPax] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    cabinClass: 'Economy'
-  });
-  const [seat, setSeat] = useState(null);
+  const [passengers, setPassengers] = useState([emptyPax()]);
+  const [activeIdx, setActiveIdx] = useState(0);
   const [payMethod, setPayMethod] = useState('credit_card');
   const [card, setCard] = useState({
     number: '',
@@ -1775,11 +1845,11 @@ function Sales({
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState(null);
-  const price = pax.cabinClass === 'Business' ? 500 : 200;
-  const set = (k, v) => setPax(p => ({
+  const total = passengers.reduce((s, p) => s + (p.cabinClass === 'Business' ? 500 : 200), 0);
+  const setPax = (i, k, v) => setPassengers(ps => ps.map((p, idx) => idx === i ? {
     ...p,
     [k]: v
-  }));
+  } : p));
   const loadDetail = useCallback(id => {
     if (!id) {
       setDetail(null);
@@ -1789,55 +1859,65 @@ function Sales({
   }, []);
   useEffect(() => {
     loadDetail(flightId);
-    setSeat(null);
+    setPassengers([emptyPax()]);
+    setActiveIdx(0);
   }, [flightId, loadDetail]);
-  useEffect(() => {
-    setSeat(null);
-  }, [pax.cabinClass]);
+  const addPax = () => {
+    setPassengers(ps => [...ps, emptyPax()]);
+    setActiveIdx(passengers.length);
+  };
+  const removePax = i => {
+    setPassengers(ps => ps.filter((_, idx) => idx !== i));
+    setActiveIdx(a => Math.max(0, a >= i ? a - 1 : a));
+  };
+  // Changing a passenger's cabin clears a seat that no longer fits.
+  const changeCabin = (i, cabin) => setPassengers(ps => ps.map((p, idx) => idx === i ? {
+    ...p,
+    cabinClass: cabin,
+    seat: null
+  } : p));
+  const onSelectSeat = s => setPax(activeIdx, 'seat', s.id);
   const submit = async () => {
     setMsg(null);
     if (!flightId) return setMsg({
       type: 'error',
       text: 'Select a flight'
     });
-    if (!pax.firstName || !pax.lastName) return setMsg({
-      type: 'error',
-      text: 'Passenger name required'
-    });
-    if (!seat) return setMsg({
-      type: 'error',
-      text: 'Select a seat'
-    });
+    for (let i = 0; i < passengers.length; i++) {
+      const p = passengers[i];
+      if (!p.firstName || !p.lastName) return setMsg({
+        type: 'error',
+        text: `Passenger ${i + 1}: name required`
+      });
+      if (!p.seat) return setMsg({
+        type: 'error',
+        text: `Passenger ${i + 1}: select a seat`
+      });
+    }
     if (payMethod === 'credit_card' && (!card.number || !card.expiry || !card.cvv)) return setMsg({
       type: 'error',
       text: 'Complete card details'
     });
     setBusy(true);
     try {
-      const booking = await api('/bookings', {
+      const group = await api('/bookings', {
         method: 'POST',
         body: {
           flightId: Number(flightId),
-          firstName: pax.firstName,
-          lastName: pax.lastName,
-          email: pax.email,
-          phone: pax.phone,
-          cabinClass: pax.cabinClass,
-          seatAssigned: seat.id,
-          paymentMethod: payMethod
+          paymentMethod: payMethod,
+          passengers: passengers.map(p => ({
+            firstName: p.firstName,
+            lastName: p.lastName,
+            email: p.email,
+            phone: p.phone,
+            cabinClass: p.cabinClass,
+            seatAssigned: p.seat
+          }))
         }
       });
-      setConfirmed(booking);
+      setConfirmed(group);
       reloadFlights();
       loadDetail(flightId);
-      setPax({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        cabinClass: 'Economy'
-      });
-      setSeat(null);
       setCard({
         number: '',
         expiry: '',
@@ -1855,14 +1935,25 @@ function Sales({
   };
   if (confirmed) {
     return /*#__PURE__*/React.createElement(SalesConfirmation, {
-      booking: confirmed,
+      group: confirmed,
       seatMap: detail && detail.seatMap,
       onNew: () => {
         setConfirmed(null);
+        setPassengers([emptyPax()]);
+        setActiveIdx(0);
       }
     });
   }
+
+  // Seats taken = existing bookings + seats chosen by OTHER party members.
   const occ = detail ? occupancyFromBookings(detail.bookings) : {};
+  passengers.forEach((p, idx) => {
+    if (p.seat && idx !== activeIdx) occ[p.seat] = {
+      name: `P${idx + 1} ${p.firstName || 'Passenger'}`,
+      group: true
+    };
+  });
+  const active = passengers[activeIdx] || passengers[0];
   return /*#__PURE__*/React.createElement("div", {
     className: "grid-2"
   }, /*#__PURE__*/React.createElement("div", {
@@ -1880,39 +1971,105 @@ function Sales({
     key: f.id,
     value: f.id
   }, f.flightNumber, " · ", f.departure, "→", f.arrival, " · ", fmtDateTime(f.departureTime))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      margin: '6px 0'
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      margin: 0
+    }
+  }, "Passengers (", passengers.length, ") — one PNR"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "btn-ghost btn-sm",
+    onClick: addPax,
+    disabled: !flightId
+  }, "+ Add passenger")), passengers.map((p, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "panel",
+    style: {
+      padding: 12,
+      marginBottom: 10,
+      border: i === activeIdx ? '2px solid var(--tk-blue)' : '1px solid var(--border)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("b", {
+    style: {
+      fontSize: 13
+    }
+  }, "Passenger ", i + 1), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 6,
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: 'tag ' + (p.seat ? 'tag-gold' : 'tag-gray')
+  }, p.seat || 'no seat'), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: i === activeIdx ? 'btn-primary btn-sm' : 'btn-ghost btn-sm',
+    onClick: () => setActiveIdx(i)
+  }, i === activeIdx ? 'Seating…' : 'Seat'), passengers.length > 1 && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "btn-danger btn-sm",
+    onClick: () => removePax(i)
+  }, "×"))), /*#__PURE__*/React.createElement("div", {
     className: "row"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "field"
+    className: "field",
+    style: {
+      marginBottom: 8
+    }
   }, /*#__PURE__*/React.createElement("label", null, "First Name"), /*#__PURE__*/React.createElement("input", {
-    value: pax.firstName,
-    onChange: e => set('firstName', e.target.value)
+    value: p.firstName,
+    onChange: e => setPax(i, 'firstName', e.target.value)
   })), /*#__PURE__*/React.createElement("div", {
-    className: "field"
+    className: "field",
+    style: {
+      marginBottom: 8
+    }
   }, /*#__PURE__*/React.createElement("label", null, "Last Name"), /*#__PURE__*/React.createElement("input", {
-    value: pax.lastName,
-    onChange: e => set('lastName', e.target.value)
+    value: p.lastName,
+    onChange: e => setPax(i, 'lastName', e.target.value)
   }))), /*#__PURE__*/React.createElement("div", {
     className: "row"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "field"
+    className: "field",
+    style: {
+      marginBottom: 8
+    }
   }, /*#__PURE__*/React.createElement("label", null, "Email"), /*#__PURE__*/React.createElement("input", {
-    value: pax.email,
-    onChange: e => set('email', e.target.value)
+    value: p.email,
+    onChange: e => setPax(i, 'email', e.target.value)
   })), /*#__PURE__*/React.createElement("div", {
-    className: "field"
+    className: "field",
+    style: {
+      marginBottom: 8
+    }
   }, /*#__PURE__*/React.createElement("label", null, "Phone"), /*#__PURE__*/React.createElement("input", {
-    value: pax.phone,
-    onChange: e => set('phone', e.target.value)
+    value: p.phone,
+    onChange: e => setPax(i, 'phone', e.target.value)
   }))), /*#__PURE__*/React.createElement("div", {
-    className: "field"
+    className: "field",
+    style: {
+      marginBottom: 0
+    }
   }, /*#__PURE__*/React.createElement("label", null, "Cabin Class"), /*#__PURE__*/React.createElement("select", {
-    value: pax.cabinClass,
-    onChange: e => set('cabinClass', e.target.value)
+    value: p.cabinClass,
+    onChange: e => changeCabin(i, e.target.value)
   }, /*#__PURE__*/React.createElement("option", {
     value: "Economy"
   }, "Economy — $200"), /*#__PURE__*/React.createElement("option", {
     value: "Business"
-  }, "Business — $500"))), /*#__PURE__*/React.createElement("div", {
+  }, "Business — $500"))))), /*#__PURE__*/React.createElement("div", {
     className: "field"
   }, /*#__PURE__*/React.createElement("label", null, "Payment Method"), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1984,12 +2141,12 @@ function Sales({
     style: {
       fontSize: 12
     }
-  }, "Seat ", seat ? seat.id : '—', " · ", pax.cabinClass), /*#__PURE__*/React.createElement("div", {
+  }, passengers.length, " passenger", passengers.length > 1 ? 's' : '', " · ", passengers.filter(p => p.seat).length, " seated"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 22,
       fontWeight: 800
     }
-  }, "$", price)), /*#__PURE__*/React.createElement("button", {
+  }, "$", total)), /*#__PURE__*/React.createElement("button", {
     className: "btn-success",
     onClick: submit,
     disabled: busy
@@ -1997,24 +2154,30 @@ function Sales({
     className: "spinner"
   }) : 'Confirm & Pay'))), /*#__PURE__*/React.createElement("div", {
     className: "panel"
-  }, /*#__PURE__*/React.createElement("h2", null, "Select Seat ", seat && /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("h2", null, "Seat for Passenger ", activeIdx + 1, " ", active && active.seat && /*#__PURE__*/React.createElement("span", {
     className: "tag tag-gold"
-  }, seat.id)), !detail ? /*#__PURE__*/React.createElement("p", {
+  }, active.seat)), /*#__PURE__*/React.createElement("p", {
+    className: "muted",
+    style: {
+      marginTop: 0
+    }
+  }, "Choosing ", /*#__PURE__*/React.createElement("b", null, active && active.cabinClass), " seat for passenger ", activeIdx + 1, active && (active.firstName || active.lastName) ? ` · ${active.firstName} ${active.lastName}` : '', ". Use the “Seat” buttons to switch passenger."), !detail ? /*#__PURE__*/React.createElement("p", {
     className: "muted"
   }, "Select a flight to view seats.") : /*#__PURE__*/React.createElement(SeatMap, {
     seatMap: detail.seatMap,
     occupancy: occ,
     mode: "select",
-    cabinFilter: pax.cabinClass,
-    selectedSeat: seat && seat.id,
-    onSelect: s => setSeat(s)
+    cabinFilter: active && active.cabinClass,
+    selectedSeat: active && active.seat,
+    onSelect: onSelectSeat
   })));
 }
 function SalesConfirmation({
-  booking,
+  group,
   seatMap,
   onNew
 }) {
+  const passengers = group.passengers || [group];
   return /*#__PURE__*/React.createElement("div", {
     className: "panel"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2023,14 +2186,16 @@ function SalesConfirmation({
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 14
+      marginBottom: 14,
+      flexWrap: 'wrap',
+      gap: 10
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "alert alert-success",
     style: {
       margin: 0
     }
-  }, "Booking confirmed · PNR ", /*#__PURE__*/React.createElement("b", null, booking.bookingReference)), /*#__PURE__*/React.createElement("div", {
+  }, "Booking confirmed · PNR ", /*#__PURE__*/React.createElement("b", null, group.bookingReference), " · ", passengers.length, " passenger", passengers.length > 1 ? 's' : '', " · $", group.totalAmount), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 8
@@ -2038,16 +2203,22 @@ function SalesConfirmation({
   }, /*#__PURE__*/React.createElement("button", {
     className: "btn-ghost",
     onClick: () => window.print()
-  }, "Print Boarding Pass"), /*#__PURE__*/React.createElement("button", {
+  }, "Print ", passengers.length > 1 ? 'All Passes' : 'Boarding Pass'), /*#__PURE__*/React.createElement("button", {
     className: "btn-primary",
     onClick: onNew
   }, "New Booking"))), /*#__PURE__*/React.createElement("div", {
     className: "print-doc"
+  }, passengers.map((b, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "bpass-print-block",
+    style: {
+      marginBottom: 18
+    }
   }, /*#__PURE__*/React.createElement(BoardingPass, {
-    booking: booking,
+    booking: b,
     seatMap: seatMap,
     variant: "sales"
-  })));
+  })))));
 }
 
 // ================= Boarding Pass component =================
@@ -2057,7 +2228,8 @@ function BoardingPass({
   variant
 }) {
   const grp = boardingGroup(booking, seatMap);
-  const barcodeValue = booking.bcbp || booking.bookingReference;
+  // Compact, scannable code (PNR + passenger sequence) keeps the barcode short.
+  const barcodeValue = booking.scanCode || booking.bookingReference;
   return /*#__PURE__*/React.createElement("div", {
     className: "bpass"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2251,6 +2423,7 @@ function CheckIn({
   reloadFlights
 }) {
   const [code, setCode] = useState('');
+  const [group, setGroup] = useState(null);
   const [booking, setBooking] = useState(null);
   const [bags, setBags] = useState([]);
   const [msg, setMsg] = useState(null);
@@ -2263,31 +2436,47 @@ function CheckIn({
   useEffect(() => {
     if (scanRef.current) scanRef.current.focus();
   }, []);
+  const choosePax = async b => {
+    setBooking(b);
+    setBags(b.baggage || []);
+    setApis({
+      passportNumber: b.passportNumber || '',
+      passportExpiry: '',
+      dateOfBirth: b.dateOfBirth || '',
+      nationality: b.nationality || '',
+      redress: '',
+      preCheck: false
+    });
+    try {
+      const fd = await api('/flights/' + b.flightId);
+      setSeatMap(fd.seatMap);
+    } catch (e) {}
+  };
   const lookup = async e => {
     if (e) e.preventDefault();
     setMsg(null);
     setDone(null);
+    setBooking(null);
+    setGroup(null);
     if (!code.trim()) return;
     setBusy(true);
     try {
-      const b = await api('/lookup?code=' + encodeURIComponent(code.trim()));
-      setBooking(b);
-      setBags(b.baggage || []);
-      setApis({
-        passportNumber: b.passportNumber || '',
-        passportExpiry: '',
-        dateOfBirth: b.dateOfBirth || '',
-        nationality: b.nationality || '',
-        redress: '',
-        preCheck: false
-      });
-      const fd = await api('/flights/' + b.flightId);
-      setSeatMap(fd.seatMap);
-      setMsg({
-        type: 'success',
-        text: 'Passenger found: ' + b.firstName + ' ' + b.lastName
+      const res = await api('/lookup?code=' + encodeURIComponent(code.trim()));
+      const list = res.passengers || [res];
+      setGroup(list);
+      const sel = res.selected != null ? list[res.selected] : list.length === 1 ? list[0] : null;
+      if (sel) {
+        await choosePax(sel);
+        setMsg({
+          type: 'success',
+          text: 'Passenger found: ' + sel.firstName + ' ' + sel.lastName
+        });
+      } else setMsg({
+        type: 'info',
+        text: `PNR ${res.bookingReference} has ${list.length} passengers — choose one below`
       });
     } catch (ex) {
+      setGroup(null);
       setBooking(null);
       setMsg({
         type: 'error',
@@ -2330,6 +2519,11 @@ function CheckIn({
       setDone(updated);
       setBooking(updated);
       reloadFlights();
+      // Refresh the PNR group so the picker reflects the new checked-in state.
+      try {
+        const res = await api('/lookup?code=' + updated.bookingReference);
+        setGroup(res.passengers || null);
+      } catch (e) {}
     } catch (ex) {
       setMsg({
         type: 'error',
@@ -2341,12 +2535,19 @@ function CheckIn({
   };
   const reset = () => {
     setCode('');
+    setGroup(null);
     setBooking(null);
     setBags([]);
     setApis(null);
     setDone(null);
     setMsg(null);
     if (scanRef.current) scanRef.current.focus();
+  };
+  const backToList = () => {
+    setDone(null);
+    setBooking(null);
+    setApis(null);
+    setMsg(null);
   };
   if (done) {
     return /*#__PURE__*/React.createElement("div", {
@@ -2372,10 +2573,13 @@ function CheckIn({
     }, /*#__PURE__*/React.createElement("button", {
       className: "btn-ghost",
       onClick: () => window.print()
-    }, "Print Boarding Pass"), /*#__PURE__*/React.createElement("button", {
+    }, "Print Boarding Pass"), group && group.length > 1 && /*#__PURE__*/React.createElement("button", {
+      className: "btn-ghost",
+      onClick: backToList
+    }, "Back to PNR passengers"), /*#__PURE__*/React.createElement("button", {
       className: "btn-primary",
       onClick: reset
-    }, "Next Passenger"))), /*#__PURE__*/React.createElement("div", {
+    }, "New Lookup"))), /*#__PURE__*/React.createElement("div", {
       className: "print-doc"
     }, /*#__PURE__*/React.createElement(BoardingPass, {
       booking: done,
@@ -2414,7 +2618,26 @@ function CheckIn({
       marginTop: 12,
       marginBottom: 0
     }
-  }, msg.text)), booking && /*#__PURE__*/React.createElement("div", {
+  }, msg.text)), group && group.length > 1 && /*#__PURE__*/React.createElement("div", {
+    className: "panel",
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("h3", null, "PNR ", group[0].bookingReference, " · ", group.length, " passengers"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      flexWrap: 'wrap'
+    }
+  }, group.map((p, i) => /*#__PURE__*/React.createElement("button", {
+    key: i,
+    className: booking && booking.id === p.id ? 'btn-primary' : 'btn-ghost',
+    onClick: () => {
+      setDone(null);
+      choosePax(p);
+      setMsg(null);
+    }
+  }, i + 1, ". ", p.firstName, " ", p.lastName, " · ", p.seatAssigned, p.checkedInTime ? ' ✓' : '')))), booking && /*#__PURE__*/React.createElement("div", {
     className: "grid-2"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "panel",

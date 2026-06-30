@@ -54,8 +54,9 @@ node build/build-standalone.js   # regenerates standalone/tkpms-standalone.html
 
 1. **Operations** — create/edit/delete flights, view per-flight seat maps with
    live occupancy, capacity, and emergency-exit rows.
-2. **Sales** — book a passenger onto a flight, pick a seat from the live grid
-   (Economy $200 / Business $500), pay by card or cash, and print a boarding pass.
+2. **Sales** — book **one or more passengers onto a single PNR**. Add passengers,
+   pick each one's seat from the live grid (Economy $200 / Business $500), pay once
+   for the party by card or cash, and print every boarding pass.
 3. **Check-In** — look up a booking by scanned barcode or 6-char PNR, process
    baggage (sequential tags, $50 per extra bag, printable airline-style tags),
    capture APIS / Secure Flight data, and print an IATA boarding pass.
@@ -75,14 +76,19 @@ node build/build-standalone.js   # regenerates standalone/tkpms-standalone.html
 Business is numbered from row 1; economy starts further back so every seat id is
 unique. Two economy rows over the wings are marked as emergency-exit rows.
 
-## Boarding pass barcode (BCBP)
+## Multiple passengers per PNR
 
-Boarding passes encode a fixed-width, IATA-style M1 string that the backend can
-parse back during boarding, e.g.:
+A booking reference (PNR) can hold several passengers, each with their own seat
+and boarding pass. Lookups by the 6-char PNR return the whole party so the agent
+can pick who to check in. Each passenger has a unique short **scan code** =
+`PNR + passenger number` (e.g. `5G8U762`) so an individual can always be
+identified at the gate.
 
-```
-M1SMITH/ALICE         E8K5Z6S ISTJFKTK0001181J001A0001
-```
+## Boarding pass barcode
 
-(format · legs · name · e-ticket · PNR · origin · dest · carrier · flight ·
-Julian date · cabin · seat · sequence)
+The printed barcode encodes the compact scan code (PNR + passenger number), so it
+stays short and scans fast. Scanning still works three ways: the printed scan
+code, a full IATA BCBP string, or a typed PNR (a bare PNR is accepted only when
+the party has a single passenger — otherwise the gate is asked to scan the
+individual pass). The full IATA M1 BCBP string is still generated for each pass,
+e.g. `M1SMITH/ALICE         E8K5Z6S ISTJFKTK0001181J001A0001`.

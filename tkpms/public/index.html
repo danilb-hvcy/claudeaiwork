@@ -218,6 +218,7 @@
         body * { visibility: hidden !important; }
         .print-doc, .print-doc * { visibility: visible !important; }
         .print-doc { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+        .bpass-print-block:not(:last-child) { page-break-after: always; }
         .no-print { display: none !important; }
         .modal-overlay { position: absolute; background: #fff; padding: 0; }
         .modal { box-shadow: none; max-width: 100%; }
@@ -609,55 +610,73 @@
       }
 
       // ================= Sales Mode =================
+      const emptyPax = () => ({ firstName:'', lastName:'', email:'', phone:'', cabinClass:'Economy', seat:null });
+
       function Sales({ flights, aircraftData, reloadFlights }) {
         const [flightId, setFlightId] = useState('');
         const [detail, setDetail] = useState(null);
-        const [pax, setPax] = useState({ firstName:'', lastName:'', email:'', phone:'', cabinClass:'Economy' });
-        const [seat, setSeat] = useState(null);
+        const [passengers, setPassengers] = useState([emptyPax()]);
+        const [activeIdx, setActiveIdx] = useState(0);
         const [payMethod, setPayMethod] = useState('credit_card');
         const [card, setCard] = useState({ number:'', expiry:'', cvv:'', name:'' });
         const [msg, setMsg] = useState(null);
         const [busy, setBusy] = useState(false);
         const [confirmed, setConfirmed] = useState(null);
 
-        const price = pax.cabinClass === 'Business' ? 500 : 200;
-        const set = (k,v)=>setPax(p=>({...p,[k]:v}));
+        const total = passengers.reduce((s,p)=>s+(p.cabinClass==='Business'?500:200),0);
+        const setPax = (i,k,v) => setPassengers(ps => ps.map((p,idx)=> idx===i ? {...p,[k]:v} : p));
 
         const loadDetail = useCallback((id) => {
           if (!id) { setDetail(null); return; }
           api('/flights/'+id).then(setDetail).catch(()=>setDetail(null));
         }, []);
-        useEffect(()=>{ loadDetail(flightId); setSeat(null); }, [flightId, loadDetail]);
-        useEffect(()=>{ setSeat(null); }, [pax.cabinClass]);
+        useEffect(()=>{ loadDetail(flightId); setPassengers([emptyPax()]); setActiveIdx(0); }, [flightId, loadDetail]);
+
+        const addPax = () => { setPassengers(ps => [...ps, emptyPax()]); setActiveIdx(passengers.length); };
+        const removePax = (i) => {
+          setPassengers(ps => ps.filter((_,idx)=>idx!==i));
+          setActiveIdx(a => Math.max(0, a >= i ? a-1 : a));
+        };
+        // Changing a passenger's cabin clears a seat that no longer fits.
+        const changeCabin = (i,cabin) => setPassengers(ps => ps.map((p,idx)=> idx===i ? {...p, cabinClass:cabin, seat:null} : p));
+
+        const onSelectSeat = (s) => setPax(activeIdx, 'seat', s.id);
 
         const submit = async () => {
           setMsg(null);
           if (!flightId) return setMsg({type:'error',text:'Select a flight'});
-          if (!pax.firstName || !pax.lastName) return setMsg({type:'error',text:'Passenger name required'});
-          if (!seat) return setMsg({type:'error',text:'Select a seat'});
+          for (let i=0;i<passengers.length;i++){
+            const p = passengers[i];
+            if (!p.firstName || !p.lastName) return setMsg({type:'error',text:`Passenger ${i+1}: name required`});
+            if (!p.seat) return setMsg({type:'error',text:`Passenger ${i+1}: select a seat`});
+          }
           if (payMethod==='credit_card' && (!card.number||!card.expiry||!card.cvv))
             return setMsg({type:'error',text:'Complete card details'});
           setBusy(true);
           try {
-            const booking = await api('/bookings', { method:'POST', body:{
-              flightId: Number(flightId), firstName:pax.firstName, lastName:pax.lastName,
-              email:pax.email, phone:pax.phone, cabinClass:pax.cabinClass,
-              seatAssigned: seat.id, paymentMethod: payMethod,
+            const group = await api('/bookings', { method:'POST', body:{
+              flightId: Number(flightId), paymentMethod: payMethod,
+              passengers: passengers.map(p=>({ firstName:p.firstName, lastName:p.lastName, email:p.email,
+                phone:p.phone, cabinClass:p.cabinClass, seatAssigned:p.seat })),
             }});
-            setConfirmed(booking);
+            setConfirmed(group);
             reloadFlights(); loadDetail(flightId);
-            setPax({ firstName:'', lastName:'', email:'', phone:'', cabinClass:'Economy' });
-            setSeat(null); setCard({number:'',expiry:'',cvv:'',name:''});
+            setCard({number:'',expiry:'',cvv:'',name:''});
           } catch (ex) { setMsg({type:'error',text:ex.message}); }
           finally { setBusy(false); }
         };
 
         if (confirmed) {
-          return <SalesConfirmation booking={confirmed} seatMap={detail&&detail.seatMap}
-            onNew={()=>{ setConfirmed(null); }} />;
+          return <SalesConfirmation group={confirmed} seatMap={detail&&detail.seatMap}
+            onNew={()=>{ setConfirmed(null); setPassengers([emptyPax()]); setActiveIdx(0); }} />;
         }
 
+        // Seats taken = existing bookings + seats chosen by OTHER party members.
         const occ = detail ? occupancyFromBookings(detail.bookings) : {};
+        passengers.forEach((p,idx)=>{
+          if (p.seat && idx!==activeIdx) occ[p.seat] = { name:`P${idx+1} ${p.firstName||'Passenger'}`, group:true };
+        });
+        const active = passengers[activeIdx] || passengers[0];
 
         return (
           <div className="grid-2">
@@ -671,21 +690,42 @@
                   {flights.map(f=><option key={f.id} value={f.id}>{f.flightNumber} · {f.departure}→{f.arrival} · {fmtDateTime(f.departureTime)}</option>)}
                 </select>
               </div>
-              <div className="row">
-                <div className="field"><label>First Name</label><input value={pax.firstName} onChange={e=>set('firstName',e.target.value)} /></div>
-                <div className="field"><label>Last Name</label><input value={pax.lastName} onChange={e=>set('lastName',e.target.value)} /></div>
+
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',margin:'6px 0'}}>
+                <label style={{margin:0}}>Passengers ({passengers.length}) — one PNR</label>
+                <button type="button" className="btn-ghost btn-sm" onClick={addPax} disabled={!flightId}>+ Add passenger</button>
               </div>
-              <div className="row">
-                <div className="field"><label>Email</label><input value={pax.email} onChange={e=>set('email',e.target.value)} /></div>
-                <div className="field"><label>Phone</label><input value={pax.phone} onChange={e=>set('phone',e.target.value)} /></div>
-              </div>
-              <div className="field">
-                <label>Cabin Class</label>
-                <select value={pax.cabinClass} onChange={e=>set('cabinClass',e.target.value)}>
-                  <option value="Economy">Economy — $200</option>
-                  <option value="Business">Business — $500</option>
-                </select>
-              </div>
+
+              {passengers.map((p,i)=>(
+                <div key={i} className="panel" style={{padding:12,marginBottom:10,
+                  border: i===activeIdx?'2px solid var(--tk-blue)':'1px solid var(--border)'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                    <b style={{fontSize:13}}>Passenger {i+1}</b>
+                    <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                      <span className={'tag '+(p.seat?'tag-gold':'tag-gray')}>{p.seat||'no seat'}</span>
+                      <button type="button" className={i===activeIdx?'btn-primary btn-sm':'btn-ghost btn-sm'} onClick={()=>setActiveIdx(i)}>
+                        {i===activeIdx?'Seating…':'Seat'}
+                      </button>
+                      {passengers.length>1 && <button type="button" className="btn-danger btn-sm" onClick={()=>removePax(i)}>×</button>}
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div className="field" style={{marginBottom:8}}><label>First Name</label><input value={p.firstName} onChange={e=>setPax(i,'firstName',e.target.value)} /></div>
+                    <div className="field" style={{marginBottom:8}}><label>Last Name</label><input value={p.lastName} onChange={e=>setPax(i,'lastName',e.target.value)} /></div>
+                  </div>
+                  <div className="row">
+                    <div className="field" style={{marginBottom:8}}><label>Email</label><input value={p.email} onChange={e=>setPax(i,'email',e.target.value)} /></div>
+                    <div className="field" style={{marginBottom:8}}><label>Phone</label><input value={p.phone} onChange={e=>setPax(i,'phone',e.target.value)} /></div>
+                  </div>
+                  <div className="field" style={{marginBottom:0}}>
+                    <label>Cabin Class</label>
+                    <select value={p.cabinClass} onChange={e=>changeCabin(i,e.target.value)}>
+                      <option value="Economy">Economy — $200</option>
+                      <option value="Business">Business — $500</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
 
               <div className="field">
                 <label>Payment Method</label>
@@ -707,37 +747,45 @@
 
               <div className="panel" style={{padding:14,marginTop:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <div>
-                  <div className="muted" style={{fontSize:12}}>Seat {seat?seat.id:'—'} · {pax.cabinClass}</div>
-                  <div style={{fontSize:22,fontWeight:800}}>${price}</div>
+                  <div className="muted" style={{fontSize:12}}>{passengers.length} passenger{passengers.length>1?'s':''} · {passengers.filter(p=>p.seat).length} seated</div>
+                  <div style={{fontSize:22,fontWeight:800}}>${total}</div>
                 </div>
                 <button className="btn-success" onClick={submit} disabled={busy}>{busy?<span className="spinner"></span>:'Confirm & Pay'}</button>
               </div>
             </div>
 
             <div className="panel">
-              <h2>Select Seat {seat && <span className="tag tag-gold">{seat.id}</span>}</h2>
+              <h2>Seat for Passenger {activeIdx+1} {active&&active.seat && <span className="tag tag-gold">{active.seat}</span>}</h2>
+              <p className="muted" style={{marginTop:0}}>Choosing <b>{active&&active.cabinClass}</b> seat for passenger {activeIdx+1}{active&&(active.firstName||active.lastName)?` · ${active.firstName} ${active.lastName}`:''}. Use the “Seat” buttons to switch passenger.</p>
               {!detail ? <p className="muted">Select a flight to view seats.</p> :
                 <SeatMap seatMap={detail.seatMap} occupancy={occ} mode="select"
-                  cabinFilter={pax.cabinClass} selectedSeat={seat&&seat.id}
-                  onSelect={s=>setSeat(s)} />
+                  cabinFilter={active&&active.cabinClass} selectedSeat={active&&active.seat}
+                  onSelect={onSelectSeat} />
               }
             </div>
           </div>
         );
       }
 
-      function SalesConfirmation({ booking, seatMap, onNew }) {
+      function SalesConfirmation({ group, seatMap, onNew }) {
+        const passengers = group.passengers || [group];
         return (
           <div className="panel">
-            <div className="no-print" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-              <div className="alert alert-success" style={{margin:0}}>Booking confirmed · PNR <b>{booking.bookingReference}</b></div>
+            <div className="no-print" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,flexWrap:'wrap',gap:10}}>
+              <div className="alert alert-success" style={{margin:0}}>
+                Booking confirmed · PNR <b>{group.bookingReference}</b> · {passengers.length} passenger{passengers.length>1?'s':''} · ${group.totalAmount}
+              </div>
               <div style={{display:'flex',gap:8}}>
-                <button className="btn-ghost" onClick={()=>window.print()}>Print Boarding Pass</button>
+                <button className="btn-ghost" onClick={()=>window.print()}>Print {passengers.length>1?'All Passes':'Boarding Pass'}</button>
                 <button className="btn-primary" onClick={onNew}>New Booking</button>
               </div>
             </div>
             <div className="print-doc">
-              <BoardingPass booking={booking} seatMap={seatMap} variant="sales" />
+              {passengers.map((b,i)=>(
+                <div key={i} className="bpass-print-block" style={{marginBottom:18}}>
+                  <BoardingPass booking={b} seatMap={seatMap} variant="sales" />
+                </div>
+              ))}
             </div>
           </div>
         );
@@ -746,7 +794,8 @@
       // ================= Boarding Pass component =================
       function BoardingPass({ booking, seatMap, variant }) {
         const grp = boardingGroup(booking, seatMap);
-        const barcodeValue = booking.bcbp || booking.bookingReference;
+        // Compact, scannable code (PNR + passenger sequence) keeps the barcode short.
+        const barcodeValue = booking.scanCode || booking.bookingReference;
         return (
           <div className="bpass">
             <div className="bpass-head">
@@ -802,6 +851,7 @@
       // ================= Check-In Mode =================
       function CheckIn({ reloadFlights }) {
         const [code, setCode] = useState('');
+        const [group, setGroup] = useState(null);
         const [booking, setBooking] = useState(null);
         const [bags, setBags] = useState([]);
         const [msg, setMsg] = useState(null);
@@ -814,24 +864,30 @@
 
         useEffect(()=>{ if(scanRef.current) scanRef.current.focus(); }, []);
 
+        const choosePax = async (b) => {
+          setBooking(b);
+          setBags(b.baggage||[]);
+          setApis({
+            passportNumber: b.passportNumber||'', passportExpiry:'',
+            dateOfBirth: b.dateOfBirth||'', nationality: b.nationality||'',
+            redress:'', preCheck:false,
+          });
+          try { const fd = await api('/flights/'+b.flightId); setSeatMap(fd.seatMap); } catch(e){}
+        };
+
         const lookup = async (e) => {
           if (e) e.preventDefault();
-          setMsg(null); setDone(null);
+          setMsg(null); setDone(null); setBooking(null); setGroup(null);
           if (!code.trim()) return;
           setBusy(true);
           try {
-            const b = await api('/lookup?code='+encodeURIComponent(code.trim()));
-            setBooking(b);
-            setBags(b.baggage||[]);
-            setApis({
-              passportNumber: b.passportNumber||'', passportExpiry:'',
-              dateOfBirth: b.dateOfBirth||'', nationality: b.nationality||'',
-              redress:'', preCheck:false,
-            });
-            const fd = await api('/flights/'+b.flightId);
-            setSeatMap(fd.seatMap);
-            setMsg({type:'success',text:'Passenger found: '+b.firstName+' '+b.lastName});
-          } catch (ex) { setBooking(null); setMsg({type:'error',text:ex.message}); }
+            const res = await api('/lookup?code='+encodeURIComponent(code.trim()));
+            const list = res.passengers || [res];
+            setGroup(list);
+            const sel = res.selected!=null ? list[res.selected] : (list.length===1 ? list[0] : null);
+            if (sel) { await choosePax(sel); setMsg({type:'success',text:'Passenger found: '+sel.firstName+' '+sel.lastName}); }
+            else setMsg({type:'info',text:`PNR ${res.bookingReference} has ${list.length} passengers — choose one below`});
+          } catch (ex) { setGroup(null); setBooking(null); setMsg({type:'error',text:ex.message}); }
           finally { setBusy(false); }
         };
 
@@ -849,11 +905,14 @@
             const updated = await api('/checkin', { method:'POST', body:{ bookingId:booking.id, apisData:apis }});
             setDone(updated); setBooking(updated);
             reloadFlights();
+            // Refresh the PNR group so the picker reflects the new checked-in state.
+            try { const res = await api('/lookup?code='+updated.bookingReference); setGroup(res.passengers||null); } catch(e){}
           } catch (ex) { setMsg({type:'error',text:ex.message}); }
           finally { setBusy(false); }
         };
 
-        const reset = () => { setCode(''); setBooking(null); setBags([]); setApis(null); setDone(null); setMsg(null); if(scanRef.current) scanRef.current.focus(); };
+        const reset = () => { setCode(''); setGroup(null); setBooking(null); setBags([]); setApis(null); setDone(null); setMsg(null); if(scanRef.current) scanRef.current.focus(); };
+        const backToList = () => { setDone(null); setBooking(null); setApis(null); setMsg(null); };
 
         if (done) {
           return (
@@ -862,7 +921,8 @@
                 <div className="alert alert-success" style={{margin:0}}>Checked in · Sequence #{String(done.sequence).padStart(3,'0')} · APIS {JSON.parse(done.apisData||'{}')?'submitted':''}</div>
                 <div style={{display:'flex',gap:8}}>
                   <button className="btn-ghost" onClick={()=>window.print()}>Print Boarding Pass</button>
-                  <button className="btn-primary" onClick={reset}>Next Passenger</button>
+                  {group && group.length>1 && <button className="btn-ghost" onClick={backToList}>Back to PNR passengers</button>}
+                  <button className="btn-primary" onClick={reset}>New Lookup</button>
                 </div>
               </div>
               <div className="print-doc"><BoardingPass booking={done} seatMap={seatMap} variant="checkin" /></div>
@@ -881,6 +941,22 @@
               </form>
               {msg && <div className={'alert alert-'+msg.type} style={{marginTop:12,marginBottom:0}}>{msg.text}</div>}
             </div>
+
+            {group && group.length>1 && (
+              <div className="panel" style={{marginBottom:16}}>
+                <h3>PNR {group[0].bookingReference} · {group.length} passengers</h3>
+                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                  {group.map((p,i)=>(
+                    <button key={i}
+                      className={booking&&booking.id===p.id?'btn-primary':'btn-ghost'}
+                      onClick={()=>{ setDone(null); choosePax(p); setMsg(null); }}>
+                      {i+1}. {p.firstName} {p.lastName} · {p.seatAssigned}
+                      {p.checkedInTime ? ' ✓' : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {booking && (
               <div className="grid-2">

@@ -317,92 +317,115 @@ app.delete('/api/flights/:id', async (req, res) => {
 });
 
 // -------------------- Bookings (Sales) --------------------
+// Accepts either a single passenger (legacy fields) or a `passengers` array,
+// all sharing one PNR on the same flight.
 app.post('/api/bookings', async (req, res) => {
   try {
-    const {
-      flightId,
-      firstName,
-      lastName,
-      email,
-      phone,
-      cabinClass,
-      seatAssigned,
-      paymentMethod,
-      passportNumber,
-      dateOfBirth,
-      nationality,
-    } = req.body || {};
+    const body = req.body || {};
+    const flightId = body.flightId;
+    let passengers = Array.isArray(body.passengers) ? body.passengers : null;
+    if (!passengers) {
+      passengers = [
+        {
+          firstName: body.firstName,
+          lastName: body.lastName,
+          email: body.email,
+          phone: body.phone,
+          cabinClass: body.cabinClass,
+          seatAssigned: body.seatAssigned,
+        },
+      ];
+    }
+    const paymentMethod = body.paymentMethod || 'cash';
 
-    if (!flightId || !firstName || !lastName || !cabinClass || !seatAssigned) {
-      return res
-        .status(400)
-        .json({ error: 'Flight, passenger name, cabin class and seat are required' });
+    if (!flightId || !passengers.length) {
+      return res.status(400).json({ error: 'Flight and at least one passenger are required' });
     }
     const flight = await get('SELECT * FROM flights WHERE id=?', [flightId]);
     if (!flight) return res.status(404).json({ error: 'Flight not found' });
 
-    // Validate seat belongs to this aircraft and matches cabin.
-    const seatDef = aircraft
-      .getAllSeats(flight.aircraftType)
-      .find((s) => s.id === seatAssigned);
-    if (!seatDef) return res.status(400).json({ error: 'Invalid seat for aircraft' });
-    if (seatDef.cabin !== cabinClass) {
-      return res
-        .status(400)
-        .json({ error: `Seat ${seatAssigned} is not in ${cabinClass} cabin` });
+    // Validate every passenger up front (all-or-nothing).
+    const seenSeats = new Set();
+    for (const p of passengers) {
+      if (!p.firstName || !p.lastName || !p.cabinClass || !p.seatAssigned) {
+        return res
+          .status(400)
+          .json({ error: 'Each passenger needs a name, cabin class and seat' });
+      }
+      const seatDef = aircraft
+        .getAllSeats(flight.aircraftType)
+        .find((s) => s.id === p.seatAssigned);
+      if (!seatDef) return res.status(400).json({ error: `Invalid seat ${p.seatAssigned}` });
+      if (seatDef.cabin !== p.cabinClass) {
+        return res
+          .status(400)
+          .json({ error: `Seat ${p.seatAssigned} is not in ${p.cabinClass} cabin` });
+      }
+      if (seenSeats.has(p.seatAssigned)) {
+        return res.status(400).json({ error: `Duplicate seat ${p.seatAssigned} in this booking` });
+      }
+      seenSeats.add(p.seatAssigned);
+      const taken = await get('SELECT id FROM bookings WHERE flightId=? AND seatAssigned=?', [
+        flightId,
+        p.seatAssigned,
+      ]);
+      if (taken) return res.status(409).json({ error: `Seat ${p.seatAssigned} already booked` });
     }
 
-    // Prevent double-booking the same seat (overbooking protection).
-    const taken = await get(
-      'SELECT id FROM bookings WHERE flightId=? AND seatAssigned=?',
-      [flightId, seatAssigned]
-    );
-    if (taken) return res.status(409).json({ error: `Seat ${seatAssigned} already booked` });
-
-    const passenger = await run(
-      `INSERT INTO passengers (flightId, firstName, lastName, email, phone, passportNumber, dateOfBirth, nationality, createdAt)
-       VALUES (?,?,?,?,?,?,?,?,?)`,
-      [
-        flightId,
-        firstName,
-        lastName,
-        email || '',
-        phone || '',
-        passportNumber || '',
-        dateOfBirth || '',
-        nationality || '',
-        now(),
-      ]
-    );
-
-    const amount = SEAT_PRICE[cabinClass] || 0;
-
-    // Unique booking reference (retry on the rare collision).
+    // One shared PNR for the whole party.
     let ref;
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       ref = makeBookingRef();
       const exists = await get('SELECT id FROM bookings WHERE bookingReference=?', [ref]);
       if (!exists) break;
     }
 
-    const booking = await run(
-      `INSERT INTO bookings (passengerId, flightId, seatAssigned, cabinClass, bookingReference, paymentMethod, paymentAmount, paymentStatus, createdAt)
-       VALUES (?,?,?,?,?,?,?,?,?)`,
-      [
-        passenger.lastID,
-        flightId,
-        seatAssigned,
-        cabinClass,
-        ref,
-        paymentMethod || 'cash',
-        amount,
-        'paid',
-        now(),
-      ]
-    );
+    const ids = [];
+    let seq = 1;
+    for (const p of passengers) {
+      const passenger = await run(
+        `INSERT INTO passengers (flightId, firstName, lastName, email, phone, passportNumber, dateOfBirth, nationality, createdAt)
+         VALUES (?,?,?,?,?,?,?,?,?)`,
+        [
+          flightId,
+          p.firstName,
+          p.lastName,
+          p.email || '',
+          p.phone || '',
+          p.passportNumber || '',
+          p.dateOfBirth || '',
+          p.nationality || '',
+          now(),
+        ]
+      );
+      const booking = await run(
+        `INSERT INTO bookings (passengerId, flightId, seatAssigned, cabinClass, bookingReference, paxSeq, paymentMethod, paymentAmount, paymentStatus, createdAt)
+         VALUES (?,?,?,?,?,?,?,?,?,?)`,
+        [
+          passenger.lastID,
+          flightId,
+          p.seatAssigned,
+          p.cabinClass,
+          ref,
+          seq,
+          paymentMethod,
+          SEAT_PRICE[p.cabinClass] || 0,
+          'paid',
+          now(),
+        ]
+      );
+      ids.push(booking.lastID);
+      seq++;
+    }
 
-    const full = await getBookingFull(booking.lastID);
-    res.json(full);
+    const fullList = [];
+    for (const id of ids) fullList.push(await getBookingFull(id));
+    res.json({
+      bookingReference: ref,
+      flightId,
+      totalAmount: fullList.reduce((s, b) => s + (b.paymentAmount || 0), 0),
+      passengers: fullList,
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -428,11 +451,46 @@ async function getBookingFull(bookingId) {
   if (!row) return null;
   row.isExitSeat = aircraft.isExitSeat(row.aircraftType, row.seatAssigned);
   row.bcbp = buildBCBP(row);
+  // Short, scannable code that uniquely identifies this passenger within the
+  // PNR: reference + passenger sequence (e.g. "ABC1232"). Used as the printed
+  // boarding-pass barcode so it stays compact.
+  row.scanCode = String(row.bookingReference) + String(row.paxSeq || 1);
   const bags = await all('SELECT * FROM baggage WHERE bookingId=? ORDER BY id', [
     bookingId,
   ]);
   row.baggage = bags;
   return row;
+}
+
+/**
+ * Resolve a scanned/typed code to a PNR and (optionally) a specific passenger.
+ * Accepts: a full BCBP string, a short scan code (PNR + paxSeq), or a bare
+ * 6-char PNR. Returns { ref, seat, paxSeq } where seat/paxSeq may be null.
+ */
+function resolveCode(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  const parsed = parseBCBP(s);
+  if (parsed && parsed.bookingReference) {
+    return { ref: parsed.bookingReference.toUpperCase(), seat: parsed.seat || null, paxSeq: null };
+  }
+  const up = s.toUpperCase();
+  if (up.length > 6) {
+    const tail = up.slice(6);
+    return { ref: up.slice(0, 6), seat: null, paxSeq: /^\d+$/.test(tail) ? parseInt(tail, 10) : null };
+  }
+  return { ref: up, seat: null, paxSeq: null };
+}
+
+// All passengers (full records) sharing a PNR, ordered by paxSeq.
+async function getGroup(ref) {
+  const rows = await all(
+    'SELECT id FROM bookings WHERE bookingReference=? ORDER BY paxSeq ASC',
+    [ref]
+  );
+  const out = [];
+  for (const r of rows) out.push(await getBookingFull(r.id));
+  return out;
 }
 
 app.get('/api/bookings', async (req, res) => {
@@ -454,18 +512,21 @@ app.get('/api/bookings', async (req, res) => {
   }
 });
 
-// Lookup by PNR (6-char) or by scanned BCBP barcode string.
+// Lookup by PNR (6-char), short scan code, or scanned BCBP barcode string.
+// Returns the whole PNR group plus the index of the specific passenger when
+// the code identifies one.
 app.get('/api/lookup', async (req, res) => {
   try {
     const raw = String(req.query.code || '').trim();
     if (!raw) return res.status(400).json({ error: 'No lookup code provided' });
-    let ref = raw.toUpperCase();
-    const parsed = parseBCBP(raw);
-    if (parsed && parsed.bookingReference) ref = parsed.bookingReference.toUpperCase();
-    const booking = await get('SELECT id FROM bookings WHERE bookingReference=?', [ref]);
-    if (!booking) return res.status(404).json({ error: `No booking for "${ref}"` });
-    const full = await getBookingFull(booking.id);
-    res.json(full);
+    const resolved = resolveCode(raw);
+    const passengers = await getGroup(resolved.ref);
+    if (!passengers.length) return res.status(404).json({ error: `No booking for "${resolved.ref}"` });
+    let selected = null;
+    if (resolved.seat) selected = passengers.findIndex((p) => p.seatAssigned === resolved.seat);
+    else if (resolved.paxSeq) selected = passengers.findIndex((p) => p.paxSeq === resolved.paxSeq);
+    if (selected === -1) selected = null;
+    res.json({ bookingReference: resolved.ref, flightId: passengers[0].flightId, passengers, selected });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -577,15 +638,23 @@ app.post('/api/boarding/scan', async (req, res) => {
     const raw = String(req.body.code || '').trim();
     if (!raw) return res.status(400).json({ error: 'No barcode scanned', status: 'error' });
 
-    let ref = raw.toUpperCase();
-    const parsed = parseBCBP(raw);
-    if (parsed && parsed.bookingReference) ref = parsed.bookingReference.toUpperCase();
-
-    const bookingRow = await get('SELECT id FROM bookings WHERE bookingReference=?', [ref]);
-    if (!bookingRow) {
-      return res.json({ status: 'error', reason: `Unknown boarding pass (${ref})` });
+    const resolved = resolveCode(raw);
+    const group = await getGroup(resolved.ref);
+    if (!group.length) {
+      return res.json({ status: 'error', reason: `Unknown boarding pass (${resolved.ref})` });
     }
-    const booking = await getBookingFull(bookingRow.id);
+    // Pick the specific passenger when the code identifies one; otherwise a
+    // lone passenger is unambiguous, but a party needs the individual pass.
+    let booking = null;
+    if (resolved.seat) booking = group.find((p) => p.seatAssigned === resolved.seat);
+    else if (resolved.paxSeq) booking = group.find((p) => p.paxSeq === resolved.paxSeq);
+    else if (group.length === 1) booking = group[0];
+    if (!booking) {
+      return res.json({
+        status: 'error',
+        reason: `PNR ${resolved.ref} has ${group.length} passengers — scan the individual boarding pass`,
+      });
+    }
 
     // Validation chain.
     if (!booking.checkedInTime) {

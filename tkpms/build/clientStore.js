@@ -126,7 +126,7 @@
           email:'john.doe@example.com', phone:'+1 555 0100', passportNumber:'U12345678',
           dateOfBirth:'1985-06-15', nationality:'USA', createdAt:nowISO() });
         DB.bookings.push({ id:nextId('bookings'), passengerId:pid, flightId:first.id, seatAssigned:'12A',
-          cabinClass:'Economy', bookingReference:'TKDEMO', paymentMethod:'credit_card', paymentAmount:200,
+          cabinClass:'Economy', bookingReference:'TKDEMO', paxSeq:1, paymentMethod:'credit_card', paymentAmount:200,
           paymentStatus:'paid', createdAt:nowISO() });
         saveDB();
         return DB;
@@ -148,7 +148,8 @@
         const bags = DB.baggage.filter(x=>String(x.bookingId)===String(b.id));
         const row = {
           id:b.id, passengerId:b.passengerId, flightId:b.flightId, seatAssigned:b.seatAssigned,
-          cabinClass:b.cabinClass, bookingReference:b.bookingReference, paymentMethod:b.paymentMethod,
+          cabinClass:b.cabinClass, bookingReference:b.bookingReference, paxSeq:b.paxSeq||1,
+          paymentMethod:b.paymentMethod,
           paymentAmount:b.paymentAmount, paymentStatus:b.paymentStatus, createdAt:b.createdAt,
           firstName:p.firstName, lastName:p.lastName, email:p.email, phone:p.phone,
           passportNumber:p.passportNumber, dateOfBirth:p.dateOfBirth, nationality:p.nationality,
@@ -162,8 +163,28 @@
         };
         row.isExitSeat = isExitSeat(row.aircraftType, row.seatAssigned);
         row.bcbp = buildBCBP(row);
+        row.scanCode = String(row.bookingReference) + String(row.paxSeq || 1);
         row.baggage = bags;
         return row;
+      }
+
+      // Resolve a scanned/typed code to a PNR + optional specific passenger.
+      function resolveCode(raw){
+        const s = String(raw||'').trim();
+        if(!s) return null;
+        const parsed = parseBCBP(s);
+        if(parsed && parsed.bookingReference)
+          return { ref:parsed.bookingReference.toUpperCase(), seat:parsed.seat||null, paxSeq:null };
+        const up = s.toUpperCase();
+        if(up.length>6){
+          const tail = up.slice(6);
+          return { ref:up.slice(0,6), seat:null, paxSeq:/^\d+$/.test(tail)?parseInt(tail,10):null };
+        }
+        return { ref:up, seat:null, paxSeq:null };
+      }
+      function getGroup(ref){
+        return DB.bookings.filter(b=>b.bookingReference===ref)
+          .sort((a,b)=>(a.paxSeq||1)-(b.paxSeq||1)).map(b=>getBookingFull(b.id));
       }
 
       // ----- API dispatcher (same call signatures the UI already uses) -----
@@ -246,28 +267,42 @@
           saveDB(); return { ok:true };
         }
 
-        // ---- bookings ----
+        // ---- bookings (one PNR, one or more passengers) ----
         if (pure === '/bookings' && method === 'POST') {
-          const r = data;
-          if (!r.flightId||!r.firstName||!r.lastName||!r.cabinClass||!r.seatAssigned)
-            throw new Error('Flight, passenger name, cabin class and seat are required');
-          const flight = byId(DB.flights, r.flightId); if(!flight) throw new Error('Flight not found');
-          const seatDef = getAllSeats(flight.aircraftType).find(s=>s.id===r.seatAssigned);
-          if (!seatDef) throw new Error('Invalid seat for aircraft');
-          if (seatDef.cabin !== r.cabinClass) throw new Error('Seat '+r.seatAssigned+' is not in '+r.cabinClass+' cabin');
-          if (DB.bookings.find(b=>String(b.flightId)===String(r.flightId)&&b.seatAssigned===r.seatAssigned))
-            throw new Error('Seat '+r.seatAssigned+' already booked');
-          const pid = nextId('passengers');
-          DB.passengers.push({ id:pid, flightId:r.flightId, firstName:r.firstName, lastName:r.lastName,
-            email:r.email||'', phone:r.phone||'', passportNumber:r.passportNumber||'',
-            dateOfBirth:r.dateOfBirth||'', nationality:r.nationality||'', createdAt:nowISO() });
+          const flight = byId(DB.flights, data.flightId); if(!flight) throw new Error('Flight not found');
+          let passengers = Array.isArray(data.passengers) ? data.passengers : [{
+            firstName:data.firstName, lastName:data.lastName, email:data.email, phone:data.phone,
+            cabinClass:data.cabinClass, seatAssigned:data.seatAssigned }];
+          if (!passengers.length) throw new Error('At least one passenger is required');
+          const seen = new Set();
+          passengers.forEach(p => {
+            if(!p.firstName||!p.lastName||!p.cabinClass||!p.seatAssigned)
+              throw new Error('Each passenger needs a name, cabin class and seat');
+            const seatDef = getAllSeats(flight.aircraftType).find(s=>s.id===p.seatAssigned);
+            if(!seatDef) throw new Error('Invalid seat '+p.seatAssigned);
+            if(seatDef.cabin!==p.cabinClass) throw new Error('Seat '+p.seatAssigned+' is not in '+p.cabinClass+' cabin');
+            if(seen.has(p.seatAssigned)) throw new Error('Duplicate seat '+p.seatAssigned+' in this booking');
+            seen.add(p.seatAssigned);
+            if(DB.bookings.find(b=>String(b.flightId)===String(data.flightId)&&b.seatAssigned===p.seatAssigned))
+              throw new Error('Seat '+p.seatAssigned+' already booked');
+          });
           let ref;
           for(let i=0;i<20;i++){ ref=makeBookingRef(); if(!DB.bookings.find(b=>b.bookingReference===ref)) break; }
-          const bk = { id:nextId('bookings'), passengerId:pid, flightId:r.flightId, seatAssigned:r.seatAssigned,
-            cabinClass:r.cabinClass, bookingReference:ref, paymentMethod:r.paymentMethod||'cash',
-            paymentAmount:SEAT_PRICE[r.cabinClass]||0, paymentStatus:'paid', createdAt:nowISO() };
-          DB.bookings.push(bk); saveDB();
-          return getBookingFull(bk.id);
+          const ids=[]; let seq=1;
+          passengers.forEach(p => {
+            const pid = nextId('passengers');
+            DB.passengers.push({ id:pid, flightId:data.flightId, firstName:p.firstName, lastName:p.lastName,
+              email:p.email||'', phone:p.phone||'', passportNumber:p.passportNumber||'',
+              dateOfBirth:p.dateOfBirth||'', nationality:p.nationality||'', createdAt:nowISO() });
+            const bk = { id:nextId('bookings'), passengerId:pid, flightId:data.flightId, seatAssigned:p.seatAssigned,
+              cabinClass:p.cabinClass, bookingReference:ref, paxSeq:seq, paymentMethod:data.paymentMethod||'cash',
+              paymentAmount:SEAT_PRICE[p.cabinClass]||0, paymentStatus:'paid', createdAt:nowISO() };
+            DB.bookings.push(bk); ids.push(bk.id); seq++;
+          });
+          saveDB();
+          const fullList = ids.map(id=>getBookingFull(id));
+          return { bookingReference:ref, flightId:data.flightId,
+            totalAmount: fullList.reduce((s,b)=>s+(b.paymentAmount||0),0), passengers:fullList };
         }
         if (pure === '/bookings' && method === 'GET') {
           let rows = DB.bookings.slice();
@@ -278,16 +313,18 @@
             .sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
         }
 
-        // ---- lookup (PNR or scanned BCBP) ----
+        // ---- lookup (PNR, short scan code, or scanned BCBP) -> PNR group ----
         if (pure === '/lookup') {
           const raw = String(query.code||'').trim();
           if (!raw) throw new Error('No lookup code provided');
-          let ref = raw.toUpperCase();
-          const parsed = parseBCBP(raw);
-          if (parsed && parsed.bookingReference) ref = parsed.bookingReference.toUpperCase();
-          const b = DB.bookings.find(x=>x.bookingReference===ref);
-          if (!b) throw new Error('No booking for "'+ref+'"');
-          return getBookingFull(b.id);
+          const resolved = resolveCode(raw);
+          const passengers = getGroup(resolved.ref);
+          if (!passengers.length) throw new Error('No booking for "'+resolved.ref+'"');
+          let selected = null;
+          if (resolved.seat) selected = passengers.findIndex(p=>p.seatAssigned===resolved.seat);
+          else if (resolved.paxSeq) selected = passengers.findIndex(p=>p.paxSeq===resolved.paxSeq);
+          if (selected === -1) selected = null;
+          return { bookingReference:resolved.ref, flightId:passengers[0].flightId, passengers, selected };
         }
 
         // ---- baggage ----
@@ -332,19 +369,22 @@
         if (pure === '/boarding/scan' && method === 'POST') {
           const raw = String(data.code||'').trim();
           if (!raw) return { status:'error', reason:'No barcode scanned' };
-          let ref = raw.toUpperCase();
-          const parsed = parseBCBP(raw);
-          if (parsed && parsed.bookingReference) ref = parsed.bookingReference.toUpperCase();
-          const bk = DB.bookings.find(x=>x.bookingReference===ref);
-          if (!bk) return { status:'error', reason:'Unknown boarding pass ('+ref+')' };
-          const booking = getBookingFull(bk.id);
+          const resolved = resolveCode(raw);
+          const group = getGroup(resolved.ref);
+          if (!group.length) return { status:'error', reason:'Unknown boarding pass ('+resolved.ref+')' };
+          let booking = null;
+          if (resolved.seat) booking = group.find(p=>p.seatAssigned===resolved.seat);
+          else if (resolved.paxSeq) booking = group.find(p=>p.paxSeq===resolved.paxSeq);
+          else if (group.length===1) booking = group[0];
+          if (!booking) return { status:'error',
+            reason:'PNR '+resolved.ref+' has '+group.length+' passengers — scan the individual boarding pass' };
           if (!booking.checkedInTime) return { status:'error', reason:'Passenger is NOT checked in', booking };
           if (data.flightId && Number(data.flightId)!==Number(booking.flightId))
             return { status:'error', reason:'Wrong flight (pass is for '+booking.flightNumber+')', booking };
-          if (DB.boarding.find(x=>String(x.bookingId)===String(bk.id)))
+          if (DB.boarding.find(x=>String(x.bookingId)===String(booking.id)))
             return { status:'error', reason:'Already boarded', booking };
-          const seq = DB.boarding.filter(x=>String(x.flightId)===String(bk.flightId)).length + 1;
-          DB.boarding.push({ id:nextId('boarding'), bookingId:bk.id, flightId:bk.flightId, boardedTime:nowISO(), sequence:seq });
+          const seq = DB.boarding.filter(x=>String(x.flightId)===String(booking.flightId)).length + 1;
+          DB.boarding.push({ id:nextId('boarding'), bookingId:booking.id, flightId:booking.flightId, boardedTime:nowISO(), sequence:seq });
           saveDB();
           booking.boardingSequence=seq; booking.boardedTime=nowISO();
           return { status: booking.isExitSeat?'exit':'ok', booking, sequence:seq };
