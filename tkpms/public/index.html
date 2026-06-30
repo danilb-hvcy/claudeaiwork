@@ -1,0 +1,1164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TKPMS · Turkish Passenger Management System</title>
+    <style>
+      :root {
+        --tk-blue: #003da5;
+        --tk-blue-dark: #002a73;
+        --tk-gold: #d4a574;
+        --success: #28a745;
+        --error: #dc3545;
+        --warning: #e8920a;
+        --neutral: #6c757d;
+        --bg: #eef1f6;
+        --panel: #ffffff;
+        --border: #d7deea;
+        --text: #1f2733;
+        --muted: #6c757d;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14px;
+      }
+      button {
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        border-radius: 6px;
+        padding: 9px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: filter .15s, background .15s;
+      }
+      button:hover { filter: brightness(0.95); }
+      button:disabled { opacity: .5; cursor: not-allowed; }
+      .btn-primary { background: var(--tk-blue); color: #fff; }
+      .btn-gold { background: var(--tk-gold); color: #3a2a12; }
+      .btn-success { background: var(--success); color: #fff; }
+      .btn-danger { background: var(--error); color: #fff; }
+      .btn-ghost { background: #eef1f6; color: var(--tk-blue); border: 1px solid var(--border); }
+      .btn-sm { padding: 5px 10px; font-size: 12px; }
+      input, select, textarea {
+        font-family: inherit;
+        font-size: 14px;
+        padding: 9px 11px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        width: 100%;
+        background: #fff;
+        color: var(--text);
+      }
+      input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--tk-blue);
+        box-shadow: 0 0 0 3px rgba(0,61,165,.12);
+      }
+      label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 12.5px; color: #3a4452; }
+      .field { margin-bottom: 13px; }
+      .row { display: flex; gap: 13px; flex-wrap: wrap; }
+      .row > .field { flex: 1; min-width: 140px; }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(20,40,80,.05);
+      }
+      h1,h2,h3,h4 { margin: 0 0 12px; }
+      h2 { font-size: 19px; color: var(--tk-blue-dark); }
+      h3 { font-size: 16px; }
+      .muted { color: var(--muted); }
+      .tag {
+        display: inline-block; padding: 2px 8px; border-radius: 20px;
+        font-size: 11px; font-weight: 700; letter-spacing: .3px;
+      }
+      .tag-blue { background: #e3ecfb; color: var(--tk-blue); }
+      .tag-green { background: #e2f5e9; color: var(--success); }
+      .tag-gold { background: #f6ecdc; color: #9a6f33; }
+      .tag-gray { background: #eceff3; color: var(--neutral); }
+
+      /* ---------- Login ---------- */
+      .login-wrap {
+        min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, var(--tk-blue) 0%, var(--tk-blue-dark) 100%);
+      }
+      .login-card {
+        background: #fff; border-radius: 14px; padding: 40px 36px; width: 380px;
+        box-shadow: 0 18px 50px rgba(0,0,0,.3);
+      }
+      .login-logo { text-align: center; margin-bottom: 22px; }
+
+      /* ---------- App shell ---------- */
+      .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+      header.topbar {
+        background: var(--tk-blue); color: #fff; display: flex; align-items: center;
+        padding: 0 22px; height: 60px; gap: 26px; position: sticky; top: 0; z-index: 50;
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
+      }
+      .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: .5px; }
+      .brand .roundel {
+        width: 32px; height: 32px; border-radius: 50%; background: var(--tk-gold);
+        display: flex; align-items: center; justify-content: center; color: var(--tk-blue-dark);
+        font-weight: 900; font-size: 13px;
+      }
+      nav.tabs { display: flex; gap: 4px; flex: 1; }
+      nav.tabs button {
+        background: transparent; color: #cdd9f0; border-radius: 8px 8px 0 0;
+        padding: 8px 18px; font-weight: 700; letter-spacing: .4px; font-size: 13px;
+      }
+      nav.tabs button.active { background: var(--bg); color: var(--tk-blue); }
+      .user-box { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+      main.content { flex: 1; padding: 22px; max-width: 1280px; width: 100%; margin: 0 auto; }
+      footer.statusbar {
+        background: #18222f; color: #aab6c6; font-size: 12px; padding: 8px 22px;
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background: var(--success); margin-right:6px; }
+
+      .grid-2 { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
+      @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+      table.data { width: 100%; border-collapse: collapse; }
+      table.data th, table.data td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); }
+      table.data th { font-size: 12px; text-transform: uppercase; color: var(--muted); letter-spacing: .4px; }
+      table.data tr:hover td { background: #f7f9fc; }
+
+      .alert { padding: 11px 14px; border-radius: 8px; margin-bottom: 14px; font-weight: 600; }
+      .alert-error { background: #fbe3e6; color: #9a1f2b; border: 1px solid #f3c2c8; }
+      .alert-success { background: #e2f5e9; color: #1c6b32; border: 1px solid #bfe6cc; }
+      .alert-info { background: #e3ecfb; color: #1d3f7a; border: 1px solid #c4d6f3; }
+
+      /* ---------- Modal ---------- */
+      .modal-overlay {
+        position: fixed; inset: 0; background: rgba(14,22,36,.55);
+        display: flex; align-items: flex-start; justify-content: center; z-index: 100;
+        padding: 30px; overflow: auto;
+      }
+      .modal {
+        background: #fff; border-radius: 12px; padding: 22px; max-width: 920px; width: 100%;
+        box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      }
+      .modal-head { display:flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+      .close-x { background: #eef1f6; color: #444; border-radius: 50%; width: 32px; height: 32px; padding:0; font-size:18px; line-height:1; }
+
+      /* ---------- Seat map ---------- */
+      .seatmap { display: flex; flex-direction: column; gap: 4px; }
+      .seat-section-label { font-weight: 800; color: var(--tk-blue); margin: 14px 0 6px; letter-spacing:.5px; font-size: 13px; }
+      .seat-row { display: flex; align-items: center; gap: 4px; }
+      .seat-row .rownum { width: 26px; text-align: right; font-size: 11px; color: var(--muted); font-weight:700; }
+      .seat {
+        width: 30px; height: 30px; border-radius: 6px 6px 4px 4px; font-size: 10px; font-weight: 700;
+        display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,.12);
+        user-select: none;
+      }
+      .seat.aisle-gap { margin-right: 16px; }
+      .seat-avail { background: #e2f5e9; color: #1c6b32; cursor: pointer; }
+      .seat-avail:hover { background: var(--success); color:#fff; }
+      .seat-taken { background: var(--tk-blue); color: #fff; cursor: pointer; }
+      .seat-blocked { background: #d7dde5; color: #888; }
+      .seat-selected { background: var(--tk-gold); color: #3a2a12; box-shadow: 0 0 0 2px var(--warning); }
+      .seat-exit { box-shadow: inset 0 0 0 2px var(--warning); }
+      .exit-marker { font-size: 10px; color: var(--warning); font-weight: 800; padding: 0 6px; }
+      .legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 8px 0 4px; font-size: 12px; }
+      .legend span { display: flex; align-items: center; gap: 6px; }
+      .legend .chip { width: 16px; height: 16px; border-radius: 4px; display:inline-block; }
+
+      /* ---------- Boarding pass ---------- */
+      .bpass {
+        border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+        max-width: 720px; background: #fff; font-family: 'Segoe UI', Arial, sans-serif;
+      }
+      .bpass-head { background: var(--tk-blue); color: #fff; padding: 12px 18px; display:flex; justify-content: space-between; align-items:center; }
+      .bpass-body { display: flex; }
+      .bpass-main { flex: 1; padding: 16px 18px; }
+      .bpass-stub { width: 220px; border-left: 2px dashed var(--border); padding: 16px; background: #fafbfd; }
+      .bp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px 18px; margin-bottom: 12px; }
+      .bp-field .lbl { font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing:.5px; }
+      .bp-field .val { font-size: 16px; font-weight: 700; }
+      .bp-notice { font-size: 10.5px; color: var(--muted); margin-top: 10px; line-height: 1.4; border-top: 1px solid var(--border); padding-top: 8px; }
+
+      /* ---------- Bag tag ---------- */
+      .bagtag {
+        width: 300px; border: 2px solid #111; border-radius: 6px; overflow: hidden; background: #fff;
+        font-family: 'Arial Narrow', Arial, sans-serif;
+      }
+      .bagtag-top { background: var(--tk-blue); color: #fff; padding: 6px 10px; display:flex; justify-content: space-between; font-weight: 800; }
+      .bagtag-route { font-size: 40px; font-weight: 900; text-align: center; letter-spacing: 4px; padding: 6px 0; border-bottom: 2px solid #111; }
+      .bagtag-row { display: flex; justify-content: space-between; padding: 4px 10px; border-bottom: 1px dashed #999; font-size: 12px; }
+      .bagtag-barcode { text-align: center; padding: 6px; }
+
+      /* ---------- Boarding mode ---------- */
+      .board-scan { font-size: 20px; padding: 18px; text-align: center; letter-spacing: 2px; }
+      .board-result {
+        border-radius: 12px; padding: 20px; margin-top: 16px; color: #fff; text-align:center;
+        animation: pop .2s ease;
+      }
+      @keyframes pop { from { transform: scale(.96); opacity:.4 } to { transform: scale(1); opacity:1 } }
+      .board-ok { background: var(--success); }
+      .board-error { background: var(--error); }
+      .board-exit { background: var(--warning); }
+      .board-result .big-name { font-size: 30px; font-weight: 800; }
+      .board-result .big-seat { font-size: 48px; font-weight: 900; letter-spacing: 2px; }
+      .counter-pill { background: #fff; color: var(--tk-blue); border-radius: 30px; padding: 8px 20px; font-weight: 800; font-size: 18px; }
+      .log-line { font-family: 'Courier New', monospace; font-size: 12.5px; padding: 4px 8px; border-bottom: 1px solid #f0f2f6; }
+      .log-exit { background: #fdf3e2; }
+
+      .spinner { display:inline-block; width:16px; height:16px; border:2px solid #fff; border-top-color: transparent; border-radius:50%; animation: spin .7s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* ---------- Print ---------- */
+      @media print {
+        body * { visibility: hidden !important; }
+        .print-doc, .print-doc * { visibility: visible !important; }
+        .print-doc { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+        .no-print { display: none !important; }
+        .modal-overlay { position: absolute; background: #fff; padding: 0; }
+        .modal { box-shadow: none; max-width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script src="/vendor/react.js"></script>
+    <script src="/vendor/react-dom.js"></script>
+    <script src="/vendor/jsbarcode.js"></script>
+    <script src="/vendor/babel.js"></script>
+    <script>
+      // Force the classic JSX runtime (React.createElement) so no ES "import"
+      // statements are emitted into the non-module inline script.
+      Babel.registerPreset('react-classic', {
+        presets: [[Babel.availablePresets['react'], { runtime: 'classic' }]],
+      });
+    </script>
+
+    <script type="text/babel" data-presets="react-classic">
+      const { useState, useEffect, useRef, useCallback } = React;
+      const API = '/api';
+
+      // ---------------- API helper ----------------
+      async function api(path, opts = {}) {
+        const res = await fetch(API + path, {
+          headers: { 'Content-Type': 'application/json' },
+          ...opts,
+          body: opts.body ? JSON.stringify(opts.body) : undefined,
+        });
+        let data = null;
+        try { data = await res.json(); } catch (e) {}
+        if (!res.ok) throw new Error((data && data.error) || ('HTTP ' + res.status));
+        return data;
+      }
+
+      // ---------------- Utilities ----------------
+      function fmtDateTime(s) {
+        if (!s) return '—';
+        const d = new Date(s);
+        if (isNaN(d)) return s;
+        return d.toLocaleString(undefined, { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+      }
+      function fmtTime(s) {
+        if (!s) return '—';
+        const d = new Date(s);
+        if (isNaN(d)) return s;
+        return d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+      }
+      function boardingTime(departureTime) {
+        const d = new Date(departureTime);
+        if (isNaN(d)) return '—';
+        return new Date(d.getTime() - 30*60000).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      }
+      function julian(dateStr) {
+        const d = dateStr ? new Date(dateStr) : new Date();
+        const start = new Date(d.getFullYear(), 0, 0);
+        return String(Math.floor((d - start)/86400000)).padStart(3,'0');
+      }
+      function cabinCode(c){ return c === 'Business' ? 'J' : 'Y'; }
+      function paxName(b){ return ((b.lastName||'')+'/'+(b.firstName||'')).toUpperCase(); }
+
+      function boardingGroup(booking, seatMap) {
+        if (booking.cabinClass === 'Business') return 'A';
+        if (!seatMap) return 'C';
+        const rows = seatMap.economy.map(r => r.row);
+        const min = Math.min(...rows), max = Math.max(...rows);
+        const m = String(booking.seatAssigned||'').match(/^(\d+)/);
+        const row = m ? parseInt(m[1],10) : max;
+        const third = min + (max - min) / 3;
+        return row <= third ? 'B' : 'C';
+      }
+
+      // ---------------- Barcode ----------------
+      function Barcode({ value, format = 'CODE128', height = 50, width = 1.6, displayValue = true }) {
+        const ref = useRef(null);
+        useEffect(() => {
+          if (ref.current && value) {
+            try {
+              window.JsBarcode(ref.current, String(value), {
+                format, height, width, displayValue, fontSize: 11, margin: 4, background: '#ffffff',
+              });
+            } catch (e) { /* ignore invalid */ }
+          }
+        }, [value, format, height]);
+        return <svg ref={ref}></svg>;
+      }
+
+      // ---------------- Audio feedback (Web Audio API) ----------------
+      let audioCtx = null;
+      function getAudio() {
+        if (!audioCtx) {
+          try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+          catch (e) { audioCtx = null; }
+        }
+        return audioCtx;
+      }
+      function beep(freq, durationMs, startMs, gain = 0.18) {
+        const ctx = getAudio();
+        if (!ctx) return;
+        const t = ctx.currentTime + startMs / 1000;
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(gain, t);
+        g.gain.setValueAtTime(gain, t + durationMs / 1000 - 0.01);
+        g.gain.linearRampToValueAtTime(0, t + durationMs / 1000);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(t); osc.stop(t + durationMs / 1000);
+      }
+      function playOk() { beep(400, 200, 0); beep(800, 200, 230); }
+      function playError() { beep(800,100,0,0.22); beep(800,100,150,0.22); beep(800,100,300,0.22); }
+      function playExit() { beep(600,150,0,0.22); beep(600,150,250,0.22); }
+
+      // ================= Login =================
+      function Login({ onLogin }) {
+        const [u, setU] = useState('');
+        const [p, setP] = useState('');
+        const [err, setErr] = useState('');
+        const [busy, setBusy] = useState(false);
+        const submit = async (e) => {
+          e.preventDefault();
+          setErr(''); setBusy(true);
+          try {
+            const r = await api('/login', { method:'POST', body:{ username:u, password:p }});
+            onLogin(r.username);
+          } catch (ex) { setErr('Invalid username or password'); }
+          finally { setBusy(false); }
+        };
+        return (
+          <div className="login-wrap">
+            <form className="login-card" onSubmit={submit}>
+              <div className="login-logo">
+                <div style={{display:'inline-flex',alignItems:'center',gap:10}}>
+                  <div className="roundel" style={{width:44,height:44,fontSize:16}}>TK</div>
+                  <div style={{textAlign:'left'}}>
+                    <div style={{fontWeight:900,fontSize:24,color:'var(--tk-blue)'}}>TKPMS</div>
+                    <div className="muted" style={{fontSize:11}}>Passenger Management System</div>
+                  </div>
+                </div>
+              </div>
+              {err && <div className="alert alert-error">{err}</div>}
+              <div className="field">
+                <label>Username</label>
+                <input value={u} onChange={e=>setU(e.target.value)} placeholder="danilb" autoFocus />
+              </div>
+              <div className="field">
+                <label>Password</label>
+                <input type="password" value={p} onChange={e=>setP(e.target.value)} placeholder="••••••••" />
+              </div>
+              <button className="btn-primary" style={{width:'100%',marginTop:6}} disabled={busy}>
+                {busy ? <span className="spinner"></span> : 'Sign In'}
+              </button>
+              <div className="muted" style={{textAlign:'center',marginTop:14,fontSize:11}}>
+                Authorized operator access only
+              </div>
+            </form>
+          </div>
+        );
+      }
+
+      // ================= Seat Map =================
+      function SeatMap({ seatMap, occupancy, mode, cabinFilter, selectedSeat, onSelect, onSeatClick }) {
+        if (!seatMap) return null;
+        const sections = [];
+        const wanted = cabinFilter ? [cabinFilter.toLowerCase()] : ['business','economy'];
+        wanted.forEach(sec => {
+          const rows = seatMap[sec];
+          if (!rows || !rows.length) return;
+          sections.push(
+            <div key={sec}>
+              <div className="seat-section-label">{sec === 'business' ? 'BUSINESS CLASS' : 'ECONOMY CLASS'}</div>
+              {rows.map(r => (
+                <div className="seat-row" key={r.row}>
+                  <span className="rownum">{r.row}</span>
+                  {r.seats.map(s => {
+                    const occ = occupancy[s.id];
+                    let cls = 'seat ';
+                    if (occ) cls += 'seat-taken ';
+                    else cls += 'seat-avail ';
+                    if (mode === 'select' && selectedSeat === s.id) cls = 'seat seat-selected ';
+                    if (s.isExit) cls += 'seat-exit ';
+                    if (s.aisleAfter) cls += 'aisle-gap ';
+                    const clickable = (mode === 'select' && !occ) || (occ && onSeatClick);
+                    return (
+                      <div key={s.id} className={cls}
+                        title={s.id + (s.isExit?' · EXIT':'') + (occ?' · '+occ.name:'')}
+                        onClick={() => {
+                          if (mode === 'select' && !occ && onSelect) onSelect(s);
+                          else if (occ && onSeatClick) onSeatClick(s, occ);
+                        }}>
+                        {s.letter}
+                      </div>
+                    );
+                  })}
+                  {r.isExit && <span className="exit-marker">⟶ EXIT</span>}
+                </div>
+              ))}
+            </div>
+          );
+        });
+        return (
+          <div>
+            <div className="legend">
+              <span><i className="chip" style={{background:'#e2f5e9',border:'1px solid #bfe6cc'}}></i> Available</span>
+              <span><i className="chip" style={{background:'var(--tk-blue)'}}></i> Assigned</span>
+              <span><i className="chip" style={{background:'#d7dde5'}}></i> Blocked</span>
+              <span><i className="chip" style={{boxShadow:'inset 0 0 0 2px var(--warning)',background:'#fff'}}></i> Emergency Exit</span>
+            </div>
+            <div className="seatmap">{sections}</div>
+          </div>
+        );
+      }
+
+      function occupancyFromBookings(bookings) {
+        const o = {};
+        (bookings||[]).forEach(b => {
+          if (b.seatAssigned) o[b.seatAssigned] = {
+            name: ((b.firstName||'')+' '+(b.lastName||'')).trim(),
+            ...b
+          };
+        });
+        return o;
+      }
+
+      // ================= Operations Mode =================
+      function Operations({ aircraftData, flights, reloadFlights }) {
+        const blank = { flightNumber:'', departure:'', arrival:'', departureTime:'', arrivalTime:'', aircraftType:'A359' };
+        const [form, setForm] = useState(blank);
+        const [editingId, setEditingId] = useState(null);
+        const [msg, setMsg] = useState(null);
+        const [busy, setBusy] = useState(false);
+        const [viewFlight, setViewFlight] = useState(null);
+
+        const set = (k,v) => setForm(f => ({...f,[k]:v}));
+
+        const submit = async (e) => {
+          e.preventDefault();
+          setMsg(null); setBusy(true);
+          try {
+            if (editingId) {
+              await api('/flights/'+editingId, { method:'PUT', body: form });
+              setMsg({type:'success',text:'Flight updated'});
+            } else {
+              await api('/flights', { method:'POST', body: form });
+              setMsg({type:'success',text:'Flight created'});
+            }
+            setForm(blank); setEditingId(null);
+            reloadFlights();
+          } catch (ex) { setMsg({type:'error',text:ex.message}); }
+          finally { setBusy(false); }
+        };
+
+        const edit = (f) => {
+          setEditingId(f.id);
+          setForm({ flightNumber:f.flightNumber, departure:f.departure, arrival:f.arrival,
+            departureTime:f.departureTime, arrivalTime:f.arrivalTime, aircraftType:f.aircraftType, status:f.status });
+          window.scrollTo({top:0,behavior:'smooth'});
+        };
+        const del = async (f) => {
+          if (!window.confirm('Delete flight '+f.flightNumber+' and all its bookings?')) return;
+          await api('/flights/'+f.id, { method:'DELETE' });
+          reloadFlights();
+        };
+
+        return (
+          <div className="grid-2">
+            <div className="panel">
+              <h2>{editingId ? 'Edit Flight' : 'Create Flight'}</h2>
+              {msg && <div className={'alert alert-'+msg.type}>{msg.text}</div>}
+              <form onSubmit={submit}>
+                <div className="field">
+                  <label>Flight Number</label>
+                  <input value={form.flightNumber} onChange={e=>set('flightNumber',e.target.value)} placeholder="TK1" />
+                </div>
+                <div className="row">
+                  <div className="field">
+                    <label>Departure (IATA)</label>
+                    <input value={form.departure} maxLength={3} onChange={e=>set('departure',e.target.value.toUpperCase())} placeholder="IST" />
+                  </div>
+                  <div className="field">
+                    <label>Arrival (IATA)</label>
+                    <input value={form.arrival} maxLength={3} onChange={e=>set('arrival',e.target.value.toUpperCase())} placeholder="JFK" />
+                  </div>
+                </div>
+                <div className="field">
+                  <label>Departure Date/Time</label>
+                  <input type="datetime-local" value={form.departureTime} onChange={e=>set('departureTime',e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>Arrival Date/Time</label>
+                  <input type="datetime-local" value={form.arrivalTime} onChange={e=>set('arrivalTime',e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>Aircraft Type</label>
+                  <select value={form.aircraftType} onChange={e=>set('aircraftType',e.target.value)}>
+                    {Object.keys(aircraftData).map(code =>
+                      <option key={code} value={code}>{code} · {aircraftData[code].name} ({aircraftData[code].capacity} seats)</option>
+                    )}
+                  </select>
+                </div>
+                {editingId && (
+                  <div className="field">
+                    <label>Status</label>
+                    <select value={form.status||'Scheduled'} onChange={e=>set('status',e.target.value)}>
+                      {['Scheduled','Boarding','Departed','Delayed','Cancelled'].map(s=><option key={s}>{s}</option>)}
+                    </select>
+                  </div>
+                )}
+                <div style={{display:'flex',gap:8}}>
+                  <button className="btn-primary" disabled={busy}>{busy?<span className="spinner"></span>:(editingId?'Save Changes':'Create Flight')}</button>
+                  {editingId && <button type="button" className="btn-ghost" onClick={()=>{setEditingId(null);setForm(blank);}}>Cancel</button>}
+                </div>
+              </form>
+            </div>
+
+            <div className="panel">
+              <h2>Flights ({flights.length})</h2>
+              {flights.length === 0 && <p className="muted">No flights yet. Create one to begin.</p>}
+              <table className="data">
+                <thead><tr><th>Flight</th><th>Route</th><th>Departs</th><th>Aircraft</th><th>Load</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                  {flights.map(f => {
+                    const pct = Math.round((f.booked/(f.capacity||1))*100);
+                    return (
+                      <tr key={f.id}>
+                        <td><b>{f.flightNumber}</b></td>
+                        <td>{f.departure} → {f.arrival}</td>
+                        <td>{fmtDateTime(f.departureTime)}</td>
+                        <td><span className="tag tag-gray">{f.aircraftType}</span></td>
+                        <td>{f.booked}/{f.capacity} <span className="muted">({pct}%)</span></td>
+                        <td><span className={'tag '+(f.status==='Scheduled'?'tag-blue':f.status==='Cancelled'?'tag-gray':'tag-gold')}>{f.status}</span></td>
+                        <td style={{whiteSpace:'nowrap'}}>
+                          <button className="btn-ghost btn-sm" onClick={()=>setViewFlight(f)}>Seat Map</button>{' '}
+                          <button className="btn-ghost btn-sm" onClick={()=>edit(f)}>Edit</button>{' '}
+                          <button className="btn-danger btn-sm" onClick={()=>del(f)}>Del</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {viewFlight && <SeatMapModal flight={viewFlight} onClose={()=>setViewFlight(null)} />}
+          </div>
+        );
+      }
+
+      function SeatMapModal({ flight, onClose }) {
+        const [data, setData] = useState(null);
+        const [sel, setSel] = useState(null);
+        useEffect(()=>{ api('/flights/'+flight.id).then(setData).catch(()=>{}); }, [flight.id]);
+        return (
+          <div className="modal-overlay" onClick={onClose}>
+            <div className="modal" onClick={e=>e.stopPropagation()}>
+              <div className="modal-head">
+                <h2>{flight.flightNumber} · {flight.departure} → {flight.arrival} · {flight.aircraftType}</h2>
+                <button className="close-x" onClick={onClose}>×</button>
+              </div>
+              {!data ? <p className="muted">Loading…</p> : (
+                <div style={{display:'flex',gap:20,flexWrap:'wrap'}}>
+                  <div style={{flex:'1 1 380px'}}>
+                    <p className="muted">{data.flight.booked}/{data.flight.capacity} seats filled · click an occupied seat for passenger info</p>
+                    <SeatMap seatMap={data.seatMap} occupancy={occupancyFromBookings(data.bookings)}
+                      mode="view" onSeatClick={(s,occ)=>setSel(occ)} />
+                  </div>
+                  <div style={{width:240}}>
+                    <h3>Passenger</h3>
+                    {sel ? (
+                      <div className="panel" style={{padding:14}}>
+                        <div style={{fontWeight:800,fontSize:16}}>{sel.firstName} {sel.lastName}</div>
+                        <div className="muted" style={{marginBottom:8}}>{sel.cabinClass} · Seat {sel.seatAssigned}</div>
+                        <div><b>PNR:</b> {sel.bookingReference}</div>
+                        <div><b>Email:</b> {sel.email||'—'}</div>
+                        <div><b>Checked in:</b> {sel.checkedInTime?fmtTime(sel.checkedInTime):'No'}</div>
+                        <div><b>Boarded:</b> {sel.boardedTime?fmtTime(sel.boardedTime):'No'}</div>
+                      </div>
+                    ) : <p className="muted">Select an occupied (blue) seat.</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // ================= Sales Mode =================
+      function Sales({ flights, aircraftData, reloadFlights }) {
+        const [flightId, setFlightId] = useState('');
+        const [detail, setDetail] = useState(null);
+        const [pax, setPax] = useState({ firstName:'', lastName:'', email:'', phone:'', cabinClass:'Economy' });
+        const [seat, setSeat] = useState(null);
+        const [payMethod, setPayMethod] = useState('credit_card');
+        const [card, setCard] = useState({ number:'', expiry:'', cvv:'', name:'' });
+        const [msg, setMsg] = useState(null);
+        const [busy, setBusy] = useState(false);
+        const [confirmed, setConfirmed] = useState(null);
+
+        const price = pax.cabinClass === 'Business' ? 500 : 200;
+        const set = (k,v)=>setPax(p=>({...p,[k]:v}));
+
+        const loadDetail = useCallback((id) => {
+          if (!id) { setDetail(null); return; }
+          api('/flights/'+id).then(setDetail).catch(()=>setDetail(null));
+        }, []);
+        useEffect(()=>{ loadDetail(flightId); setSeat(null); }, [flightId, loadDetail]);
+        useEffect(()=>{ setSeat(null); }, [pax.cabinClass]);
+
+        const submit = async () => {
+          setMsg(null);
+          if (!flightId) return setMsg({type:'error',text:'Select a flight'});
+          if (!pax.firstName || !pax.lastName) return setMsg({type:'error',text:'Passenger name required'});
+          if (!seat) return setMsg({type:'error',text:'Select a seat'});
+          if (payMethod==='credit_card' && (!card.number||!card.expiry||!card.cvv))
+            return setMsg({type:'error',text:'Complete card details'});
+          setBusy(true);
+          try {
+            const booking = await api('/bookings', { method:'POST', body:{
+              flightId: Number(flightId), firstName:pax.firstName, lastName:pax.lastName,
+              email:pax.email, phone:pax.phone, cabinClass:pax.cabinClass,
+              seatAssigned: seat.id, paymentMethod: payMethod,
+            }});
+            setConfirmed(booking);
+            reloadFlights(); loadDetail(flightId);
+            setPax({ firstName:'', lastName:'', email:'', phone:'', cabinClass:'Economy' });
+            setSeat(null); setCard({number:'',expiry:'',cvv:'',name:''});
+          } catch (ex) { setMsg({type:'error',text:ex.message}); }
+          finally { setBusy(false); }
+        };
+
+        if (confirmed) {
+          return <SalesConfirmation booking={confirmed} seatMap={detail&&detail.seatMap}
+            onNew={()=>{ setConfirmed(null); }} />;
+        }
+
+        const occ = detail ? occupancyFromBookings(detail.bookings) : {};
+
+        return (
+          <div className="grid-2">
+            <div className="panel">
+              <h2>New Booking</h2>
+              {msg && <div className={'alert alert-'+msg.type}>{msg.text}</div>}
+              <div className="field">
+                <label>Flight</label>
+                <select value={flightId} onChange={e=>setFlightId(e.target.value)}>
+                  <option value="">— Select flight —</option>
+                  {flights.map(f=><option key={f.id} value={f.id}>{f.flightNumber} · {f.departure}→{f.arrival} · {fmtDateTime(f.departureTime)}</option>)}
+                </select>
+              </div>
+              <div className="row">
+                <div className="field"><label>First Name</label><input value={pax.firstName} onChange={e=>set('firstName',e.target.value)} /></div>
+                <div className="field"><label>Last Name</label><input value={pax.lastName} onChange={e=>set('lastName',e.target.value)} /></div>
+              </div>
+              <div className="row">
+                <div className="field"><label>Email</label><input value={pax.email} onChange={e=>set('email',e.target.value)} /></div>
+                <div className="field"><label>Phone</label><input value={pax.phone} onChange={e=>set('phone',e.target.value)} /></div>
+              </div>
+              <div className="field">
+                <label>Cabin Class</label>
+                <select value={pax.cabinClass} onChange={e=>set('cabinClass',e.target.value)}>
+                  <option value="Economy">Economy — $200</option>
+                  <option value="Business">Business — $500</option>
+                </select>
+              </div>
+
+              <div className="field">
+                <label>Payment Method</label>
+                <div style={{display:'flex',gap:8}}>
+                  <button type="button" className={payMethod==='credit_card'?'btn-primary':'btn-ghost'} onClick={()=>setPayMethod('credit_card')}>Credit Card</button>
+                  <button type="button" className={payMethod==='cash'?'btn-primary':'btn-ghost'} onClick={()=>setPayMethod('cash')}>Cash</button>
+                </div>
+              </div>
+              {payMethod==='credit_card' && (
+                <div className="panel" style={{padding:14,background:'#f7f9fc'}}>
+                  <div className="field"><label>Card Number</label><input value={card.number} onChange={e=>setCard({...card,number:e.target.value})} placeholder="4111 1111 1111 1111" /></div>
+                  <div className="row">
+                    <div className="field"><label>Expiry</label><input value={card.expiry} onChange={e=>setCard({...card,expiry:e.target.value})} placeholder="MM/YY" /></div>
+                    <div className="field"><label>CVV</label><input value={card.cvv} onChange={e=>setCard({...card,cvv:e.target.value})} placeholder="123" /></div>
+                  </div>
+                  <div className="field"><label>Cardholder Name</label><input value={card.name} onChange={e=>setCard({...card,name:e.target.value})} /></div>
+                </div>
+              )}
+
+              <div className="panel" style={{padding:14,marginTop:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div>
+                  <div className="muted" style={{fontSize:12}}>Seat {seat?seat.id:'—'} · {pax.cabinClass}</div>
+                  <div style={{fontSize:22,fontWeight:800}}>${price}</div>
+                </div>
+                <button className="btn-success" onClick={submit} disabled={busy}>{busy?<span className="spinner"></span>:'Confirm & Pay'}</button>
+              </div>
+            </div>
+
+            <div className="panel">
+              <h2>Select Seat {seat && <span className="tag tag-gold">{seat.id}</span>}</h2>
+              {!detail ? <p className="muted">Select a flight to view seats.</p> :
+                <SeatMap seatMap={detail.seatMap} occupancy={occ} mode="select"
+                  cabinFilter={pax.cabinClass} selectedSeat={seat&&seat.id}
+                  onSelect={s=>setSeat(s)} />
+              }
+            </div>
+          </div>
+        );
+      }
+
+      function SalesConfirmation({ booking, seatMap, onNew }) {
+        return (
+          <div className="panel">
+            <div className="no-print" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+              <div className="alert alert-success" style={{margin:0}}>Booking confirmed · PNR <b>{booking.bookingReference}</b></div>
+              <div style={{display:'flex',gap:8}}>
+                <button className="btn-ghost" onClick={()=>window.print()}>Print Boarding Pass</button>
+                <button className="btn-primary" onClick={onNew}>New Booking</button>
+              </div>
+            </div>
+            <div className="print-doc">
+              <BoardingPass booking={booking} seatMap={seatMap} variant="sales" />
+            </div>
+          </div>
+        );
+      }
+
+      // ================= Boarding Pass component =================
+      function BoardingPass({ booking, seatMap, variant }) {
+        const grp = boardingGroup(booking, seatMap);
+        const barcodeValue = booking.bcbp || booking.bookingReference;
+        return (
+          <div className="bpass">
+            <div className="bpass-head">
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <div className="roundel">TK</div>
+                <div><div style={{fontWeight:900,fontSize:18}}>TURKISH AIRLINES</div>
+                <div style={{fontSize:11,opacity:.85}}>{variant==='sales'?'BOARDING PASS':'BOARDING PASS'}</div></div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:11,opacity:.85}}>{booking.cabinClass==='Business'?'BUSINESS':'ECONOMY'}</div>
+                <div style={{fontWeight:800,fontSize:16}}>{booking.cabinClass==='Business'?'J':'Y'} CLASS</div>
+              </div>
+            </div>
+            <div className="bpass-body">
+              <div className="bpass-main">
+                <div className="bp-grid">
+                  <div className="bp-field"><div className="lbl">Passenger</div><div className="val">{paxName(booking)}</div></div>
+                  <div className="bp-field"><div className="lbl">Flight</div><div className="val">{booking.flightNumber}</div></div>
+                  <div className="bp-field"><div className="lbl">Date</div><div className="val">{(booking.departureTime||'').slice(0,10)}</div></div>
+                  <div className="bp-field"><div className="lbl">From</div><div className="val">{booking.departure}</div></div>
+                  <div className="bp-field"><div className="lbl">To</div><div className="val">{booking.arrival}</div></div>
+                  <div className="bp-field"><div className="lbl">Seat</div><div className="val">{booking.seatAssigned}{booking.isExitSeat?' ⚠':''}</div></div>
+                  {variant!=='sales' && <div className="bp-field"><div className="lbl">Gate</div><div className="val">TBD</div></div>}
+                  {variant!=='sales' && <div className="bp-field"><div className="lbl">Boarding</div><div className="val">{boardingTime(booking.departureTime)}</div></div>}
+                  {variant!=='sales' && <div className="bp-field"><div className="lbl">Group</div><div className="val">{grp}</div></div>}
+                  <div className="bp-field"><div className="lbl">Departs</div><div className="val">{fmtTime(booking.departureTime)}</div></div>
+                  <div className="bp-field"><div className="lbl">PNR</div><div className="val">{booking.bookingReference}</div></div>
+                  {booking.sequence && <div className="bp-field"><div className="lbl">Seq</div><div className="val">{String(booking.sequence).padStart(3,'0')}</div></div>}
+                </div>
+                <div style={{marginTop:6}}>
+                  <Barcode value={barcodeValue} height={48} />
+                </div>
+                {variant!=='sales' && (
+                  <div className="bp-notice">
+                    Please review the safety information card in your seat pocket. Keep your seatbelt fastened while seated.
+                    {booking.isExitSeat && <b> You are seated in an emergency exit row — you must be willing and able to assist in an evacuation.</b>}
+                  </div>
+                )}
+              </div>
+              <div className="bpass-stub">
+                <div className="bp-field"><div className="lbl">Passenger</div><div className="val" style={{fontSize:13}}>{paxName(booking)}</div></div>
+                <div className="bp-field" style={{marginTop:8}}><div className="lbl">Flight</div><div className="val" style={{fontSize:14}}>{booking.flightNumber}</div></div>
+                <div className="bp-field" style={{marginTop:8}}><div className="lbl">Seat</div><div className="val">{booking.seatAssigned}</div></div>
+                <div className="bp-field" style={{marginTop:8}}><div className="lbl">{booking.departure} → {booking.arrival}</div><div className="val" style={{fontSize:13}}>{fmtTime(booking.departureTime)}</div></div>
+                {variant!=='sales' && <div className="bp-field" style={{marginTop:8}}><div className="lbl">Group</div><div className="val">{grp}</div></div>}
+                <div style={{marginTop:10}}><Barcode value={booking.bookingReference} format="CODE39" height={36} width={1.3} /></div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ================= Check-In Mode =================
+      function CheckIn({ reloadFlights }) {
+        const [code, setCode] = useState('');
+        const [booking, setBooking] = useState(null);
+        const [bags, setBags] = useState([]);
+        const [msg, setMsg] = useState(null);
+        const [busy, setBusy] = useState(false);
+        const [apis, setApis] = useState(null);
+        const [seatMap, setSeatMap] = useState(null);
+        const [done, setDone] = useState(null);
+        const [printBag, setPrintBag] = useState(null);
+        const scanRef = useRef(null);
+
+        useEffect(()=>{ if(scanRef.current) scanRef.current.focus(); }, []);
+
+        const lookup = async (e) => {
+          if (e) e.preventDefault();
+          setMsg(null); setDone(null);
+          if (!code.trim()) return;
+          setBusy(true);
+          try {
+            const b = await api('/lookup?code='+encodeURIComponent(code.trim()));
+            setBooking(b);
+            setBags(b.baggage||[]);
+            setApis({
+              passportNumber: b.passportNumber||'', passportExpiry:'',
+              dateOfBirth: b.dateOfBirth||'', nationality: b.nationality||'',
+              redress:'', preCheck:false,
+            });
+            const fd = await api('/flights/'+b.flightId);
+            setSeatMap(fd.seatMap);
+            setMsg({type:'success',text:'Passenger found: '+b.firstName+' '+b.lastName});
+          } catch (ex) { setBooking(null); setMsg({type:'error',text:ex.message}); }
+          finally { setBusy(false); }
+        };
+
+        const addBag = async (charge) => {
+          const weight = window.prompt('Bag weight (kg)?', '23');
+          if (weight === null) return;
+          const bag = await api('/baggage', { method:'POST', body:{ bookingId:booking.id, weight:Number(weight)||null, charge }});
+          setBags(b=>[...b,bag]);
+        };
+        const removeBag = async (id) => { await api('/baggage/'+id,{method:'DELETE'}); setBags(b=>b.filter(x=>x.id!==id)); };
+
+        const submitCheckin = async () => {
+          setBusy(true); setMsg(null);
+          try {
+            const updated = await api('/checkin', { method:'POST', body:{ bookingId:booking.id, apisData:apis }});
+            setDone(updated); setBooking(updated);
+            reloadFlights();
+          } catch (ex) { setMsg({type:'error',text:ex.message}); }
+          finally { setBusy(false); }
+        };
+
+        const reset = () => { setCode(''); setBooking(null); setBags([]); setApis(null); setDone(null); setMsg(null); if(scanRef.current) scanRef.current.focus(); };
+
+        if (done) {
+          return (
+            <div className="panel">
+              <div className="no-print" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                <div className="alert alert-success" style={{margin:0}}>Checked in · Sequence #{String(done.sequence).padStart(3,'0')} · APIS {JSON.parse(done.apisData||'{}')?'submitted':''}</div>
+                <div style={{display:'flex',gap:8}}>
+                  <button className="btn-ghost" onClick={()=>window.print()}>Print Boarding Pass</button>
+                  <button className="btn-primary" onClick={reset}>Next Passenger</button>
+                </div>
+              </div>
+              <div className="print-doc"><BoardingPass booking={done} seatMap={seatMap} variant="checkin" /></div>
+            </div>
+          );
+        }
+
+        return (
+          <div>
+            <div className="panel" style={{marginBottom:16}}>
+              <h2>Step 1 · Passenger Lookup</h2>
+              <form onSubmit={lookup} style={{display:'flex',gap:10}}>
+                <input ref={scanRef} value={code} onChange={e=>setCode(e.target.value)}
+                  placeholder="Scan boarding pass barcode or enter 6-char PNR…" style={{fontSize:16,letterSpacing:1}} />
+                <button className="btn-primary" disabled={busy}>{busy?<span className="spinner"></span>:'Look Up'}</button>
+              </form>
+              {msg && <div className={'alert alert-'+msg.type} style={{marginTop:12,marginBottom:0}}>{msg.text}</div>}
+            </div>
+
+            {booking && (
+              <div className="grid-2">
+                <div>
+                  <div className="panel" style={{marginBottom:16}}>
+                    <h3>{booking.firstName} {booking.lastName}</h3>
+                    <div className="muted" style={{marginBottom:8}}>{booking.flightNumber} · {booking.departure}→{booking.arrival} · {fmtDateTime(booking.departureTime)}</div>
+                    <div><b>PNR:</b> {booking.bookingReference} &nbsp; <b>Seat:</b> {booking.seatAssigned}{booking.isExitSeat&&<span className="tag tag-gold" style={{marginLeft:6}}>EXIT</span>} &nbsp; <b>Class:</b> {booking.cabinClass}</div>
+                  </div>
+
+                  <div className="panel">
+                    <h2>Step 2 · Baggage</h2>
+                    <p className="muted">Allowance: 1 checked + 1 carry-on. Extra checked bags $50 each.</p>
+                    <div style={{display:'flex',gap:8,marginBottom:10}}>
+                      <button className="btn-ghost btn-sm" onClick={()=>addBag(false)}>+ Add Bag (included)</button>
+                      <button className="btn-gold btn-sm" onClick={()=>addBag(true)}>+ Add Extra Bag ($50)</button>
+                    </div>
+                    {bags.length===0 ? <p className="muted">No checked bags.</p> :
+                      <table className="data">
+                        <thead><tr><th>Tag #</th><th>Weight</th><th>Charge</th><th></th></tr></thead>
+                        <tbody>{bags.map((bg,i)=>(
+                          <tr key={bg.id}>
+                            <td>{bg.bagTagNumber} <span className="muted">({String(i+1).padStart(3,'0')})</span></td>
+                            <td>{bg.weight?bg.weight+' kg':'—'}</td>
+                            <td>{bg.extraCharge?'$'+bg.extraCharge:'incl.'}</td>
+                            <td><button className="btn-ghost btn-sm" onClick={()=>setPrintBag({bag:bg,index:i})}>Tag</button> <button className="btn-danger btn-sm" onClick={()=>removeBag(bg.id)}>×</button></td>
+                          </tr>
+                        ))}</tbody>
+                      </table>
+                    }
+                  </div>
+                </div>
+
+                <div className="panel">
+                  <h2>Step 3 · APIS / Secure Flight</h2>
+                  {apis && (
+                    <div>
+                      <div className="field"><label>Passenger Name</label><input value={paxName(booking)} disabled /></div>
+                      <div className="row">
+                        <div className="field"><label>Passport Number</label><input value={apis.passportNumber} onChange={e=>setApis({...apis,passportNumber:e.target.value})} /></div>
+                        <div className="field"><label>Passport Expiry</label><input type="date" value={apis.passportExpiry} onChange={e=>setApis({...apis,passportExpiry:e.target.value})} /></div>
+                      </div>
+                      <div className="row">
+                        <div className="field"><label>Date of Birth (DD/MM/YYYY)</label><input value={apis.dateOfBirth} onChange={e=>setApis({...apis,dateOfBirth:e.target.value})} placeholder="15/06/1985" /></div>
+                        <div className="field"><label>Nationality (ISO-3)</label><input maxLength={3} value={apis.nationality} onChange={e=>setApis({...apis,nationality:e.target.value.toUpperCase()})} placeholder="USA" /></div>
+                      </div>
+                      <div className="field"><label>Seat</label><input value={booking.seatAssigned} disabled /></div>
+                      <div className="row">
+                        <div className="field"><label>Redress Number (optional)</label><input value={apis.redress} onChange={e=>setApis({...apis,redress:e.target.value})} /></div>
+                        <div className="field" style={{display:'flex',alignItems:'flex-end'}}>
+                          <label style={{display:'flex',alignItems:'center',gap:8,marginBottom:9}}>
+                            <input type="checkbox" style={{width:'auto'}} checked={apis.preCheck} onChange={e=>setApis({...apis,preCheck:e.target.checked})} /> TSA PreCheck / Clear
+                          </label>
+                        </div>
+                      </div>
+                      <button className="btn-success" style={{width:'100%',marginTop:8}} onClick={submitCheckin} disabled={busy}>
+                        {busy?<span className="spinner"></span>:'Step 4 · Submit & Print Boarding Pass'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {printBag && <BagTagModal booking={booking} bag={printBag.bag} index={printBag.index} onClose={()=>setPrintBag(null)} />}
+          </div>
+        );
+      }
+
+      function BagTagModal({ booking, bag, index, onClose }) {
+        return (
+          <div className="modal-overlay" onClick={onClose}>
+            <div className="modal" style={{maxWidth:380}} onClick={e=>e.stopPropagation()}>
+              <div className="modal-head no-print">
+                <h3>Baggage Tag</h3>
+                <div>
+                  <button className="btn-ghost btn-sm" onClick={()=>window.print()}>Print</button>{' '}
+                  <button className="close-x" onClick={onClose}>×</button>
+                </div>
+              </div>
+              <div className="print-doc" style={{display:'flex',justifyContent:'center'}}>
+                <div className="bagtag">
+                  <div className="bagtag-top"><span>TURKISH AIRLINES</span><span>{booking.flightNumber}</span></div>
+                  <div className="bagtag-route">{booking.arrival}</div>
+                  <div className="bagtag-row"><span>{paxName(booking)}</span><span>{booking.cabinClass==='Business'?'J':'Y'}</span></div>
+                  <div className="bagtag-row"><span>{booking.departure} → {booking.arrival}</span><span>PNR {booking.bookingReference}</span></div>
+                  <div className="bagtag-row"><span>TAG {String(index+1).padStart(3,'0')}</span><span>{bag.weight?bag.weight+' kg':''}</span></div>
+                  <div className="bagtag-barcode">
+                    <Barcode value={bag.bagTagNumber} height={60} />
+                    <div style={{fontWeight:800,letterSpacing:2,fontSize:14}}>{bag.bagTagNumber}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ================= Boarding Mode =================
+      function Boarding({ flights }) {
+        const [flightId, setFlightId] = useState('');
+        const [code, setCode] = useState('');
+        const [result, setResult] = useState(null);
+        const [log, setLog] = useState([]);
+        const [counts, setCounts] = useState({ boarded:0, total:0 });
+        const scanRef = useRef(null);
+
+        const flight = flights.find(f=>String(f.id)===String(flightId));
+
+        const refreshLog = useCallback(async (fid) => {
+          if (!fid) { setLog([]); setCounts({boarded:0,total:0}); return; }
+          const rows = await api('/boarding?flightId='+fid);
+          setLog(rows);
+          const f = flights.find(x=>String(x.id)===String(fid));
+          setCounts({ boarded: rows.length, total: f?f.capacity:0 });
+        }, [flights]);
+
+        useEffect(()=>{ refreshLog(flightId); if(scanRef.current) scanRef.current.focus(); }, [flightId, refreshLog]);
+
+        const scan = async (e) => {
+          if (e) e.preventDefault();
+          if (!code.trim() || !flightId) {
+            if (!flightId) setResult({status:'error',reason:'Select a flight first'});
+            return;
+          }
+          try {
+            const r = await api('/boarding/scan', { method:'POST', body:{ code:code.trim(), flightId:Number(flightId) }});
+            setResult(r);
+            if (r.status==='ok') playOk();
+            else if (r.status==='exit') playExit();
+            else playError();
+            if (r.status==='ok' || r.status==='exit') {
+              const b = r.booking;
+              const line = { time:new Date().toLocaleTimeString(), name:(b.firstName+' '+b.lastName), seat:b.seatAssigned, cabin:b.cabinClass, exit:b.isExitSeat, seq:r.sequence };
+              setLog(l=>[...l, {...b, boardedTime:new Date().toISOString(), sequence:r.sequence, _line:line}]);
+              setCounts(c=>({...c, boarded:c.boarded+1}));
+            }
+          } catch (ex) {
+            setResult({status:'error',reason:ex.message}); playError();
+          }
+          setCode('');
+          if (scanRef.current) scanRef.current.focus();
+        };
+
+        const exportLog = () => {
+          const rows = [['seq','time','name','seat','cabin','exit'].join(',')];
+          log.forEach((b,i)=>{
+            rows.push([b.sequence||i+1, fmtTime(b.boardedTime), (b.firstName+' '+b.lastName), b.seatAssigned, b.cabinClass, b.isExitSeat?'EXIT':''].join(','));
+          });
+          const blob = new Blob([rows.join('\n')], {type:'text/csv'});
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'boarding-log-'+(flight?flight.flightNumber:'flight')+'.csv';
+          a.click();
+        };
+
+        return (
+          <div>
+            <div className="panel" style={{marginBottom:16}}>
+              <div style={{display:'flex',gap:16,alignItems:'center',flexWrap:'wrap'}}>
+                <div className="field" style={{margin:0,minWidth:280,flex:1}}>
+                  <label>Boarding Flight</label>
+                  <select value={flightId} onChange={e=>setFlightId(e.target.value)}>
+                    <option value="">— Select flight —</option>
+                    {flights.map(f=><option key={f.id} value={f.id}>{f.flightNumber} · {f.departure}→{f.arrival}</option>)}
+                  </select>
+                </div>
+                <div className="counter-pill">Boarded: {counts.boarded}/{counts.total||(flight?flight.capacity:0)}</div>
+              </div>
+            </div>
+
+            <div className="panel" style={{marginBottom:16}}>
+              <form onSubmit={scan}>
+                <label>Scan Boarding Pass</label>
+                <input ref={scanRef} className="board-scan" value={code} onChange={e=>setCode(e.target.value)}
+                  placeholder="Scan barcode or type PNR + Enter…" disabled={!flightId} />
+              </form>
+              {result && (
+                <div className={'board-result board-'+(result.status==='ok'?'ok':result.status==='exit'?'exit':'error')}>
+                  {result.status==='error' ? (
+                    <div>
+                      <div style={{fontSize:30,fontWeight:800}}>✕ DO NOT BOARD</div>
+                      <div style={{fontSize:18,marginTop:6}}>{result.reason}</div>
+                      {result.booking && <div style={{marginTop:6}}>{result.booking.firstName} {result.booking.lastName} · {result.booking.seatAssigned}</div>}
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{fontSize:22,fontWeight:700}}>{result.status==='exit'?'⚠ EXIT ROW · OK TO BOARD':'✓ OK TO BOARD'}</div>
+                      <div className="big-name">{result.booking.firstName} {result.booking.lastName}</div>
+                      <div className="big-seat">{result.booking.seatAssigned}</div>
+                      <div style={{fontSize:18}}>{result.booking.cabinClass} · Seq #{String(result.sequence).padStart(3,'0')}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="panel">
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <h2>Boarding Log ({log.length})</h2>
+                <button className="btn-ghost btn-sm" onClick={exportLog} disabled={!log.length}>Export CSV</button>
+              </div>
+              <div style={{maxHeight:320,overflow:'auto',border:'1px solid var(--border)',borderRadius:8}}>
+                {log.length===0 ? <p className="muted" style={{padding:12}}>No passengers boarded yet.</p> :
+                  log.map((b,i)=>(
+                    <div key={i} className={'log-line'+(b.isExitSeat?' log-exit':'')}>
+                      BOARDED: {fmtTime(b.boardedTime)} | #{String(b.sequence||i+1).padStart(3,'0')} | {b.firstName} {b.lastName} | Seat {b.seatAssigned} | {b.cabinClass}{b.isExitSeat?' | ⚠ EXIT':''}
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ================= App shell =================
+      function App() {
+        const [user, setUser] = useState(() => {
+          try { return JSON.parse(localStorage.getItem('tkpms_session')||'null'); } catch(e){ return null; }
+        });
+        const [mode, setMode] = useState('OPERATIONS');
+        const [flights, setFlights] = useState([]);
+        const [aircraftData, setAircraftData] = useState({});
+        const [clock, setClock] = useState(new Date());
+
+        const reloadFlights = useCallback(() => { api('/flights').then(setFlights).catch(()=>{}); }, []);
+
+        useEffect(()=>{
+          if (user) {
+            api('/aircraft').then(setAircraftData).catch(()=>{});
+            reloadFlights();
+          }
+        }, [user, reloadFlights]);
+
+        useEffect(()=>{ const t=setInterval(()=>setClock(new Date()),1000); return ()=>clearInterval(t); },[]);
+
+        const login = (username) => {
+          const session = { username, ts: Date.now() };
+          localStorage.setItem('tkpms_session', JSON.stringify(session));
+          setUser(session);
+        };
+        const logout = () => { localStorage.removeItem('tkpms_session'); setUser(null); };
+
+        if (!user) return <Login onLogin={login} />;
+
+        const tabs = ['OPERATIONS','SALES','CHECK-IN','BOARDING'];
+        return (
+          <div className="app-shell">
+            <header className="topbar no-print">
+              <div className="brand"><div className="roundel">TK</div> TKPMS</div>
+              <nav className="tabs">
+                {tabs.map(t=>(
+                  <button key={t} className={mode===t?'active':''} onClick={()=>setMode(t)}>{t}</button>
+                ))}
+              </nav>
+              <div className="user-box">
+                <span>👤 {user.username}</span>
+                <button className="btn-gold btn-sm" onClick={logout}>Logout</button>
+              </div>
+            </header>
+
+            <main className="content">
+              {mode==='OPERATIONS' && <Operations aircraftData={aircraftData} flights={flights} reloadFlights={reloadFlights} />}
+              {mode==='SALES' && <Sales flights={flights} aircraftData={aircraftData} reloadFlights={reloadFlights} />}
+              {mode==='CHECK-IN' && <CheckIn reloadFlights={reloadFlights} />}
+              {mode==='BOARDING' && <Boarding flights={flights} />}
+            </main>
+
+            <footer className="statusbar no-print">
+              <div><span className="status-dot"></span> System operational · {flights.length} flights · Backend :5000</div>
+              <div>{clock.toLocaleString()}</div>
+            </footer>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+  </body>
+</html>
