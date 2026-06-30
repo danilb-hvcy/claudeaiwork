@@ -28,6 +28,28 @@ The in-memory database is seeded on every start with three sample flights
 (TK1 IST→JFK, TK79 IST→LAX, TK1985 IST→LHR) and one demo booking
 (PNR **TKDEMO**, John Doe, seat 12A) for quick testing. Data resets on restart.
 
+## Standalone version (no server, just double-click)
+
+If you'd rather not run a backend, open **`standalone/tkpms-standalone.html`** directly
+in a browser (double-click it). It's a single self-contained file with React, JsBarcode,
+and all logic inlined — no install, no server, works offline from `file://`.
+
+The only difference: there's no shared SQLite database, so data is stored in that
+browser's `localStorage` instead. It persists across reloads but is local to that
+machine/browser. A **Reset demo data** button (footer) restores the seeded sample.
+
+Rebuild it after changing the app with:
+
+```bash
+cd tkpms
+npm install
+node build/build-standalone.js   # regenerates standalone/tkpms-standalone.html
+```
+
+> Opening `public/index.html` directly will *not* work — that file expects the
+> Express backend to serve its libraries and API. Use the standalone file for
+> double-click usage, or run the server (below) for the full version.
+
 ## Modes
 
 1. **Operations** — create/edit/delete flights, view per-flight seat maps with

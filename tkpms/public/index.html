@@ -1124,6 +1124,12 @@
           setUser(session);
         };
         const logout = () => { localStorage.removeItem('tkpms_session'); setUser(null); };
+        const resetData = () => {
+          if (!window.confirm('Reset all demo data (flights, bookings, boarding) back to the seeded sample?')) return;
+          localStorage.removeItem('tkpms_db_v1');
+          localStorage.removeItem('tkpms_session');
+          window.location.reload();
+        };
 
         if (!user) return <Login onLogin={login} />;
 
@@ -1152,7 +1158,10 @@
 
             <footer className="statusbar no-print">
               <div><span className="status-dot"></span> System operational · {flights.length} flights · Backend :5000</div>
-              <div>{clock.toLocaleString()}</div>
+              <div style={{display:'flex',alignItems:'center',gap:12}}>
+                {window.__TKPMS_STANDALONE__ && <button className="btn-ghost btn-sm" onClick={resetData}>Reset demo data</button>}
+                <span>{clock.toLocaleString()}</span>
+              </div>
             </footer>
           </div>
         );
