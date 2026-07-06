@@ -29,6 +29,30 @@ Install any "custom new tab URL" extension and set it to your deployed Netlify U
 Because the session is stored in `localStorage` for **1 year**, you sign in once and
 land straight on your dashboard every time you open a tab.
 
+## Managing users & apps (the "code + redeploy" database)
+
+There's no backend server. **`data.json` in this folder is the database** — it's the
+source of truth that every employee's launchpad reads on load. To change who can log
+in or which tools appear:
+
+1. Open the launchpad as a Super Admin → **⚙️ Admin Console**.
+2. Add / edit / delete users and apps in the **👥 Users** and **🧩 Apps** tabs.
+   These changes are a **draft on your device** (a banner reminds you).
+3. Go to the **📦 Publish** tab → **Download data.json** (it already has your changes
+   and an incremented `version`).
+4. Replace `launchpad/data.json` in the repo with that file, `git commit` and
+   `git push`. Netlify redeploys automatically.
+5. Every launchpad refreshes to the new version on the next new tab — no action
+   needed by staff.
+
+> The `version` field is what makes a redeploy propagate. When a browser sees a
+> `data.json` whose `version` is newer than what it last applied, it refreshes its
+> local user/app lists. Always bump it when you publish (the Publish tab does this
+> for you).
+
+**Even simpler:** anyone with repo access can add a user by editing `data.json`
+directly in GitHub — add the entry and bump `version` — no admin panel needed.
+
 ## Sign-in accounts (seed data)
 
 | Name | Username | Password | Role |

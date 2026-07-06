@@ -16,6 +16,7 @@ const KEY = {
   alerts:  'hv_launchpad_alerts',
   dismissed: 'hv_launchpad_alerts_dismissed',
   theme:   'hv_launchpad_theme',
+  seedVersion: 'hv_launchpad_seed_version',
 };
 
 const SESSION_MS = 365 * 24 * 60 * 60 * 1000; // 1 year
@@ -27,8 +28,14 @@ const ROLE_LABELS = {
 };
 const ROLE_ORDER = ['standard', 'admin_plus', 'super_admin'];
 
-/* ─── Seed data (embedded for offline / new-tab robustness) ──────── */
+/* ─── Seed data ───────────────────────────────────────────────────
+   data.json (fetched at runtime) is the published source of truth — the
+   "database" in the code + redeploy model. Bump its "version" whenever you
+   change users/apps and every launchpad will refresh on the next load.
+   This embedded copy is only a fallback for offline / file:// use.
+   ────────────────────────────────────────────────────────────────── */
 const SEED = {
+  version: 1,
   users: [
     { name: 'DANIL BABADJANOV',     username: 'danilb',   password: 'Danilka2010!', role: 'super_admin' },
     { name: 'ALEKSEY BABADZHANOV',  username: 'alekseyb', password: 'Aleksey2131!', role: 'super_admin' },
@@ -90,6 +97,40 @@ function getAlerts() { return store.get(KEY.alerts, []); }
 function saveAlerts(a) { store.set(KEY.alerts, a); }
 
 function structuredCloneSafe(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+/* ─── Published seed sync (the "code + redeploy" database) ──────────
+   Fetch data.json (the committed source of truth). If its version differs
+   from what this browser last applied, overwrite the local user/app lists —
+   so pushing a new data.json propagates to every employee on their next tab.
+   Falls back to the embedded SEED if the fetch fails (offline / file://).
+   ────────────────────────────────────────────────────────────────── */
+let PUBLISHED_VERSION = SEED.version;
+
+async function loadPublishedSeed() {
+  try {
+    const res = await fetch('data.json', { cache: 'no-store' });
+    if (res.ok) {
+      const j = await res.json();
+      if (j && Array.isArray(j.users) && Array.isArray(j.apps)) {
+        return { version: Number(j.version) || 1, users: j.users, apps: j.apps };
+      }
+    }
+  } catch { /* offline / file:// — fall through to embedded seed */ }
+  return { version: SEED.version, users: SEED.users, apps: SEED.apps };
+}
+
+function applyPublishedSeed(seed) {
+  PUBLISHED_VERSION = seed.version;
+  const appliedVersion = store.get(KEY.seedVersion, null);
+  const firstRun = store.get(KEY.users, null) === null;
+  // Published version wins: (re)hydrate local lists when the deploy is newer
+  // than what this browser last saw, or on the very first visit.
+  if (appliedVersion !== seed.version || firstRun) {
+    store.set(KEY.users, structuredCloneSafe(seed.users));
+    store.set(KEY.apps, structuredCloneSafe(seed.apps));
+    store.set(KEY.seedVersion, seed.version);
+  }
+}
 
 /* ─── Session ────────────────────────────────────────────────────── */
 function getSession() {
@@ -418,6 +459,7 @@ function openAdmin() {
           <button class="tab" data-tab="users">👥 Users</button>
           <button class="tab" data-tab="apps">🧩 Apps</button>
           <button class="tab" data-tab="broadcast">📣 Broadcast</button>
+          <button class="tab" data-tab="publish">📦 Publish</button>
         </div>
         <div id="admin-content"></div>
       </div>
@@ -447,9 +489,17 @@ function paintAdmin() {
   document.querySelectorAll('#admin-overlay .tab').forEach(t =>
     t.classList.toggle('active', t.getAttribute('data-tab') === adminTab));
   const c = $('#admin-content');
-  if (adminTab === 'users') c.innerHTML = '', renderAdminUsers(c);
+  if (adminTab === 'users') renderAdminUsers(c);
   else if (adminTab === 'apps') renderAdminApps(c);
-  else renderAdminBroadcast(c);
+  else if (adminTab === 'broadcast') renderAdminBroadcast(c);
+  else renderAdminPublish(c);
+}
+
+/* Honest banner: in-panel edits are a browser-local draft until published. */
+function draftBanner() {
+  return `<div class="draft-note">
+    ✏️ <span>Edits here are a <strong>draft on this device</strong>. To make them live for all staff, open the <strong>📦 Publish</strong> tab and commit the exported <code>data.json</code>.</span>
+  </div>`;
 }
 
 /* ── Users tab ── */
@@ -457,6 +507,7 @@ function renderAdminUsers(c) {
   const users = getUsers();
   const me = currentUser();
   c.innerHTML = `
+    ${draftBanner()}
     <div class="panel-section">
       <div class="panel-section__title">Add New User</div>
       <form id="add-user-form" class="form-grid">
@@ -535,6 +586,7 @@ function renderAdminUsers(c) {
 function renderAdminApps(c) {
   const apps = getApps();
   c.innerHTML = `
+    ${draftBanner()}
     <div class="panel-section">
       <div class="panel-section__title">Add New App</div>
       <form id="add-app-form" class="form-grid">
@@ -658,10 +710,71 @@ function renderAdminBroadcast(c) {
   }));
 }
 
+/* ── Publish tab (export the committed data.json) ── */
+function buildPublishJson() {
+  // Preserve the role labels for readability; bump the version so deployed
+  // launchpads know to refresh.
+  const payload = {
+    version: (Number(PUBLISHED_VERSION) || 1) + 1,
+    roles: ROLE_LABELS,
+    users: getUsers(),
+    apps: getApps(),
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+function renderAdminPublish(c) {
+  const nextVersion = (Number(PUBLISHED_VERSION) || 1) + 1;
+  const json = buildPublishJson();
+  c.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-section__title">Publish to all staff</div>
+      <p class="publish-lead">
+        This launchpad uses a <strong>code + redeploy</strong> database: the file
+        <code>launchpad/data.json</code> in your repo is the source of truth. Your
+        in-panel edits are saved on this device only until you publish them.
+      </p>
+      <ol class="publish-steps">
+        <li><strong>Download</strong> (or copy) the updated <code>data.json</code> below — it already includes every user &amp; app change you made, with the version bumped to <strong>v${nextVersion}</strong>.</li>
+        <li>Replace <code>launchpad/data.json</code> in the repo with it and <code>git commit</code> + <code>git push</code>.</li>
+        <li>Netlify redeploys automatically. Every employee's launchpad refreshes to v${nextVersion} on their next tab.</li>
+      </ol>
+      <div class="publish-actions">
+        <button class="btn btn--primary btn--sm" id="pub-download">⬇ Download data.json</button>
+        <button class="btn btn--ghost btn--sm" id="pub-copy">📋 Copy JSON</button>
+      </div>
+      <textarea class="publish-code" id="pub-json" spellcheck="false" readonly>${esc(json)}</textarea>
+      <p class="publish-tip">💡 No coding needed to add someone in a pinch — you (or anyone) can also just edit this <code>data.json</code> in GitHub directly and bump the <code>version</code> number.</p>
+    </div>`;
+
+  $('#pub-copy').addEventListener('click', async () => {
+    const text = buildPublishJson();
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('data.json copied to clipboard.', 'success');
+    } catch {
+      const ta = $('#pub-json'); ta.focus(); ta.select();
+      toast('Press ⌘/Ctrl+C to copy the selected JSON.', 'info');
+    }
+  });
+
+  $('#pub-download').addEventListener('click', () => {
+    const blob = new Blob([buildPublishJson()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'data.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast('data.json downloaded — commit it to publish.', 'success');
+  });
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    BOOT
    ═══════════════════════════════════════════════════════════════════ */
 initTheme();
-// Ensure seed data exists on first run
-getUsers(); getApps();
-render();
+(async () => {
+  const seed = await loadPublishedSeed(); // published data.json (or embedded fallback)
+  applyPublishedSeed(seed);               // published version wins over local drafts
+  render();
+})();
