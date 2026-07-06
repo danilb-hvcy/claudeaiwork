@@ -1,0 +1,19 @@
+# Netlify configuration — HeyVacay Employee Launchpad
+# Static site: no build step needed, index.html is the entry point.
+
+[build]
+  publish = "."
+  command = ""
+
+# SPA-style fallback so /admin (or any path) resolves to the launchpad.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
