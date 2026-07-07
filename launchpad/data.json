@@ -1,0 +1,112 @@
+{
+  "version": 2,
+  "roles": {
+    "super_admin": "Super Admin",
+    "admin_plus": "Admin Plus",
+    "standard": "Standard User"
+  },
+  "users": [
+    {
+      "name": "DANIL BABADJANOV",
+      "username": "danilb",
+      "password": "Danilka2010!",
+      "role": "super_admin"
+    },
+    {
+      "name": "ALEKSEY BABADZHANOV",
+      "username": "alekseyb",
+      "password": "Aleksey2131!",
+      "role": "super_admin"
+    },
+    {
+      "name": "LEONID BABADJANOV",
+      "username": "leonidb",
+      "password": "Danil2010!",
+      "role": "admin_plus"
+    },
+    {
+      "name": "Estefania Babadzhanov",
+      "username": "stefb",
+      "password": "Estefmac2131!",
+      "role": "standard"
+    }
+  ],
+  "apps": [
+    {
+      "id": "google-workspace",
+      "name": "Google Workspace",
+      "icon": "🔤",
+      "description": "Email, Drive, Docs, Sheets, Calendar, Meet",
+      "subApps": [
+        { "name": "Gmail", "icon": "📬", "url": "https://mail.google.com", "roles": ["standard", "admin_plus", "super_admin"] },
+        { "name": "Google Drive", "icon": "📁", "url": "https://drive.google.com", "roles": ["standard", "admin_plus", "super_admin"] },
+        { "name": "Google Docs", "icon": "📄", "url": "https://docs.google.com", "roles": ["standard", "admin_plus", "super_admin"] },
+        { "name": "Google Sheets", "icon": "📊", "url": "https://sheets.google.com", "roles": ["standard", "admin_plus", "super_admin"] },
+        { "name": "Google Calendar", "icon": "📅", "url": "https://calendar.google.com", "roles": ["standard", "admin_plus", "super_admin"] },
+        { "name": "Google Meet", "icon": "🎥", "url": "https://meet.google.com", "roles": ["standard", "admin_plus", "super_admin"] },
+        { "name": "Google Admin", "icon": "🛡️", "url": "https://admin.google.com", "roles": ["super_admin"] }
+      ],
+      "roles": ["standard", "admin_plus", "super_admin"]
+    },
+    {
+      "id": "support-tools",
+      "name": "Support Tools",
+      "icon": "🎧",
+      "description": "Zendesk, Zoom & HeyVacay NOVA",
+      "subApps": [
+        { "name": "Zendesk", "icon": "📞", "url": "https://zendesk.com", "roles": ["standard", "admin_plus", "super_admin"] },
+        { "name": "Zoom", "icon": "📱", "url": "https://zoom.us", "roles": ["standard", "admin_plus", "super_admin"] },
+        { "name": "HeyVacay NOVA", "icon": "🚀", "url": "https://admin.heyvacay.co", "roles": ["standard", "admin_plus", "super_admin"] }
+      ],
+      "roles": ["standard", "admin_plus", "super_admin"]
+    },
+    {
+      "id": "hced",
+      "name": "HCED System",
+      "icon": "🏨",
+      "description": "Hotel Complaint & Escalation",
+      "url": "https://hced.heyvacay.co",
+      "roles": ["standard", "admin_plus", "super_admin"]
+    },
+    {
+      "id": "gusto",
+      "name": "Gusto",
+      "icon": "💰",
+      "description": "Contractor Payroll",
+      "url": "https://gusto.com",
+      "roles": ["standard", "admin_plus", "super_admin"]
+    },
+    {
+      "id": "heyvacay",
+      "name": "HeyVacay",
+      "icon": "✈️",
+      "description": "Main Booking Platform",
+      "url": "https://heyvacay.co",
+      "roles": ["standard", "admin_plus", "super_admin"]
+    },
+    {
+      "id": "ratehawk",
+      "name": "RateHawk",
+      "icon": "🔑",
+      "description": "Hotel Inventory Admin",
+      "url": "https://dashboard.ratehawk.com",
+      "roles": ["admin_plus", "super_admin"]
+    },
+    {
+      "id": "stripe",
+      "name": "Stripe",
+      "icon": "💳",
+      "description": "Payment Processing",
+      "url": "https://dashboard.stripe.com",
+      "roles": ["super_admin"]
+    },
+    {
+      "id": "receptionhq",
+      "name": "ReceptionHQ",
+      "icon": "📧",
+      "description": "Email Forwarding & Management",
+      "url": "https://receptionhq.com",
+      "roles": ["super_admin"]
+    }
+  ]
+}

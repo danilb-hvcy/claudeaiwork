@@ -1,0 +1,2356 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HeyVacay Operations · Launchpad</title>
+    <meta name="description" content="HeyVacay Employee Launchpad — your unified entry point to every company tool." />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23003D7A'/%3E%3Ctext y='.9em' x='14' font-size='72'%3E%F0%9F%8C%B4%3C/text%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+/* ═══════════════════════════════════════════════════════════════════
+   HeyVacay Employee Launchpad — Styles
+   Premium travel-tech concierge aesthetic
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Brand palette (per design direction) */
+  --brand-blue: #003D7A;
+  --brand-blue-600: #00539f;
+  --brand-blue-300: #4d82b8;
+  --teal: #00B4D8;
+  --teal-600: #0093b3;
+  --sand: #F5E6D3;
+  --charcoal: #1A1A1A;
+  --white: #FFFFFF;
+  --gray: #E8E8E8;
+
+  /* Semantic */
+  --text: #1A1A1A;
+  --text-soft: #52627a;
+  --text-faint: #8a97ab;
+  --surface: #FFFFFF;
+  --surface-2: #f7f9fc;
+  --border: #e6eaf1;
+  --danger: #e5484d;
+  --success: #1f9d55;
+
+  /* Effects */
+  --shadow-sm: 0 2px 10px rgba(0, 61, 122, 0.08);
+  --shadow: 0 12px 40px rgba(0, 61, 122, 0.14);
+  --shadow-lg: 0 24px 70px rgba(0, 61, 122, 0.22);
+  --shadow-teal: 0 14px 40px rgba(0, 180, 216, 0.32);
+
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 22px;
+
+  --gradient-brand: linear-gradient(135deg, var(--brand-blue) 0%, var(--teal) 100%);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ─── Dark mode ──────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --text: #eef3fa;
+  --text-soft: #a9b6ca;
+  --text-faint: #6f7d93;
+  --surface: #131a24;
+  --surface-2: #0e141d;
+  --border: #26313f;
+  --gray: #26313f;
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+
+/* ─── Reset & base ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  min-height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--text);
+  background: var(--surface-2);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body { position: relative; overflow-x: hidden; }
+
+h1, h2, h3, .display { font-family: 'Poppins', 'Inter', sans-serif; letter-spacing: -0.02em; }
+
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input, select { font-family: inherit; }
+a { color: inherit; text-decoration: none; }
+
+::selection { background: var(--teal); color: #fff; }
+
+/* ─── Animated ocean backdrop ────────────────────────────────────── */
+.ocean {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 700px at 80% -10%, rgba(0, 180, 216, 0.20), transparent 60%),
+    radial-gradient(1000px 800px at 5% 110%, rgba(0, 61, 122, 0.18), transparent 55%),
+    linear-gradient(180deg, #eef6fb 0%, #f8f3ea 100%);
+}
+[data-theme="dark"] .ocean {
+  background:
+    radial-gradient(1200px 700px at 80% -10%, rgba(0, 180, 216, 0.16), transparent 60%),
+    radial-gradient(1000px 800px at 5% 110%, rgba(0, 61, 122, 0.35), transparent 55%),
+    linear-gradient(180deg, #070b11 0%, #0d1420 100%);
+}
+
+.ocean__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.55;
+  animation: drift 22s var(--ease) infinite alternate;
+}
+.ocean__glow--1 { width: 460px; height: 460px; top: -120px; left: -80px; background: var(--teal); }
+.ocean__glow--2 { width: 520px; height: 520px; bottom: -160px; right: -100px; background: var(--brand-blue); animation-delay: -8s; }
+
+.ocean__watermark {
+  position: absolute;
+  right: 4vw;
+  bottom: 8vh;
+  font-size: clamp(180px, 34vw, 460px);
+  line-height: 1;
+  opacity: 0.05;
+  filter: grayscale(0.2);
+  user-select: none;
+  transform: rotate(-8deg);
+}
+
+.ocean__waves {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 42vh;
+  min-height: 260px;
+}
+.wave { opacity: 0.5; }
+.wave--back  { fill: rgba(0, 180, 216, 0.28); animation: swell 12s ease-in-out infinite; }
+.wave--mid   { fill: rgba(0, 83, 159, 0.28);  animation: swell 9s ease-in-out infinite reverse; }
+.wave--front { fill: rgba(0, 61, 122, 0.35);  animation: swell 7s ease-in-out infinite; }
+[data-theme="dark"] .wave { opacity: 0.35; }
+
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(60px, 40px) scale(1.15); }
+}
+@keyframes swell {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50%      { transform: translateX(-3%) translateY(-10px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ocean__glow, .wave { animation: none; }
+}
+
+/* ─── Shared layout ──────────────────────────────────────────────── */
+#app { position: relative; z-index: 1; }
+
+.view-enter { animation: viewIn 0.6s var(--ease) both; }
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.99); }
+  to   { opacity: 1; transform: none; }
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+}
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: var(--gradient-brand);
+  box-shadow: var(--shadow-teal);
+  font-size: 22px;
+}
+.brand__word { font-size: 20px; letter-spacing: -0.02em; }
+.brand__word strong { color: var(--teal); font-weight: 800; }
+[data-theme="dark"] .brand__word { color: #fff; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOGIN VIEW
+   ═══════════════════════════════════════════════════════════════════ */
+.login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+}
+
+.login__card {
+  width: min(440px, 100%);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  border: 1px solid color-mix(in srgb, var(--white) 40%, transparent);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 40px 38px 34px;
+}
+[data-theme="dark"] .login__card {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+
+.login__brand { display: flex; justify-content: center; margin-bottom: 22px; }
+.login__brand .brand__mark { width: 58px; height: 58px; border-radius: 17px; font-size: 30px; }
+
+.login__title {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.login__subtitle {
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 14.5px;
+  margin-bottom: 28px;
+}
+
+.field { margin-bottom: 16px; }
+.field__label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-soft);
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+.field__input {
+  width: 100%;
+  padding: 13px 15px;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.field__input::placeholder { color: var(--text-faint); }
+.field__input:focus {
+  outline: none;
+  border-color: var(--teal);
+  background: var(--surface);
+  box-shadow: 0 0 0 4px rgba(0, 180, 216, 0.15);
+}
+.field--pw { position: relative; }
+.field__toggle {
+  position: absolute;
+  right: 10px;
+  top: 33px;
+  padding: 6px 8px;
+  font-size: 13px;
+  color: var(--text-faint);
+  border-radius: 8px;
+}
+.field__toggle:hover { color: var(--teal); background: var(--surface-2); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 13px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  transition: transform 0.18s var(--ease), box-shadow 0.2s, opacity 0.2s, background 0.2s;
+}
+.btn:active { transform: translateY(1px) scale(0.995); }
+.btn--primary {
+  width: 100%;
+  color: #fff;
+  background: var(--gradient-brand);
+  box-shadow: var(--shadow-teal);
+}
+.btn--primary:hover { transform: translateY(-2px); box-shadow: 0 18px 46px rgba(0, 180, 216, 0.42); }
+.btn--primary:disabled { opacity: 0.7; cursor: progress; transform: none; }
+.btn--ghost { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); }
+.btn--ghost:hover { border-color: var(--teal); color: var(--teal); }
+.btn--danger { background: rgba(229, 72, 77, 0.12); color: var(--danger); }
+.btn--danger:hover { background: var(--danger); color: #fff; }
+.btn--sm { padding: 8px 13px; font-size: 13px; }
+
+.login__error {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 11px 14px;
+  font-size: 13.5px;
+  color: var(--danger);
+  background: rgba(229, 72, 77, 0.1);
+  border: 1px solid rgba(229, 72, 77, 0.28);
+  border-radius: var(--radius-sm);
+}
+.login__error.show { display: flex; animation: shake 0.4s; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.btn--google {
+  width: 100%;
+  gap: 11px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.btn--google:hover { border-color: var(--text-faint); background: var(--surface-2); transform: translateY(-1px); }
+.btn--google svg { flex: 0 0 auto; }
+.login__or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+.login__or::before, .login__or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+.login__foot {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.login__hint {
+  margin-top: 14px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-soft);
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+.login__hint code { color: var(--teal); font-weight: 600; }
+
+/* Spinner */
+.spinner {
+  width: 17px; height: 17px;
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════════════════════════
+   DASHBOARD VIEW
+   ═══════════════════════════════════════════════════════════════════ */
+.shell { max-width: 1180px; margin: 0 auto; padding: 22px clamp(16px, 4vw, 40px) 80px; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  margin-bottom: 30px;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  border: 1px solid color-mix(in srgb, var(--white) 30%, transparent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 14px;
+  z-index: 40;
+}
+[data-theme="dark"] .topbar { border-color: var(--border); }
+
+.topbar__spacer { flex: 1; }
+
+.userchip {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 6px 8px 6px 6px;
+  border-radius: 999px;
+}
+.userchip__avatar {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--gradient-brand);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+}
+.userchip__meta { line-height: 1.25; }
+.userchip__name { font-weight: 600; font-size: 14px; }
+.userchip__role { font-size: 11.5px; color: var(--text-soft); }
+
+.iconbtn {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 11px;
+  font-size: 17px;
+  color: var(--text-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: all 0.18s var(--ease);
+}
+.iconbtn:hover { color: var(--teal); border-color: var(--teal); transform: translateY(-1px); }
+
+.hero {
+  margin-bottom: 26px;
+}
+.hero__eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--teal-600);
+  margin-bottom: 8px;
+}
+.hero__title { font-size: clamp(26px, 4vw, 38px); font-weight: 800; }
+.hero__title span { color: var(--teal); }
+.hero__sub { margin-top: 6px; color: var(--text-soft); font-size: 15px; }
+
+/* Broadcast alerts */
+/* Section headings (Announcements / Your Apps) */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.section-head__title {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: -0.01em;
+}
+.section-head__count {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+/* Announcements */
+.ann { margin-bottom: 30px; }
+.ann__list { display: grid; gap: 12px; }
+.ann__empty {
+  padding: 18px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--text-faint);
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+.announcement {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(0, 180, 216, 0.14), rgba(0, 61, 122, 0.1));
+  border: 1px solid rgba(0, 180, 216, 0.3);
+  box-shadow: var(--shadow-sm);
+  animation: viewIn 0.5s var(--ease) both;
+}
+.announcement__icon { font-size: 20px; line-height: 1.3; }
+.announcement__body { flex: 1; }
+.announcement__title { font-weight: 700; font-size: 14.5px; }
+.announcement__text { font-size: 13.5px; color: var(--text-soft); margin-top: 2px; line-height: 1.5; }
+.announcement__meta { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+.announcement__dismiss { color: var(--text-faint); font-size: 18px; padding: 2px 6px; border-radius: 8px; }
+.announcement__dismiss:hover { color: var(--danger); background: rgba(229,72,77,0.1); }
+
+.ann__composer {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  animation: viewIn 0.35s var(--ease) both;
+}
+.ann__composer[hidden] { display: none; }
+.ann__msg { resize: vertical; min-height: 52px; line-height: 1.5; }
+.ann__composer-actions { display: flex; gap: 8px; }
+.draft-note--live { background: rgba(31, 157, 85, 0.1); border-color: rgba(31, 157, 85, 0.32); }
+/* keep primary buttons compact here (the base .btn--primary is full-width for login) */
+.section-head .btn--primary,
+.ann__composer-actions .btn--primary { width: auto; }
+
+/* HeyVacay logo */
+.hv-logo { height: 30px; width: auto; display: block; }
+.brand--logo { color: var(--text); display: inline-flex; align-items: center; }
+.brand--logo .hv-logo { height: 34px; }
+.login__logo { color: var(--brand-blue); }
+[data-theme="dark"] .login__logo { color: #fff; }
+.login__logo .hv-logo { height: 52px; }
+
+/* App grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px;
+  min-height: 148px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease), border-color 0.22s;
+  overflow: hidden;
+  text-align: left;
+  cursor: pointer;
+}
+.tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-brand);
+  opacity: 0;
+  transition: opacity 0.22s;
+  z-index: 0;
+}
+.tile > * { position: relative; z-index: 1; }
+.tile:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+  border-color: transparent;
+}
+.tile:hover::before { opacity: 0.06; }
+.tile:hover .tile__icon { transform: scale(1.08) rotate(-4deg); }
+
+.tile__icon {
+  width: 52px; height: 52px;
+  display: grid; place-items: center;
+  font-size: 27px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: transform 0.28s var(--ease);
+}
+.tile__name { font-weight: 700; font-size: 16px; font-family: 'Poppins', sans-serif; }
+.tile__desc { font-size: 13px; color: var(--text-soft); line-height: 1.5; }
+.tile__go {
+  margin-top: auto;
+  align-self: flex-start;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--teal-600);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+.tile:hover .tile__go { opacity: 1; transform: none; }
+
+.tile__badge {
+  position: absolute;
+  top: 14px; right: 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  z-index: 2;
+}
+.tile__badge--folder { background: rgba(0, 180, 216, 0.14); color: var(--teal-600); }
+.tile__badge--restricted { background: rgba(0, 61, 122, 0.12); color: var(--brand-blue-600); }
+[data-theme="dark"] .tile__badge--restricted { color: var(--brand-blue-300); }
+
+/* Folder tile (Google) */
+.tile--folder .tile__chev { transition: transform 0.25s var(--ease); font-size: 13px; color: var(--text-faint); }
+.tile--folder.open .tile__chev { transform: rotate(180deg); }
+
+.folder-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 20px;
+  margin-top: -6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 2px 12px rgba(0, 61, 122, 0.05);
+  animation: viewIn 0.4s var(--ease) both;
+}
+.subtile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: all 0.18s var(--ease);
+  cursor: pointer;
+}
+.subtile:hover {
+  transform: translateY(-3px);
+  border-color: var(--teal);
+  box-shadow: var(--shadow-sm);
+}
+.subtile__icon { font-size: 20px; }
+.subtile__name { font-size: 13.5px; font-weight: 600; }
+
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-soft);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL / ADMIN PANEL
+   ═══════════════════════════════════════════════════════════════════ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(9, 20, 35, 0.55);
+  backdrop-filter: blur(6px);
+  animation: fade 0.25s ease both;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  width: min(860px, 100%);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: viewIn 0.35s var(--ease) both;
+}
+.modal__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.modal__title { font-size: 19px; font-weight: 700; }
+.modal__close {
+  margin-left: auto;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  font-size: 18px;
+  color: var(--text-soft);
+}
+.modal__close:hover { background: var(--surface-2); color: var(--danger); }
+.modal__body { padding: 22px 24px; overflow-y: auto; }
+
+.tabs { display: flex; gap: 4px; padding: 6px; background: var(--surface-2); border-radius: 12px; margin-bottom: 20px; }
+.tab {
+  flex: 1;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-soft);
+  border-radius: 9px;
+  transition: all 0.18s;
+}
+.tab.active { background: var(--surface); color: var(--teal-600); box-shadow: var(--shadow-sm); }
+
+.panel-section { margin-bottom: 26px; }
+.panel-section__title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+}
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; align-items: end; }
+.form-grid .field { margin: 0; }
+.field__input--sm { padding: 10px 12px; font-size: 14px; }
+select.field__input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238a97ab' d='M6 8 0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 34px; }
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.data-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  border-bottom: 2px solid var(--border);
+}
+.data-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--surface-2); }
+
+.pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.pill--super_admin { background: rgba(0, 61, 122, 0.14); color: var(--brand-blue-600); }
+.pill--admin_plus { background: rgba(0, 180, 216, 0.16); color: var(--teal-600); }
+.pill--standard { background: var(--surface-2); color: var(--text-soft); border: 1px solid var(--border); }
+[data-theme="dark"] .pill--super_admin { color: var(--brand-blue-300); }
+
+/* Draft banner + Publish tab */
+.draft-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 14px;
+  margin-bottom: 20px;
+  font-size: 12.8px;
+  line-height: 1.5;
+  color: var(--text-soft);
+  background: rgba(245, 166, 35, 0.1);
+  border: 1px solid rgba(245, 166, 35, 0.32);
+  border-radius: var(--radius-sm);
+}
+.draft-note code, .publish-lead code, .publish-steps code, .publish-tip code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+  color: var(--teal-600);
+  background: var(--surface-2);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+.publish-lead { font-size: 13.5px; line-height: 1.6; color: var(--text-soft); margin-bottom: 14px; }
+.publish-steps { margin: 0 0 16px 18px; padding: 0; display: grid; gap: 8px; font-size: 13.5px; line-height: 1.55; color: var(--text-soft); }
+.publish-steps li { padding-left: 4px; }
+.publish-actions { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.publish-code {
+  width: 100%;
+  min-height: 220px;
+  padding: 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  white-space: pre;
+  overflow: auto;
+}
+.publish-tip { margin-top: 12px; font-size: 12.5px; color: var(--text-faint); line-height: 1.55; }
+
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.miniact {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+}
+.miniact:hover { border-color: var(--teal); color: var(--teal); }
+.miniact--del:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   TOASTS
+   ═══════════════════════════════════════════════════════════════════ */
+.toast-stack {
+  position: fixed;
+  right: 20px; bottom: 20px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: min(360px, calc(100vw - 40px));
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 15px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--teal);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  animation: toastIn 0.35s var(--ease) both;
+}
+.toast.out { animation: toastOut 0.3s var(--ease) forwards; }
+.toast--success { border-left-color: var(--success); }
+.toast--error { border-left-color: var(--danger); }
+.toast--info { border-left-color: var(--teal); }
+.toast__icon { font-size: 17px; }
+.toast__msg { font-size: 13.5px; line-height: 1.45; }
+.toast__title { font-weight: 700; display: block; margin-bottom: 1px; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { to { opacity: 0; transform: translateX(30px); } }
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 620px) {
+  .topbar { flex-wrap: wrap; }
+  .userchip__meta { display: none; }
+  .grid { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .data-table { font-size: 12.5px; }
+}
+@media (max-width: 400px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   IDLE SCREENSAVER BANNER (shows after 60s of inactivity)
+   ═══════════════════════════════════════════════════════════════════ */
+.idle-banner {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #000;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  cursor: pointer;
+  transition: opacity 0.8s ease, visibility 0s linear 0.8s;
+}
+.idle-banner.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.8s ease;
+}
+
+/* Ken Burns background */
+.idle-banner__bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('https://files.manuscdn.com/user_upload_by_module/session_file/310519663816720185/rlpIZzLKtNYtcKkw.png');
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.9);
+  animation: ib-kenBurns 20s ease-in-out infinite;
+  transform-origin: center;
+}
+@keyframes ib-kenBurns {
+  0%   { transform: scale(1) translate(0, 0); }
+  50%  { transform: scale(1.1) translate(18px, -12px); }
+  100% { transform: scale(1) translate(0, 0); }
+}
+
+.idle-banner__overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.55) 100%);
+  z-index: 1;
+}
+
+.idle-banner__content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+/* Logo — floating with cyan glow */
+.idle-logo-wrap {
+  margin-bottom: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.idle-logo-wrap svg {
+  width: min(300px, 60vw);
+  height: auto;
+  filter: drop-shadow(0 10px 30px rgba(35, 227, 239, 0.55));
+}
+.idle-banner.show .idle-logo-wrap { animation: ib-fadeInScale 1s ease-out 0.3s both; }
+.idle-banner.show .idle-logo-wrap svg { animation: ib-float 4s ease-in-out 1s infinite; }
+.idle-banner:hover .idle-logo-wrap svg { filter: drop-shadow(0 15px 46px rgba(35, 227, 239, 0.9)); }
+
+@keyframes ib-fadeInScale {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes ib-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-15px); }
+}
+
+/* Motto */
+.idle-motto {
+  font-family: 'Montserrat', 'Poppins', 'Inter', sans-serif;
+  font-size: clamp(28px, 6vw, 64px);
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1.2;
+  color: #fff;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+}
+.idle-banner.show .idle-motto { animation: ib-fadeInUp 1s ease-out 0.8s both; }
+.idle-word { display: inline-block; margin: 0 8px; opacity: 0; }
+.idle-banner.show .idle-word { animation: ib-wordPulse 0.6s ease-out both; }
+.idle-banner.show .idle-word:nth-child(1) { animation-delay: 0.9s; }
+.idle-banner.show .idle-word:nth-child(2) { animation-delay: 1.1s; }
+.idle-banner.show .idle-word:nth-child(3) { animation-delay: 1.3s; }
+.idle-word--accent {
+  color: #23e3ef;
+  font-weight: 800;
+  text-shadow: 0 0 20px rgba(35, 227, 239, 0.8), 0 4px 20px rgba(0, 0, 0, 0.7);
+}
+
+@keyframes ib-fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes ib-wordPulse {
+  0%   { opacity: 0; transform: scale(0.8) translateY(10px); }
+  50%  { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Accent line */
+.idle-accent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  z-index: 2;
+  background: linear-gradient(90deg, transparent, #23e3ef, transparent);
+}
+.idle-banner.show .idle-accent { animation: ib-slideIn 1.5s ease-out 0.5s both; }
+@keyframes ib-slideIn {
+  from { width: 0; left: 50%; }
+  to   { width: 100%; left: 0; }
+}
+
+/* "Click anywhere to continue" hint */
+.idle-hint {
+  position: absolute;
+  bottom: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-family: 'Montserrat', 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+}
+.idle-banner.show .idle-hint { animation: ib-hintPulse 2.2s ease-in-out 1.6s infinite; }
+@keyframes ib-hintPulse {
+  0%, 100% { opacity: 0.5; transform: translateX(-50%) translateY(0); }
+  50%      { opacity: 1;   transform: translateX(-50%) translateY(-3px); }
+}
+
+@media (max-width: 768px) {
+  .idle-logo-wrap { margin-bottom: 24px; }
+  .idle-logo-wrap svg { width: min(210px, 62vw); }
+  .idle-motto { font-size: clamp(20px, 7vw, 40px); }
+  .idle-word { margin: 0 5px; }
+  .idle-hint { bottom: 24px; font-size: 11.5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idle-banner__bg { animation: none; }
+  .idle-banner.show .idle-logo-wrap svg { animation: none; }
+  .idle-banner.show .idle-hint { animation: none; opacity: 0.85; }
+}
+
+    </style>
+  </head>
+  <body>
+    <!-- Animated ocean backdrop (shared across states) -->
+    <div class="ocean" aria-hidden="true">
+      <div class="ocean__glow ocean__glow--1"></div>
+      <div class="ocean__glow ocean__glow--2"></div>
+      <div class="ocean__watermark">🌴</div>
+      <svg class="ocean__waves" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+        <path class="wave wave--back" d="M0,160 C240,220 480,100 720,160 C960,220 1200,100 1440,160 L1440,320 L0,320 Z"></path>
+        <path class="wave wave--mid" d="M0,200 C240,140 480,260 720,200 C960,140 1200,260 1440,200 L1440,320 L0,320 Z"></path>
+        <path class="wave wave--front" d="M0,240 C240,290 480,190 720,240 C960,290 1200,190 1440,240 L1440,320 L0,320 Z"></path>
+      </svg>
+    </div>
+
+    <!-- App root — rendered by app.js -->
+    <div id="app" aria-live="polite"></div>
+
+    <!-- Toast container -->
+    <div id="toast-stack" class="toast-stack" aria-live="assertive"></div>
+
+    <!-- Idle screensaver banner (shown after 60s of inactivity) -->
+    <div id="idle-banner" class="idle-banner" role="dialog" aria-label="HeyVacay screensaver" aria-hidden="true">
+      <div class="idle-banner__bg"></div>
+      <div class="idle-banner__overlay"></div>
+      <div class="idle-banner__content">
+        <div class="idle-logo-wrap">
+          <svg data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 511.38 230" aria-label="HeyVacay">
+            <defs>
+              <style>
+                .ib-cls-1 { fill: none; }
+                .ib-cls-2 { fill: #23e3ef; }
+                .ib-cls-3 { clip-path: url(#ib-clippath); }
+              </style>
+              <clipPath id="ib-clippath"><rect class="ib-cls-1" width="205.56" height="230"/></clipPath>
+            </defs>
+            <g data-name="Layer 1">
+              <g>
+                <path fill="#fff" d="M136.08,144.27v-67.54h13.9v31.5h.18c3.61-3.62,7.44-5.43,11.52-5.43,2,0,3.98.27,5.94.8,1.97.52,3.86,1.33,5.66,2.43s3.26,2.67,4.38,4.68c1.13,2,1.7,4.35,1.7,7.01v26.55h-13.9v-22.76c0-2.1-.67-3.94-2-5.51-1.34-1.57-3.07-2.35-5.21-2.35s-4.01.81-5.71,2.43c-1.7,1.62-2.55,3.43-2.55,5.43v22.76h-13.9Z"/>
+                <path fill="#fff" d="M228.76,126.04h-29.23c0,2.84.91,4.95,2.75,6.31,1.83,1.35,3.82,2.03,5.96,2.03,2.25,0,4.03-.3,5.33-.9,1.31-.6,2.81-1.79,4.48-3.58l10.07,5.03c-4.19,7.01-11.16,10.52-20.91,10.52-6.06,0-11.27-2.08-15.63-6.24-4.35-4.17-6.51-9.19-6.51-15.05s2.17-10.88,6.51-15.08c4.36-4.19,9.57-6.29,15.63-6.29,6.39,0,11.6,1.85,15.6,5.53,4.01,3.69,6.01,8.97,6.01,15.83,0,.95-.03,1.58-.08,1.88ZM199.93,118.35h15.3c-.3-2.08-1.12-3.69-2.45-4.81-1.34-1.13-3.06-1.7-5.16-1.7-2.3,0-4.14.6-5.51,1.8-1.35,1.2-2.08,2.77-2.18,4.71Z"/>
+                <path fill="#fff" d="M265.89,103.97h16.03l-31.66,60.71h-16.03l13.9-26.7-19.08-34.01h16.03l11.22,20.66,9.59-20.66Z"/>
+                <path fill="#fff" d="M279.71,150.82l9.82,21.91,9.82-21.91h16.48l-21.59,40.3h-9.42l-21.61-40.3h16.5Z"/>
+                <path fill="#fff" d="M321.72,186.13c-3.78-4.11-5.66-9.14-5.66-15.1s1.88-11.03,5.66-15.18c3.77-4.14,8.56-6.21,14.38-6.21,5.34,0,9.74,1.68,13.2,5.03v-3.86h13.9v40.3h-13.75v-4.56h-.15c-3.46,3.83-7.86,5.73-13.2,5.73-5.81,0-10.61-2.05-14.38-6.16ZM333.54,164.19c-1.8,1.77-2.7,4.04-2.7,6.81s.86,5.05,2.58,6.81c1.73,1.75,4.01,2.63,6.84,2.63s4.96-.89,6.71-2.68c1.75-1.78,2.63-4.04,2.63-6.76s-.9-5.04-2.7-6.81c-1.8-1.78-4.02-2.68-6.64-2.68s-4.91.9-6.71,2.68Z"/>
+                <path fill="#fff" d="M394.04,161.03c-2.62,0-4.88.97-6.76,2.91-1.87,1.94-2.8,4.27-2.8,6.99s.93,5.13,2.8,7.06c1.88,1.94,4.14,2.91,6.76,2.91,1.26,0,2.46-.15,3.58-.45,1.11-.31,1.94-.63,2.48-.95l.7-.48,4.71,9.67c-.37.25-.88.58-1.53.98s-2.15.94-4.48,1.6c-2.32.68-4.82,1.03-7.49,1.03-5.93,0-11.13-2.08-15.6-6.24-4.48-4.17-6.71-9.17-6.71-14.98s2.24-10.89,6.71-15.1c4.47-4.22,9.67-6.34,15.6-6.34,2.67,0,5.12.32,7.36.95,2.25.62,3.86,1.25,4.81,1.88l1.33.95-4.71,9.49c-1.74-1.25-3.99-1.88-6.76-1.88Z"/>
+                <path fill="#fff" d="M413.92,186.13c-3.78-4.11-5.66-9.14-5.66-15.1s1.88-11.03,5.66-15.18c3.77-4.14,8.56-6.21,14.38-6.21,5.34,0,9.74,1.68,13.2,5.03v-3.86h13.9v40.3h-13.75v-4.56h-.15c-3.46,3.83-7.86,5.73-13.2,5.73-5.81,0-10.61-2.05-14.38-6.16ZM425.74,164.19c-1.8,1.77-2.7,4.04-2.7,6.81s.86,5.05,2.58,6.81c1.73,1.75,4.01,2.63,6.84,2.63s4.96-.89,6.71-2.68c1.75-1.78,2.63-4.04,2.63-6.76s-.9-5.04-2.7-6.81c-1.8-1.78-4.02-2.68-6.64-2.68s-4.91.9-6.71,2.68Z"/>
+                <path fill="#fff" d="M495.35,150.82h16.03l-31.66,60.71h-16.03l13.9-26.7-19.08-34.01h16.03l11.22,20.66,9.59-20.66Z"/>
+                <g class="ib-cls-3">
+                  <path class="ib-cls-2" d="M56.62,141.17c6.19-.63,11.63.65,11.63.65l1.8-1.56,1.45,1.77c4.18.39,8.38,1.93,8.38,1.93l1.6-.47.54,1.56c5.05,2.02,6.92,4.63,6.92,4.63-3.29-16.25-15.77-17.04-21.28-16.56,2.47-1.15,4.13-1.69,4.13-1.69l1.06-3.41,2.99,1.21c5.27-2.64,11.38-3.82,11.38-3.82l1.59-1.83,1.72,1.63c3.44-.54,6.12-.4,8.05-.1-.14,28.21-1.41,54.75-2.74,79.18-3.25.55-8.54,1.53-11.83,2.25-12.38-25.62-26.11-55.3-27.37-65.38ZM.03,229.85h205.88c-41.33-11.28-43.58-15.78-93.54-22.98.98-57.86-10.61-142.26-13.88-153.16,10.52-1.78,20.25-.13,20.25-.13l2.74-2.7,2.74,2.74c7.02.27,14.29,2.38,14.29,2.38l2.57-.93,1.18,2.51c8.77,2.81,12.33,6.92,12.33,6.92-4.79-15.21-13.9-21.61-22.47-24.05l1.96-3.63,5.38,2.91c10.83-2.95,22.83-3.19,22.83-3.19l3.52-2.65,2.9,3.29c14.61.16,21.86,4.76,21.86,4.76-18.7-28.17-42.11-28.64-57.9-24.48,2.84-2.13,4.93-3.44,4.93-3.44l1.31-3.14,3.2.99c9.73-5.77,16.3-5.67,16.3-5.67-22.88-10.82-38.49-2.05-47.43,6.91-9.02,2.29-13.88,8.62-16.48,14.22-.08-.21-.13-.43-.21-.64,0,0-16.17-36.95-51.39-15.4,0,0,5.97-.61,14.83,4.52l2.89-1.25,1.18,3.1s1.32.83,3.27,2.25c-9.49-1.88-21.22.39-32.31,15.15,0,0,5.18-2.72,14.96-1.3l2.19-2.18,2.15,2.37s.38.08,1.04.21c-14.91,1.06-36.46,8.63-39.64,42.99,0,0,3.89-6.71,15.66-12.11l.92-3.98,4.01,1.1s9.82-4.09,19.88-5.37l3.09-4.54,4.78,3.85s2.86-.8,7.48-1.5c-8.32,4.55-25.4,17.54-14.66,43.9,0,0,.18-5.53,5.5-13.21l-.71-2.75,2.72-.84s4.56-6.18,10.14-10.71l.39-3.91,4.05.53s6.54-6.98,15.97-11.98c4.53,9.49,5.97,36.04,5.89,66.67-11.48-11.24-22.76-8.22-29.65-4.32l.43-.43.28-1.85,1.77.35c4.28-3.84,7.67-4.19,7.67-4.19-10.14-3.57-16.55-.89-20.56,3.08.49-1.31.86-2.14.86-2.14l-.43-1.88,1.81-.33c2.64-5.34,5.72-6.97,5.72-6.97-24.04.91-19.97,24.05-19.97,24.05.04.13.08.24.11.38-3.07-1.88-7.46-3.39-12.58-1.59-7.23-1.47-17.63-.69-25.24,11.95,0,0,3.15-2.17,9.74-2.52l1.22-1.5,1.67,1.09s1.44-.03,3.51.09c-9.01,3.06-20.23,10.84-20.21,30.55,0,0,2.04-4.57,9.07-9.36l.36-2.54,2.55.16s5.92-3.76,12.12-5.82l1.67-3.16,2.13,1.14c-3.37,3.95-5.74,9.99-3.16,18.91,0,0,.41-3.14,3.76-7.33l-.24-1.58,1.55-.39s2.85-3.37,6.17-5.75l.44-2.23,2.2.44s4.14-3.91,9.77-6.44c.75,4.53,7.62,37.01,19.05,66.66-9.86,3.1-33.06,5.26-72.13,20.39v.66"/>
+                </g>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div class="idle-motto">
+          <span class="idle-word">Smarter,</span>
+          <span class="idle-word idle-word--accent">Cheaper,</span>
+          <span class="idle-word">Faster</span>
+        </div>
+      </div>
+      <div class="idle-hint">✨ Click anywhere to continue</div>
+      <div class="idle-accent"></div>
+    </div>
+
+    <script>
+/* ═══════════════════════════════════════════════════════════════════
+   HeyVacay Employee Launchpad — Application Logic (vanilla JS)
+   - Client-side auth against seeded user DB
+   - 1-year localStorage session
+   - Role-based app rendering
+   - Super Admin panel (users / apps / broadcast alerts)
+   ═══════════════════════════════════════════════════════════════════ */
+
+'use strict';
+
+/* ─── Storage keys ───────────────────────────────────────────────── */
+const KEY = {
+  users:   'hv_launchpad_users',
+  apps:    'hv_launchpad_apps',
+  session: 'hv_launchpad_session',
+  alerts:  'hv_launchpad_alerts',
+  dismissed: 'hv_launchpad_alerts_dismissed',
+  theme:   'hv_launchpad_theme',
+  seedVersion: 'hv_launchpad_seed_version',
+  lastUser: 'hv_launchpad_last_user', // remembers who last signed in on this device
+};
+
+const SESSION_MS = 365 * 24 * 60 * 60 * 1000; // 1 year
+
+const ROLE_LABELS = {
+  super_admin: 'Super Admin',
+  admin_plus:  'Admin Plus',
+  standard:    'Standard User',
+};
+const ROLE_ORDER = ['standard', 'admin_plus', 'super_admin'];
+
+/* ─── Seed data ───────────────────────────────────────────────────
+   data.json (fetched at runtime) is the published source of truth — the
+   "database" in the code + redeploy model. Bump its "version" whenever you
+   change users/apps and every launchpad will refresh on the next load.
+   This embedded copy is only a fallback for offline / file:// use.
+   ────────────────────────────────────────────────────────────────── */
+const SEED = {
+  version: 2,
+  users: [
+    { name: 'DANIL BABADJANOV',     username: 'danilb',   password: 'Danilka2010!', role: 'super_admin' },
+    { name: 'ALEKSEY BABADZHANOV',  username: 'alekseyb', password: 'Aleksey2131!', role: 'super_admin' },
+    { name: 'LEONID BABADJANOV',    username: 'leonidb',  password: 'Danil2010!',   role: 'admin_plus'  },
+    { name: 'Estefania Babadzhanov',username: 'stefb',    password: 'Estefmac2131!',role: 'standard'    },
+  ],
+  apps: [
+    {
+      id: 'google-workspace', name: 'Google Workspace', icon: '🔤',
+      description: 'Email, Drive, Docs, Sheets, Calendar, Meet',
+      roles: ['standard', 'admin_plus', 'super_admin'],
+      subApps: [
+        { name: 'Gmail',            icon: '📬', url: 'https://mail.google.com',     roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Google Drive',     icon: '📁', url: 'https://drive.google.com',    roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Google Docs',      icon: '📄', url: 'https://docs.google.com',     roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Google Sheets',    icon: '📊', url: 'https://sheets.google.com',   roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Google Calendar',  icon: '📅', url: 'https://calendar.google.com', roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Google Meet',      icon: '🎥', url: 'https://meet.google.com',     roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Google Admin',     icon: '🛡️', url: 'https://admin.google.com',    roles: ['super_admin'] },
+      ],
+    },
+    {
+      id: 'support-tools', name: 'Support Tools', icon: '🎧',
+      description: 'Zendesk, Zoom & HeyVacay NOVA',
+      roles: ['standard', 'admin_plus', 'super_admin'],
+      subApps: [
+        { name: 'Zendesk',       icon: '📞', url: 'https://zendesk.com',       roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Zoom',          icon: '📱', url: 'https://zoom.us',           roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'HeyVacay NOVA', icon: '🚀', url: 'https://admin.heyvacay.co', roles: ['standard', 'admin_plus', 'super_admin'] },
+      ],
+    },
+    { id: 'hced',        name: 'HCED System', icon: '🏨', description: 'Hotel Complaint & Escalation', url: 'https://hced.heyvacay.co',         roles: ['standard', 'admin_plus', 'super_admin'] },
+    { id: 'gusto',       name: 'Gusto',       icon: '💰', description: 'Contractor Payroll',          url: 'https://gusto.com',                roles: ['standard', 'admin_plus', 'super_admin'] },
+    { id: 'heyvacay',    name: 'HeyVacay',    icon: '✈️', description: 'Main Booking Platform',        url: 'https://heyvacay.co',              roles: ['standard', 'admin_plus', 'super_admin'] },
+    { id: 'ratehawk',    name: 'RateHawk',    icon: '🔑', description: 'Hotel Inventory Admin',        url: 'https://dashboard.ratehawk.com',   roles: ['admin_plus', 'super_admin'] },
+    { id: 'stripe',      name: 'Stripe',      icon: '💳', description: 'Payment Processing',           url: 'https://dashboard.stripe.com',     roles: ['super_admin'] },
+    { id: 'receptionhq', name: 'ReceptionHQ', icon: '📧', description: 'Email Forwarding & Management',url: 'https://receptionhq.com',          roles: ['super_admin'] },
+  ],
+};
+
+/* ─── Storage helpers ────────────────────────────────────────────── */
+const store = {
+  get(k, fallback) {
+    try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; }
+    catch { return fallback; }
+  },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+
+/* ─── Data accessors (localStorage is the source of truth after seed) */
+function getUsers() {
+  let u = store.get(KEY.users, null);
+  if (!u) { u = structuredCloneSafe(SEED.users); store.set(KEY.users, u); }
+  return u;
+}
+function saveUsers(u) { store.set(KEY.users, u); pushFirestore('users'); }
+
+function getApps() {
+  let a = store.get(KEY.apps, null);
+  if (!a) { a = structuredCloneSafe(SEED.apps); store.set(KEY.apps, a); }
+  return a;
+}
+function saveApps(a) { store.set(KEY.apps, a); pushFirestore('apps'); }
+
+function getAlerts() { return store.get(KEY.alerts, []); }
+function saveAlerts(a) { store.set(KEY.alerts, a); pushFirestore('announcements'); }
+
+function structuredCloneSafe(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+/* ─── Published seed sync (the "code + redeploy" database) ──────────
+   Fetch data.json (the committed source of truth). If its version differs
+   from what this browser last applied, overwrite the local user/app lists —
+   so pushing a new data.json propagates to every employee on their next tab.
+   Falls back to the embedded SEED if the fetch fails (offline / file://).
+   ────────────────────────────────────────────────────────────────── */
+let PUBLISHED_VERSION = SEED.version;
+
+async function loadPublishedSeed() {
+  // Opened as a downloaded local file (file://)? Browsers block fetch and
+  // there's no server to hit — use the embedded seed directly, no error.
+  if (location.protocol === 'file:') {
+    return { version: SEED.version, users: SEED.users, apps: SEED.apps };
+  }
+  try {
+    const res = await fetch('data.json', { cache: 'no-store' });
+    if (res.ok) {
+      const j = await res.json();
+      // Pick up an optional firebaseConfig from data.json (no code edit needed).
+      if (j && j.firebaseConfig && typeof j.firebaseConfig === 'object') {
+        PUBLISHED_FIREBASE_CONFIG = j.firebaseConfig;
+      }
+      if (j && Array.isArray(j.users) && Array.isArray(j.apps)) {
+        return { version: Number(j.version) || 1, users: j.users, apps: j.apps };
+      }
+    }
+  } catch { /* offline / file:// — fall through to embedded seed */ }
+  return { version: SEED.version, users: SEED.users, apps: SEED.apps };
+}
+
+function applyPublishedSeed(seed) {
+  PUBLISHED_VERSION = seed.version;
+  const appliedVersion = store.get(KEY.seedVersion, null);
+  const firstRun = store.get(KEY.users, null) === null;
+  // Published version wins: (re)hydrate local lists when the deploy is newer
+  // than what this browser last saw, or on the very first visit.
+  if (appliedVersion !== seed.version || firstRun) {
+    store.set(KEY.users, structuredCloneSafe(seed.users));
+    store.set(KEY.apps, structuredCloneSafe(seed.apps));
+    store.set(KEY.seedVersion, seed.version);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FIREBASE FIRESTORE — real-time org-wide sync (optional)
+   ───────────────────────────────────────────────────────────────────
+   Paste your public-safe firebaseConfig below (or put it in data.json as
+   "firebaseConfig") and the launchpad goes live: users, apps and
+   announcements sync across every device in real time. With no config it
+   silently stays in localStorage-only mode — nothing else changes.
+
+   HOW IT WORKS: localStorage stays the synchronous cache the UI reads.
+   A Firestore listener mirrors each collection INTO localStorage and
+   re-renders on any remote change; every save also pushes to Firestore,
+   which fans the change out to everyone else. Collections are stored one
+   doc per type at hv/{users,apps,announcements} as { list: [...] }.
+   ═══════════════════════════════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyChrf1bco-6Z4Q1madQfyTAHQ0ZmVHei5w",
+  authDomain: "heyvacay-launchpad.firebaseapp.com",
+  projectId: "heyvacay-launchpad",
+  storageBucket: "heyvacay-launchpad.firebasestorage.app",
+  messagingSenderId: "836929030918",
+  appId: "1:836929030918:web:63206ad9f24cb94a23ec87",
+};
+let PUBLISHED_FIREBASE_CONFIG = null;  // ← or set "firebaseConfig" in data.json
+// Which collections sync to Firestore. `users` is OFF by default: our user docs
+// still hold plaintext passwords, and syncing them to an open-rules database
+// would make them world-readable. Turn on only once secured with Firebase Auth.
+const FS_SYNC = { users: false, apps: true, announcements: true };
+const FS_KEYS = { users: KEY.users, apps: KEY.apps, announcements: KEY.alerts };
+let fb = null;          // { db, doc, setDoc, onSnapshot, auth, ... } once loaded
+let fbReady = false;
+let fbApplyingRemote = false; // guard: don't echo a remote snapshot back up
+
+/* ─── Firebase Auth (Google + Email/Password) ─────────────────────── */
+const AUTH_USE_FIREBASE = true;          // Firebase Auth is the login (false = local-only)
+const AUTH_EMAIL_DOMAIN = 'heyvacay.co'; // company domain: Google restriction + username→email
+let AUTH_STATE = AUTH_USE_FIREBASE ? 'pending' : 'local'; // 'pending' | 'firebase' | 'local'
+let AUTH_PROFILE = null;   // { username, name, role, email } when signed in via Firebase
+let justSignedIn = false;  // show a welcome toast only on an explicit sign-in action
+let usersUnsub = null;     // hv_users collection listener
+function usingFirebaseAuth() { return AUTH_STATE === 'firebase'; }
+
+function isLiveSync() { return fbReady; }
+
+async function initFirebase() {
+  const cfg = FIREBASE_CONFIG || PUBLISHED_FIREBASE_CONFIG;
+  if (!cfg || !cfg.projectId || !cfg.apiKey) return false; // not configured → local-only
+  try {
+    const V = '10.12.5';
+    const appMod = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+    const fsMod  = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+    const app = appMod.initializeApp(cfg);
+    const db = fsMod.getFirestore(app);
+    fb = {
+      db, appConfig: cfg,
+      doc: fsMod.doc, setDoc: fsMod.setDoc, getDoc: fsMod.getDoc, deleteDoc: fsMod.deleteDoc,
+      collection: fsMod.collection, onSnapshot: fsMod.onSnapshot,
+      initializeApp: appMod.initializeApp, deleteAppFn: appMod.deleteApp,
+    };
+    if (AUTH_USE_FIREBASE) {
+      const authMod = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
+      const auth = authMod.getAuth(app);
+      try { await authMod.setPersistence(auth, authMod.browserLocalPersistence); } catch {}
+      Object.assign(fb, {
+        auth, getAuthFn: authMod.getAuth,
+        GoogleAuthProvider: authMod.GoogleAuthProvider,
+        signInWithPopup: authMod.signInWithPopup,
+        signInEmail: authMod.signInWithEmailAndPassword,
+        createEmail: authMod.createUserWithEmailAndPassword,
+        signOutFb: authMod.signOut,
+        onAuthStateChanged: authMod.onAuthStateChanged,
+      });
+    }
+    fbReady = true;
+    return true;
+  } catch (e) {
+    console.warn('[launchpad] Firebase unavailable — staying in local mode:', e && e.message);
+    return false;
+  }
+}
+
+function subscribeFirestore(onChange) {
+  if (!fbReady) return;
+  Object.keys(FS_KEYS).forEach(type => {
+    if (!FS_SYNC[type]) return; // collection sync disabled (e.g. users until secured)
+    fb.onSnapshot(fb.doc(fb.db, 'hv', type),
+      snap => {
+        if (!snap.exists()) { pushFirestore(type); return; } // bootstrap empty DB from seed
+        const list = snap.data().list;
+        if (!Array.isArray(list)) return;
+        fbApplyingRemote = true;
+        store.set(FS_KEYS[type], list);
+        fbApplyingRemote = false;
+        onChange(type);
+      },
+      err => console.warn('[launchpad] Firestore listen error:', err && err.message)
+    );
+  });
+}
+
+async function pushFirestore(type) {
+  if (!fbReady || fbApplyingRemote || !FS_SYNC[type]) return; // skip when disabled / mirroring
+  const key = FS_KEYS[type];
+  if (!key) return;
+  const list = store.get(key, []);
+  try {
+    await fb.setDoc(fb.doc(fb.db, 'hv', type), { list, updatedAt: Date.now() });
+  } catch (e) {
+    console.warn('[launchpad] Firestore write failed (' + type + '):', e && e.message);
+  }
+}
+
+// A remote change arrived → refresh the relevant part of the UI live.
+function onRemoteChange(type) {
+  if (!currentUser()) return;             // login screen: nothing to refresh
+  if (type === 'announcements') renderAnnouncements(currentUser());
+  else render();                           // users/apps changed → re-render dashboard
+}
+
+/* ─── Firebase Auth flow ───────────────────────────────────────────
+   Google (primary) + Email/Password (fallback), restricted to the company
+   domain. Roles live in Firestore profiles at hv_users/{username} (name +
+   role, never passwords). First-time company sign-ins auto-provision as
+   Standard; seed users keep their seed role (bootstraps danilb = super).
+   ────────────────────────────────────────────────────────────────── */
+function emailFor(input) {
+  const s = String(input || '').trim().toLowerCase();
+  return s.includes('@') ? s : `${s}@${AUTH_EMAIL_DOMAIN}`;
+}
+function usernameFromEmail(email) {
+  return String(email || '').toLowerCase().split('@')[0];
+}
+
+async function loadOrProvisionProfile(email, displayName) {
+  const username = usernameFromEmail(email);
+  const ref = fb.doc(fb.db, 'hv_users', username);
+  try {
+    const snap = await fb.getDoc(ref);
+    if (snap.exists()) {
+      const d = snap.data();
+      return { username, name: d.name || displayName || username, role: d.role || 'standard', email };
+    }
+  } catch (e) { console.warn('[launchpad] profile read failed:', e && e.message); }
+  // Not provisioned → auto-grant. Seed users keep their seed role (bootstrap);
+  // any other company account → standard (per chosen access model).
+  const seed = SEED.users.find(u => u.username === username);
+  const role = seed ? seed.role : 'standard';
+  const name = seed ? seed.name : (displayName || username);
+  try { await fb.setDoc(ref, { username, name, role, email, provisionedAt: Date.now() }); }
+  catch (e) { console.warn('[launchpad] profile provision failed:', e && e.message); }
+  return { username, name, role, email };
+}
+
+function initFirebaseAuth() {
+  AUTH_STATE = 'firebase';
+  fb.onAuthStateChanged(fb.auth, async (u) => {
+    if (!u) { AUTH_PROFILE = null; if (usersUnsub) { usersUnsub(); usersUnsub = null; } render(); return; }
+    const email = (u.email || '').toLowerCase();
+    // Company-domain restriction — reject any non-@heyvacay.co account.
+    if (!email.endsWith('@' + AUTH_EMAIL_DOMAIN)) {
+      toast(`Only @${AUTH_EMAIL_DOMAIN} accounts can sign in.`, 'error', 'Access denied');
+      try { await fb.signOutFb(fb.auth); } catch {}
+      AUTH_PROFILE = null; justSignedIn = false; render(); return;
+    }
+    AUTH_PROFILE = await loadOrProvisionProfile(email, u.displayName);
+    store.set(KEY.lastUser, { name: AUTH_PROFILE.name, email: AUTH_PROFILE.email, username: AUTH_PROFILE.username });
+    subscribeUsers(); // live user list for the admin panel (needs to be signed in)
+    render();
+    if (justSignedIn) { toast(`Signed in as ${firstName(AUTH_PROFILE.name)}`, 'success', 'Welcome'); justSignedIn = false; }
+  });
+}
+
+async function googleSignIn() {
+  if (!usingFirebaseAuth()) return;
+  try {
+    const provider = new fb.GoogleAuthProvider();
+    provider.setCustomParameters({ hd: AUTH_EMAIL_DOMAIN, prompt: 'select_account' });
+    justSignedIn = true;
+    await fb.signInWithPopup(fb.auth, provider);
+  } catch (e) {
+    justSignedIn = false;
+    if (e && (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request')) return;
+    toast('Google sign-in failed: ' + (e && e.message || ''), 'error');
+  }
+}
+
+// Returns { ok } / { ok:false, error }. Provisions a seed user's Firebase
+// account on their first password login (creds must match the seed).
+async function fbSignInPassword(username, password) {
+  const email = emailFor(username);
+  justSignedIn = true;
+  try {
+    await fb.signInEmail(fb.auth, email, password);
+    return { ok: true };
+  } catch (e) {
+    const uname = usernameFromEmail(email);
+    const seed = SEED.users.find(u => u.username === uname && u.password === password);
+    if (seed) {
+      try { await fb.createEmail(fb.auth, email, password); return { ok: true }; }
+      catch (e2) { justSignedIn = false; return { ok: false, error: e2 }; }
+    }
+    justSignedIn = false;
+    return { ok: false, error: e };
+  }
+}
+
+async function fbSignOut() { try { await fb.signOutFb(fb.auth); } catch {} }
+
+// Keep the local user list mirrored from the hv_users collection (admin panel).
+function subscribeUsers() {
+  if (!fb.collection || usersUnsub) return;
+  try {
+    usersUnsub = fb.onSnapshot(fb.collection(fb.db, 'hv_users'), snap => {
+      const list = [];
+      snap.forEach(d => {
+        const x = d.data() || {};
+        list.push({ username: x.username || d.id, name: x.name || d.id, role: x.role || 'standard', email: x.email || '' });
+      });
+      fbApplyingRemote = true; store.set(KEY.users, list); fbApplyingRemote = false;
+      if (currentUser()) render();
+    }, err => console.warn('[launchpad] users listen error:', err && err.message));
+  } catch (e) { console.warn('[launchpad] users subscribe failed:', e && e.message); }
+}
+
+// Create a Firebase account on a SECONDARY app instance so the admin's own
+// session is not replaced, then write the profile (no password stored).
+async function fbAddUser({ name, username, password, role }) {
+  const email = emailFor(username);
+  const uname = usernameFromEmail(email);
+  let secApp = null;
+  try {
+    secApp = fb.initializeApp(fb.appConfig, 'sec-' + Math.floor(performance.now()));
+    const secAuth = fb.getAuthFn(secApp);
+    try { await fb.createEmail(secAuth, email, password); }
+    catch (e) { if (!e || e.code !== 'auth/email-already-in-use') throw e; }
+    try { await fb.signOutFb(secAuth); } catch {}
+  } finally {
+    if (secApp && fb.deleteAppFn) { try { await fb.deleteAppFn(secApp); } catch {} }
+  }
+  await fb.setDoc(fb.doc(fb.db, 'hv_users', uname), { username: uname, name, role, email, createdAt: Date.now() });
+}
+async function fbSetRole(username, role) {
+  await fb.setDoc(fb.doc(fb.db, 'hv_users', username), { role }, { merge: true });
+}
+async function fbDeleteUser(username) {
+  await fb.deleteDoc(fb.doc(fb.db, 'hv_users', username));
+}
+
+/* ─── Session ────────────────────────────────────────────────────── */
+function getSession() {
+  const s = store.get(KEY.session, null);
+  if (!s) return null;
+  if (!s.expiresAt || Date.now() > s.expiresAt) { store.del(KEY.session); return null; }
+  return s;
+}
+function currentUser() {
+  if (AUTH_STATE === 'firebase') return AUTH_PROFILE; // Firebase Auth is the source of truth
+  if (AUTH_STATE === 'pending') return null;          // waiting for Firebase to resolve
+  const s = getSession();                              // local fallback mode
+  if (!s) return null;
+  return getUsers().find(u => u.username === s.username) || null;
+}
+function startSession(user) {
+  store.set(KEY.session, { username: user.username, expiresAt: Date.now() + SESSION_MS });
+}
+function endSession() { store.del(KEY.session); }
+
+/* ─── Utilities ──────────────────────────────────────────────────── */
+const $ = (sel, root = document) => root.querySelector(sel);
+const app = () => document.getElementById('app');
+
+function esc(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+function initials(name) {
+  return String(name || '').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
+}
+function firstName(name) {
+  const n = String(name || '').trim().split(/\s+/)[0] || '';
+  return n ? n[0].toUpperCase() + n.slice(1).toLowerCase() : 'there';
+}
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60); if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24); return `${d}d ago`;
+}
+function canAccess(item, role) { return Array.isArray(item.roles) && item.roles.includes(role); }
+
+/* ─── HeyVacay logo (palm + wordmark) ────────────────────────────────
+   Wordmark uses currentColor so it adapts to light/dark surfaces; the palm
+   is fixed brand cyan. clipPath id is parameterized so multiple copies on
+   one page don't collide.
+   ──────────────────────────────────────────────────────────────────── */
+function hvLogo(id) {
+  return `<svg class="hv-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 511.38 230" role="img" aria-label="HeyVacay">
+    <defs><clipPath id="hvclip-${id}"><rect width="205.56" height="230" fill="none"/></clipPath></defs>
+    <g>
+      <path fill="currentColor" d="M136.08,144.27v-67.54h13.9v31.5h.18c3.61-3.62,7.44-5.43,11.52-5.43,2,0,3.98.27,5.94.8,1.97.52,3.86,1.33,5.66,2.43s3.26,2.67,4.38,4.68c1.13,2,1.7,4.35,1.7,7.01v26.55h-13.9v-22.76c0-2.1-.67-3.94-2-5.51-1.34-1.57-3.07-2.35-5.21-2.35s-4.01.81-5.71,2.43c-1.7,1.62-2.55,3.43-2.55,5.43v22.76h-13.9Z"/>
+      <path fill="currentColor" d="M228.76,126.04h-29.23c0,2.84.91,4.95,2.75,6.31,1.83,1.35,3.82,2.03,5.96,2.03,2.25,0,4.03-.3,5.33-.9,1.31-.6,2.81-1.79,4.48-3.58l10.07,5.03c-4.19,7.01-11.16,10.52-20.91,10.52-6.06,0-11.27-2.08-15.63-6.24-4.35-4.17-6.51-9.19-6.51-15.05s2.17-10.88,6.51-15.08c4.36-4.19,9.57-6.29,15.63-6.29,6.39,0,11.6,1.85,15.6,5.53,4.01,3.69,6.01,8.97,6.01,15.83,0,.95-.03,1.58-.08,1.88ZM199.93,118.35h15.3c-.3-2.08-1.12-3.69-2.45-4.81-1.34-1.13-3.06-1.7-5.16-1.7-2.3,0-4.14.6-5.51,1.8-1.35,1.2-2.08,2.77-2.18,4.71Z"/>
+      <path fill="currentColor" d="M265.89,103.97h16.03l-31.66,60.71h-16.03l13.9-26.7-19.08-34.01h16.03l11.22,20.66,9.59-20.66Z"/>
+      <path fill="currentColor" d="M279.71,150.82l9.82,21.91,9.82-21.91h16.48l-21.59,40.3h-9.42l-21.61-40.3h16.5Z"/>
+      <path fill="currentColor" d="M321.72,186.13c-3.78-4.11-5.66-9.14-5.66-15.1s1.88-11.03,5.66-15.18c3.77-4.14,8.56-6.21,14.38-6.21,5.34,0,9.74,1.68,13.2,5.03v-3.86h13.9v40.3h-13.75v-4.56h-.15c-3.46,3.83-7.86,5.73-13.2,5.73-5.81,0-10.61-2.05-14.38-6.16ZM333.54,164.19c-1.8,1.77-2.7,4.04-2.7,6.81s.86,5.05,2.58,6.81c1.73,1.75,4.01,2.63,6.84,2.63s4.96-.89,6.71-2.68c1.75-1.78,2.63-4.04,2.63-6.76s-.9-5.04-2.7-6.81c-1.8-1.78-4.02-2.68-6.64-2.68s-4.91.9-6.71,2.68Z"/>
+      <path fill="currentColor" d="M394.04,161.03c-2.62,0-4.88.97-6.76,2.91-1.87,1.94-2.8,4.27-2.8,6.99s.93,5.13,2.8,7.06c1.88,1.94,4.14,2.91,6.76,2.91,1.26,0,2.46-.15,3.58-.45,1.11-.31,1.94-.63,2.48-.95l.7-.48,4.71,9.67c-.37.25-.88.58-1.53.98s-2.15.94-4.48,1.6c-2.32.68-4.82,1.03-7.49,1.03-5.93,0-11.13-2.08-15.6-6.24-4.48-4.17-6.71-9.17-6.71-14.98s2.24-10.89,6.71-15.1c4.47-4.22,9.67-6.34,15.6-6.34,2.67,0,5.12.32,7.36.95,2.25.62,3.86,1.25,4.81,1.88l1.33.95-4.71,9.49c-1.74-1.25-3.99-1.88-6.76-1.88Z"/>
+      <path fill="currentColor" d="M413.92,186.13c-3.78-4.11-5.66-9.14-5.66-15.1s1.88-11.03,5.66-15.18c3.77-4.14,8.56-6.21,14.38-6.21,5.34,0,9.74,1.68,13.2,5.03v-3.86h13.9v40.3h-13.75v-4.56h-.15c-3.46,3.83-7.86,5.73-13.2,5.73-5.81,0-10.61-2.05-14.38-6.16ZM425.74,164.19c-1.8,1.77-2.7,4.04-2.7,6.81s.86,5.05,2.58,6.81c1.73,1.75,4.01,2.63,6.84,2.63s4.96-.89,6.71-2.68c1.75-1.78,2.63-4.04,2.63-6.76s-.9-5.04-2.7-6.81c-1.8-1.78-4.02-2.68-6.64-2.68s-4.91.9-6.71,2.68Z"/>
+      <path fill="currentColor" d="M495.35,150.82h16.03l-31.66,60.71h-16.03l13.9-26.7-19.08-34.01h16.03l11.22,20.66,9.59-20.66Z"/>
+      <g clip-path="url(#hvclip-${id})">
+        <path fill="#23e3ef" d="M56.62,141.17c6.19-.63,11.63.65,11.63.65l1.8-1.56,1.45,1.77c4.18.39,8.38,1.93,8.38,1.93l1.6-.47.54,1.56c5.05,2.02,6.92,4.63,6.92,4.63-3.29-16.25-15.77-17.04-21.28-16.56,2.47-1.15,4.13-1.69,4.13-1.69l1.06-3.41,2.99,1.21c5.27-2.64,11.38-3.82,11.38-3.82l1.59-1.83,1.72,1.63c3.44-.54,6.12-.4,8.05-.1-.14,28.21-1.41,54.75-2.74,79.18-3.25.55-8.54,1.53-11.83,2.25-12.38-25.62-26.11-55.3-27.37-65.38ZM.03,229.85h205.88c-41.33-11.28-43.58-15.78-93.54-22.98.98-57.86-10.61-142.26-13.88-153.16,10.52-1.78,20.25-.13,20.25-.13l2.74-2.7,2.74,2.74c7.02.27,14.29,2.38,14.29,2.38l2.57-.93,1.18,2.51c8.77,2.81,12.33,6.92,12.33,6.92-4.79-15.21-13.9-21.61-22.47-24.05l1.96-3.63,5.38,2.91c10.83-2.95,22.83-3.19,22.83-3.19l3.52-2.65,2.9,3.29c14.61.16,21.86,4.76,21.86,4.76-18.7-28.17-42.11-28.64-57.9-24.48,2.84-2.13,4.93-3.44,4.93-3.44l1.31-3.14,3.2.99c9.73-5.77,16.3-5.67,16.3-5.67-22.88-10.82-38.49-2.05-47.43,6.91-9.02,2.29-13.88,8.62-16.48,14.22-.08-.21-.13-.43-.21-.64,0,0-16.17-36.95-51.39-15.4,0,0,5.97-.61,14.83,4.52l2.89-1.25,1.18,3.1s1.32.83,3.27,2.25c-9.49-1.88-21.22.39-32.31,15.15,0,0,5.18-2.72,14.96-1.3l2.19-2.18,2.15,2.37s.38.08,1.04.21c-14.91,1.06-36.46,8.63-39.64,42.99,0,0,3.89-6.71,15.66-12.11l.92-3.98,4.01,1.1s9.82-4.09,19.88-5.37l3.09-4.54,4.78,3.85s2.86-.8,7.48-1.5c-8.32,4.55-25.4,17.54-14.66,43.9,0,0,.18-5.53,5.5-13.21l-.71-2.75,2.72-.84s4.56-6.18,10.14-10.71l.39-3.91,4.05.53s6.54-6.98,15.97-11.98c4.53,9.49,5.97,36.04,5.89,66.67-11.48-11.24-22.76-8.22-29.65-4.32l.43-.43.28-1.85,1.77.35c4.28-3.84,7.67-4.19,7.67-4.19-10.14-3.57-16.55-.89-20.56,3.08.49-1.31.86-2.14.86-2.14l-.43-1.88,1.81-.33c2.64-5.34,5.72-6.97,5.72-6.97-24.04.91-19.97,24.05-19.97,24.05.04.13.08.24.11.38-3.07-1.88-7.46-3.39-12.58-1.59-7.23-1.47-17.63-.69-25.24,11.95,0,0,3.15-2.17,9.74-2.52l1.22-1.5,1.67,1.09s1.44-.03,3.51.09c-9.01,3.06-20.23,10.84-20.21,30.55,0,0,2.04-4.57,9.07-9.36l.36-2.54,2.55.16s5.92-3.76,12.12-5.82l1.67-3.16,2.13,1.14c-3.37,3.95-5.74,9.99-3.16,18.91,0,0,.41-3.14,3.76-7.33l-.24-1.58,1.55-.39s2.85-3.37,6.17-5.75l.44-2.23,2.2.44s4.14-3.91,9.77-6.44c.75,4.53,7.62,37.01,19.05,66.66-9.86,3.1-33.06,5.26-72.13,20.39v.66"/>
+      </g>
+    </g>
+  </svg>`;
+}
+
+/* Time-of-day greeting + a catchy, work-themed tagline (stable per session). */
+let SESSION_TAGLINE = null;
+const TAGLINES = [
+  'turn travel dreams into booked realities.',
+  'help someone find their perfect escape.',
+  'make travel smarter, cheaper, and faster.',
+  'find the deals no one else can.',
+  'deliver five-star service, one guest at a time.',
+  'book the unforgettable and beat every price.',
+  'make a traveler’s day from wherever you are.',
+  'chase big ideas and even bigger getaways.',
+];
+function dayPart() {
+  const h = new Date().getHours();
+  if (h < 12) return 'morning';
+  if (h < 17) return 'afternoon';
+  return 'evening';
+}
+function sessionTagline() {
+  if (SESSION_TAGLINE === null) {
+    SESSION_TAGLINE = TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
+  }
+  return SESSION_TAGLINE;
+}
+
+/* ─── Theme ──────────────────────────────────────────────────────── */
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  store.set(KEY.theme, t);
+}
+function initTheme() {
+  const saved = store.get(KEY.theme, null);
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+}
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  toast(next === 'dark' ? '🌙 Dark mode on' : '☀️ Light mode on', 'info');
+}
+
+/* ─── Toast notifications ────────────────────────────────────────── */
+function toast(message, type = 'info', title = '') {
+  const stack = document.getElementById('toast-stack');
+  if (!stack) return;
+  const icons = { success: '✅', error: '⚠️', info: '💡' };
+  const el = document.createElement('div');
+  el.className = `toast toast--${type}`;
+  el.innerHTML = `
+    <span class="toast__icon">${icons[type] || '💡'}</span>
+    <div class="toast__msg">${title ? `<strong class="toast__title">${esc(title)}</strong>` : ''}${esc(message)}</div>`;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('out');
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+  }, 3600);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ROUTER
+   ═══════════════════════════════════════════════════════════════════ */
+function render() {
+  const user = currentUser();
+  if (user) renderDashboard(user);
+  else renderLogin();
+}
+
+/* ─── LOGIN ──────────────────────────────────────────────────────── */
+function renderLogin() {
+  const fbAuth = usingFirebaseAuth();
+  const lastUser = store.get(KEY.lastUser, null);
+  const returning = !!(lastUser && lastUser.name);
+  const greeting = `Good ${dayPart()}`;
+  const who = returning ? firstName(lastUser.name) : '';
+  const title = returning ? `${greeting}, ${esc(who)} 👋` : greeting;
+  const subtitle = fbAuth
+    ? (returning
+        ? `Welcome back — your session ended, so please sign in with Google again to continue.`
+        : `Sign in with your @${AUTH_EMAIL_DOMAIN} account.`)
+    : (returning ? `Welcome back — sign in to continue.` : `Sign in to launch your workspace.`);
+
+  const googleBtn = fbAuth ? `
+        <button type="button" class="btn btn--google" id="google-btn">
+          <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          ${returning ? `Continue as ${esc(who)}` : 'Continue with Google'}
+        </button>
+        <div class="login__or"><span>or sign in with a password</span></div>` : '';
+
+  app().innerHTML = `
+    <div class="login view-enter">
+      <form class="login__card" id="login-form" autocomplete="on" novalidate>
+        <div class="login__brand login__logo">${hvLogo('login')}</div>
+        <h1 class="login__title">${title}</h1>
+        <p class="login__subtitle">${subtitle}</p>
+
+        <div class="login__error" id="login-error">
+          <span>⚠️</span><span id="login-error-msg">Invalid credentials.</span>
+        </div>
+
+        ${googleBtn}
+
+        <div class="field">
+          <label class="field__label" for="username">Username or Email</label>
+          <input class="field__input" id="username" name="username" type="text"
+                 placeholder="e.g. danilb" autocomplete="username" autofocus required />
+        </div>
+
+        <div class="field field--pw">
+          <label class="field__label" for="password">Password</label>
+          <input class="field__input" id="password" name="password" type="password"
+                 placeholder="••••••••" autocomplete="current-password" required />
+          <button type="button" class="field__toggle" id="pw-toggle" aria-label="Show password">Show</button>
+        </div>
+
+        <button type="submit" class="btn btn--primary" id="login-btn">Sign In</button>
+
+        ${fbAuth ? '' : '<div class="login__foot">Sessions stay active for 1 year on this device.</div>'}
+      </form>
+    </div>`;
+
+  const form = $('#login-form');
+  const errBox = $('#login-error');
+  const pwInput = $('#password');
+  const btn = $('#login-btn');
+
+  $('#pw-toggle').addEventListener('click', () => {
+    const showing = pwInput.type === 'text';
+    pwInput.type = showing ? 'password' : 'text';
+    $('#pw-toggle').textContent = showing ? 'Show' : 'Hide';
+  });
+
+  if (fbAuth) $('#google-btn').addEventListener('click', googleSignIn);
+
+  function showError(msg) {
+    btn.disabled = false; btn.textContent = 'Sign In';
+    $('#login-error-msg').textContent = msg;
+    errBox.classList.add('show');
+    pwInput.select();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errBox.classList.remove('show');
+    const username = $('#username').value.trim();
+    const password = pwInput.value;
+    if (!username || !password) return;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Signing in…`;
+
+    if (usingFirebaseAuth()) {
+      const res = await fbSignInPassword(username, password);
+      if (!res.ok) showError('Invalid username or password. Please try again.');
+      // success → onAuthStateChanged renders the dashboard
+      return;
+    }
+
+    // Local fallback (Firebase unavailable): validate against the seed/local DB.
+    setTimeout(() => {
+      const uname = username.toLowerCase();
+      const user = getUsers().find(u =>
+        u.username.toLowerCase() === uname || (u.email && u.email.toLowerCase() === uname)
+      );
+      if (!user || user.password !== password) { showError('Invalid username or password. Please try again.'); return; }
+      startSession(user);
+      store.set(KEY.lastUser, { name: user.name, username: user.username });
+      toast(`Signed in as ${firstName(user.name)}`, 'success', 'Welcome back');
+      render();
+    }, 620);
+  });
+}
+
+/* ─── DASHBOARD ──────────────────────────────────────────────────── */
+function renderDashboard(user) {
+  const isSuper = user.role === 'super_admin';
+  const apps = getApps().filter(a => canAccess(a, user.role));
+
+  app().innerHTML = `
+    <div class="shell view-enter">
+      <header class="topbar">
+        <span class="brand brand--logo">${hvLogo('top')}</span>
+        <div class="topbar__spacer"></div>
+        <button class="iconbtn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">🌓</button>
+        ${isSuper ? `<button class="iconbtn" id="admin-btn" title="Admin panel" aria-label="Admin panel">⚙️</button>` : ''}
+        <div class="userchip">
+          <span class="userchip__avatar">${esc(initials(user.name))}</span>
+          <span class="userchip__meta">
+            <span class="userchip__name">${esc(user.name)}</span>
+            <span class="userchip__role">${esc(ROLE_LABELS[user.role] || user.role)}</span>
+          </span>
+        </div>
+        <button class="btn btn--ghost btn--sm" id="signout-btn">Sign Out</button>
+      </header>
+
+      <section class="hero">
+        <span class="hero__eyebrow">Employee Launchpad</span>
+        <h1 class="hero__title">Welcome, <span>${esc(firstName(user.name))}</span> 👋</h1>
+        <p class="hero__sub">It's a great ${dayPart()} to ${esc(sessionTagline())}</p>
+      </section>
+
+      <section class="ann" id="ann"></section>
+
+      <section class="apps-section">
+        <div class="section-head">
+          <h2 class="section-head__title">Your Apps</h2>
+          <span class="section-head__count">${apps.length} tool${apps.length === 1 ? '' : 's'}</span>
+        </div>
+        <main class="grid" id="grid"></main>
+      </section>
+    </div>`;
+
+  $('#theme-btn').addEventListener('click', toggleTheme);
+  $('#signout-btn').addEventListener('click', () => {
+    if (usingFirebaseAuth()) { fbSignOut(); toast('You have been signed out.', 'info'); return; } // onAuthStateChanged renders login
+    endSession();
+    toast('You have been signed out.', 'info');
+    render();
+  });
+  if (isSuper) $('#admin-btn').addEventListener('click', openAdmin);
+
+  renderAnnouncements(user);
+  renderGrid(user, apps);
+}
+
+function renderAnnouncements(user) {
+  const box = $('#ann');
+  if (!box) return;
+  user = user || currentUser();
+  if (!user) return;
+  const isSuper = user.role === 'super_admin';
+  const dismissed = store.get(KEY.dismissed, []);
+  const list = getAlerts().filter(a => !dismissed.includes(a.id)).slice().reverse();
+
+  // Nothing to show and not an admin → hide the section entirely.
+  if (!list.length && !isSuper) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+
+  const card = a => `
+    <div class="announcement" data-id="${esc(a.id)}">
+      <span class="announcement__icon">📣</span>
+      <div class="announcement__body">
+        <div class="announcement__title">${esc(a.title || 'Announcement')}</div>
+        <div class="announcement__text">${esc(a.text)}</div>
+        <div class="announcement__meta">${esc(a.from || 'Admin')} · ${esc(timeAgo(a.ts))}</div>
+      </div>
+      <button class="announcement__dismiss" data-dismiss="${esc(a.id)}" aria-label="Dismiss">×</button>
+    </div>`;
+
+  box.innerHTML = `
+    <div class="section-head">
+      <h2 class="section-head__title">📣 Announcements</h2>
+      ${isSuper ? `<button class="btn btn--primary btn--sm" id="ann-new">＋ New announcement</button>` : ''}
+    </div>
+    ${isSuper ? `
+      <form class="ann__composer" id="ann-form" hidden>
+        <input class="field__input field__input--sm" id="ann-title" placeholder="Title (e.g. System maintenance tonight)" maxlength="80" required />
+        <textarea class="field__input field__input--sm ann__msg" id="ann-text" placeholder="Write your announcement to the team…" rows="2" maxlength="280" required></textarea>
+        <div class="ann__composer-actions">
+          <button type="submit" class="btn btn--primary btn--sm">📣 Post to team</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="ann-cancel">Cancel</button>
+        </div>
+      </form>` : ''}
+    <div class="ann__list">
+      ${list.length ? list.map(card).join('') : (isSuper ? `<div class="ann__empty">No announcements yet — post one to greet the team.</div>` : '')}
+    </div>`;
+
+  box.querySelectorAll('[data-dismiss]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-dismiss');
+      const d = store.get(KEY.dismissed, []);
+      d.push(id); store.set(KEY.dismissed, d);
+      renderAnnouncements(user);
+    });
+  });
+
+  if (isSuper) {
+    const form = $('#ann-form');
+    $('#ann-new').addEventListener('click', () => {
+      form.hidden = !form.hidden;
+      if (!form.hidden) $('#ann-title').focus();
+    });
+    $('#ann-cancel').addEventListener('click', () => { form.hidden = true; });
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const title = $('#ann-title').value.trim();
+      const text = $('#ann-text').value.trim();
+      if (!title || !text) return;
+      const alerts = getAlerts();
+      alerts.push({ id: 'al_' + Math.floor(performance.now()) + '_' + alerts.length, title, text, from: firstName(user.name), ts: Date.now() });
+      saveAlerts(alerts);
+      store.del(KEY.dismissed); // make sure the fresh post shows for everyone
+      toast('Announcement posted to the team.', 'success');
+      renderAnnouncements(user);
+    });
+  }
+}
+
+function renderGrid(user, apps) {
+  const grid = $('#grid');
+  if (!apps.length) {
+    grid.innerHTML = `<div class="empty">No tools are assigned to your account yet. Contact an administrator.</div>`;
+    return;
+  }
+
+  grid.innerHTML = apps.map(a => {
+    const isFolder = Array.isArray(a.subApps) && a.subApps.length;
+    const restricted = a.roles.length === 1 && a.roles[0] === 'super_admin';
+    return `
+      <button class="tile ${isFolder ? 'tile--folder' : ''}" data-app="${esc(a.id)}">
+        ${isFolder ? `<span class="tile__badge tile__badge--folder">Folder</span>`
+          : restricted ? `<span class="tile__badge tile__badge--restricted">Admin</span>` : ''}
+        <span class="tile__icon">${esc(a.icon || '🔗')}</span>
+        <span class="tile__name">${esc(a.name)}</span>
+        <span class="tile__desc">${esc(a.description || '')}</span>
+        <span class="tile__go">${isFolder ? '<span class="tile__chev">▼ Expand</span>' : 'Open ↗'}</span>
+      </button>`;
+  }).join('');
+
+  grid.querySelectorAll('.tile').forEach(tile => {
+    tile.addEventListener('click', () => {
+      const id = tile.getAttribute('data-app');
+      const a = apps.find(x => x.id === id);
+      if (!a) return;
+      if (Array.isArray(a.subApps) && a.subApps.length) toggleFolder(tile, a, user);
+      else launch(a.url, a.name);
+    });
+  });
+}
+
+function toggleFolder(tile, appData, user) {
+  // Close if already open
+  const existing = tile.nextElementSibling;
+  if (existing && existing.classList.contains('folder-panel')) {
+    existing.remove();
+    tile.classList.remove('open');
+    return;
+  }
+  // Close other open folders
+  document.querySelectorAll('.folder-panel').forEach(p => p.remove());
+  document.querySelectorAll('.tile--folder.open').forEach(t => t.classList.remove('open'));
+
+  tile.classList.add('open');
+  const subs = appData.subApps.filter(s => canAccess(s, user.role));
+  const panel = document.createElement('div');
+  panel.className = 'folder-panel';
+  panel.innerHTML = subs.map(s => `
+    <div class="subtile" data-url="${esc(s.url)}" data-name="${esc(s.name)}" role="button" tabindex="0">
+      <span class="subtile__icon">${esc(s.icon || '🔗')}</span>
+      <span class="subtile__name">${esc(s.name)}</span>
+    </div>`).join('');
+  tile.after(panel);
+
+  panel.querySelectorAll('.subtile').forEach(st => {
+    const go = () => launch(st.getAttribute('data-url'), st.getAttribute('data-name'));
+    st.addEventListener('click', go);
+    st.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  });
+}
+
+function launch(url, name) {
+  if (!url) return;
+  toast(`Opening ${name}…`, 'info');
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ADMIN PANEL (Super Admin only)
+   ═══════════════════════════════════════════════════════════════════ */
+let adminTab = 'users';
+
+function openAdmin() {
+  const user = currentUser();
+  if (!user || user.role !== 'super_admin') { toast('Access denied.', 'error'); return; }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.id = 'admin-overlay';
+  overlay.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Admin panel">
+      <div class="modal__head">
+        <span class="brand__mark" style="width:34px;height:34px;font-size:18px;border-radius:10px;">⚙️</span>
+        <span class="modal__title">Admin Console</span>
+        <button class="modal__close" id="admin-close" aria-label="Close">×</button>
+      </div>
+      <div class="modal__body">
+        <div class="tabs">
+          <button class="tab" data-tab="users">👥 Users</button>
+          <button class="tab" data-tab="apps">🧩 Apps</button>
+          <button class="tab" data-tab="broadcast">📣 Broadcast</button>
+          <button class="tab" data-tab="publish">📦 Publish</button>
+        </div>
+        <div id="admin-content"></div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeAdmin(); });
+  $('#admin-close').addEventListener('click', closeAdmin);
+  document.addEventListener('keydown', escClose);
+
+  overlay.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => { adminTab = t.getAttribute('data-tab'); paintAdmin(); });
+  });
+
+  paintAdmin();
+}
+function escClose(e) { if (e.key === 'Escape') closeAdmin(); }
+function closeAdmin() {
+  const o = $('#admin-overlay');
+  if (o) o.remove();
+  document.removeEventListener('keydown', escClose);
+  // Reflect any changes made in the console (broadcasts, etc.) on the dashboard.
+  if ($('#ann')) renderAnnouncements(currentUser());
+}
+
+function paintAdmin() {
+  document.querySelectorAll('#admin-overlay .tab').forEach(t =>
+    t.classList.toggle('active', t.getAttribute('data-tab') === adminTab));
+  const c = $('#admin-content');
+  if (adminTab === 'users') renderAdminUsers(c);
+  else if (adminTab === 'apps') renderAdminApps(c);
+  else if (adminTab === 'broadcast') renderAdminBroadcast(c);
+  else renderAdminPublish(c);
+}
+
+/* Honest banner: in-panel edits are a browser-local draft until published. */
+function draftBanner() {
+  if (isLiveSync()) {
+    return `<div class="draft-note draft-note--live">
+      ✅ <span><strong>Live sync is on.</strong> Changes here save to Firestore and appear on every employee's launchpad in real time — no publish step needed.</span>
+    </div>`;
+  }
+  return `<div class="draft-note">
+    ✏️ <span>Edits here are a <strong>draft on this device</strong>. To make them live for all staff, open the <strong>📦 Publish</strong> tab and commit the exported <code>data.json</code>.</span>
+  </div>`;
+}
+
+/* ── Users tab ── */
+function renderAdminUsers(c) {
+  const users = getUsers();
+  const me = currentUser();
+  c.innerHTML = `
+    ${draftBanner()}
+    <div class="panel-section">
+      <div class="panel-section__title">Add New User</div>
+      <form id="add-user-form" class="form-grid">
+        <div class="field"><label class="field__label">Full Name</label><input class="field__input field__input--sm" name="name" required placeholder="Jane Traveler" /></div>
+        <div class="field"><label class="field__label">Username</label><input class="field__input field__input--sm" name="username" required placeholder="janet" /></div>
+        <div class="field"><label class="field__label">Password</label><input class="field__input field__input--sm" name="password" required placeholder="••••••" /></div>
+        <div class="field"><label class="field__label">Role</label>
+          <select class="field__input field__input--sm" name="role">
+            <option value="standard">Standard User</option>
+            <option value="admin_plus">Admin Plus</option>
+            <option value="super_admin">Super Admin</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn--primary btn--sm">Add User</button>
+      </form>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section__title">All Users (${users.length})</div>
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Username</th><th>Role</th><th style="text-align:right">Actions</th></tr></thead>
+        <tbody>
+          ${users.map((u, i) => `
+            <tr>
+              <td>${esc(u.name)}</td>
+              <td>${esc(u.username)}</td>
+              <td><span class="pill pill--${u.role}">${esc(ROLE_LABELS[u.role] || u.role)}</span></td>
+              <td><div class="row-actions">
+                <button class="miniact" data-edit-user="${i}">Edit role</button>
+                <button class="miniact miniact--del" data-del-user="${i}" ${u.username === me.username ? 'disabled title="You cannot delete yourself"' : ''}>Delete</button>
+              </div></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  $('#add-user-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target;
+    const name = f.name.value.trim(), username = f.username.value.trim().toLowerCase(), password = f.password.value, role = f.role.value;
+    if (!name || !username || !password) return;
+    const users = getUsers();
+    if (users.some(u => u.username.toLowerCase() === username)) { toast('That username already exists.', 'error'); return; }
+    if (usingFirebaseAuth()) {
+      try {
+        await fbAddUser({ name, username, password, role });
+        toast(`User "${username}" added.`, 'success'); // list refreshes via the hv_users listener
+      } catch (err) { toast('Could not add user: ' + (err && err.message || ''), 'error'); }
+      return;
+    }
+    users.push({ name, username, password, role });
+    saveUsers(users);
+    toast(`User "${username}" added.`, 'success');
+    renderAdminUsers(c);
+  });
+
+  c.querySelectorAll('[data-del-user]').forEach(b => b.addEventListener('click', async () => {
+    if (b.disabled) return;
+    const i = +b.getAttribute('data-del-user');
+    const users = getUsers();
+    const u = users[i];
+    if (!confirm(`Delete user "${u.name}" (${u.username})?`)) return;
+    if (usingFirebaseAuth()) {
+      try { await fbDeleteUser(u.username); toast('User access revoked.', 'success'); }
+      catch (err) { toast('Could not delete user: ' + (err && err.message || ''), 'error'); }
+      return;
+    }
+    users.splice(i, 1);
+    saveUsers(users);
+    toast('User deleted.', 'success');
+    renderAdminUsers(c);
+  }));
+
+  c.querySelectorAll('[data-edit-user]').forEach(b => b.addEventListener('click', async () => {
+    const i = +b.getAttribute('data-edit-user');
+    const users = getUsers();
+    const u = users[i];
+    const next = prompt(`Set role for ${u.name}.\nType one of: standard, admin_plus, super_admin`, u.role);
+    if (!next) return;
+    if (!ROLE_ORDER.includes(next.trim())) { toast('Invalid role.', 'error'); return; }
+    if (usingFirebaseAuth()) {
+      try { await fbSetRole(u.username, next.trim()); toast('Role updated.', 'success'); }
+      catch (err) { toast('Could not update role: ' + (err && err.message || ''), 'error'); }
+      return;
+    }
+    users[i].role = next.trim();
+    saveUsers(users);
+    toast('Role updated.', 'success');
+    renderAdminUsers(c);
+  }));
+}
+
+/* ── Apps tab ── */
+function renderAdminApps(c) {
+  const apps = getApps();
+  c.innerHTML = `
+    ${draftBanner()}
+    <div class="panel-section">
+      <div class="panel-section__title">Add New App</div>
+      <form id="add-app-form" class="form-grid">
+        <div class="field"><label class="field__label">App Name</label><input class="field__input field__input--sm" name="name" required placeholder="Notion" /></div>
+        <div class="field"><label class="field__label">Icon (emoji)</label><input class="field__input field__input--sm" name="icon" placeholder="📝" maxlength="4" /></div>
+        <div class="field"><label class="field__label">URL</label><input class="field__input field__input--sm" name="url" type="url" required placeholder="https://…" /></div>
+        <div class="field"><label class="field__label">Description</label><input class="field__input field__input--sm" name="description" placeholder="Docs & wiki" /></div>
+        <div class="field"><label class="field__label">Min. Role</label>
+          <select class="field__input field__input--sm" name="minrole">
+            <option value="standard">Standard &amp; up</option>
+            <option value="admin_plus">Admin Plus &amp; up</option>
+            <option value="super_admin">Super Admin only</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn--primary btn--sm">Add App</button>
+      </form>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section__title">All Apps (${apps.length})</div>
+      <table class="data-table">
+        <thead><tr><th>App</th><th>Access</th><th style="text-align:right">Actions</th></tr></thead>
+        <tbody>
+          ${apps.map((a, i) => `
+            <tr>
+              <td>${esc(a.icon || '🔗')} <strong>${esc(a.name)}</strong>${a.subApps ? ` <span class="pill pill--admin_plus">folder</span>` : ''}<br><span style="color:var(--text-faint);font-size:12px">${esc(a.url || a.description || '')}</span></td>
+              <td>${a.roles.map(r => `<span class="pill pill--${r}">${esc(ROLE_LABELS[r] || r)}</span>`).join(' ')}</td>
+              <td><div class="row-actions">
+                <button class="miniact" data-edit-app="${i}">Access</button>
+                <button class="miniact miniact--del" data-del-app="${i}">Delete</button>
+              </div></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  $('#add-app-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target;
+    const name = f.name.value.trim();
+    const url = f.url.value.trim();
+    if (!name || !url) return;
+    const minrole = f.minrole.value;
+    const roles = ROLE_ORDER.slice(ROLE_ORDER.indexOf(minrole)); // this role & higher
+    const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Math.floor(performance.now());
+    const apps = getApps();
+    apps.push({ id, name, icon: f.icon.value.trim() || '🔗', description: f.description.value.trim(), url, roles });
+    saveApps(apps);
+    toast(`App "${name}" added.`, 'success');
+    renderAdminApps(c);
+  });
+
+  c.querySelectorAll('[data-del-app]').forEach(b => b.addEventListener('click', () => {
+    const i = +b.getAttribute('data-del-app');
+    const apps = getApps();
+    if (!confirm(`Delete app "${apps[i].name}"?`)) return;
+    apps.splice(i, 1);
+    saveApps(apps);
+    toast('App deleted.', 'success');
+    renderAdminApps(c);
+  }));
+
+  c.querySelectorAll('[data-edit-app]').forEach(b => b.addEventListener('click', () => {
+    const i = +b.getAttribute('data-edit-app');
+    const apps = getApps();
+    const a = apps[i];
+    const next = prompt(`Minimum role for "${a.name}".\nType one of: standard, admin_plus, super_admin`, a.roles[0]);
+    if (!next) return;
+    const min = next.trim();
+    if (!ROLE_ORDER.includes(min)) { toast('Invalid role.', 'error'); return; }
+    a.roles = ROLE_ORDER.slice(ROLE_ORDER.indexOf(min));
+    saveApps(apps);
+    toast('Access updated.', 'success');
+    renderAdminApps(c);
+  }));
+}
+
+/* ── Broadcast tab ── */
+function renderAdminBroadcast(c) {
+  const me = currentUser();
+  const alerts = getAlerts();
+  c.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-section__title">Send an Alert to Everyone</div>
+      <form id="broadcast-form">
+        <div class="field"><label class="field__label">Title</label><input class="field__input field__input--sm" name="title" placeholder="System maintenance" required /></div>
+        <div class="field" style="margin-top:12px"><label class="field__label">Message</label><input class="field__input field__input--sm" name="text" placeholder="Zendesk will be down 9–10pm ET tonight." required /></div>
+        <button type="submit" class="btn btn--primary btn--sm" style="margin-top:14px">📣 Broadcast Alert</button>
+      </form>
+      <p style="font-size:12px;color:var(--text-faint);margin-top:10px">Alerts appear on every employee's launchpad on this device until dismissed.</p>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section__title">Active Alerts (${alerts.length})</div>
+      ${alerts.length ? `<table class="data-table"><tbody>
+        ${alerts.slice().reverse().map(a => `
+          <tr>
+            <td><strong>${esc(a.title)}</strong><br><span style="color:var(--text-soft);font-size:12.5px">${esc(a.text)}</span><br><span style="color:var(--text-faint);font-size:11px">${esc(a.from)} · ${esc(timeAgo(a.ts))}</span></td>
+            <td style="text-align:right"><button class="miniact miniact--del" data-del-alert="${esc(a.id)}">Remove</button></td>
+          </tr>`).join('')}
+      </tbody></table>` : `<p style="color:var(--text-faint);font-size:13px">No active alerts.</p>`}
+    </div>`;
+
+  $('#broadcast-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target;
+    const title = f.title.value.trim(), text = f.text.value.trim();
+    if (!title || !text) return;
+    const alerts = getAlerts();
+    alerts.push({ id: 'al_' + Math.floor(performance.now()) + '_' + alerts.length, title, text, from: firstName(me.name), ts: Date.now() });
+    saveAlerts(alerts);
+    // Clear dismissals so the new alert shows for everyone
+    store.del(KEY.dismissed);
+    toast('Alert broadcast to all employees.', 'success');
+    renderAdminBroadcast(c);
+  });
+
+  c.querySelectorAll('[data-del-alert]').forEach(b => b.addEventListener('click', () => {
+    const id = b.getAttribute('data-del-alert');
+    saveAlerts(getAlerts().filter(a => a.id !== id));
+    toast('Alert removed.', 'success');
+    renderAdminBroadcast(c);
+  }));
+}
+
+/* ── Publish tab (export the committed data.json) ── */
+function buildPublishJson() {
+  // Preserve the role labels for readability; bump the version so deployed
+  // launchpads know to refresh.
+  const payload = {
+    version: (Number(PUBLISHED_VERSION) || 1) + 1,
+    roles: ROLE_LABELS,
+    users: getUsers(),
+    apps: getApps(),
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+function renderAdminPublish(c) {
+  const nextVersion = (Number(PUBLISHED_VERSION) || 1) + 1;
+  const json = buildPublishJson();
+  c.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-section__title">Publish to all staff</div>
+      <p class="publish-lead">
+        This launchpad uses a <strong>code + redeploy</strong> database: the file
+        <code>launchpad/data.json</code> in your repo is the source of truth. Your
+        in-panel edits are saved on this device only until you publish them.
+      </p>
+      <ol class="publish-steps">
+        <li><strong>Download</strong> (or copy) the updated <code>data.json</code> below — it already includes every user &amp; app change you made, with the version bumped to <strong>v${nextVersion}</strong>.</li>
+        <li>Replace <code>launchpad/data.json</code> in the repo with it and <code>git commit</code> + <code>git push</code>.</li>
+        <li>Netlify redeploys automatically. Every employee's launchpad refreshes to v${nextVersion} on their next tab.</li>
+      </ol>
+      <div class="publish-actions">
+        <button class="btn btn--primary btn--sm" id="pub-download">⬇ Download data.json</button>
+        <button class="btn btn--ghost btn--sm" id="pub-copy">📋 Copy JSON</button>
+      </div>
+      <textarea class="publish-code" id="pub-json" spellcheck="false" readonly>${esc(json)}</textarea>
+      <p class="publish-tip">💡 No coding needed to add someone in a pinch — you (or anyone) can also just edit this <code>data.json</code> in GitHub directly and bump the <code>version</code> number.</p>
+    </div>`;
+
+  $('#pub-copy').addEventListener('click', async () => {
+    const text = buildPublishJson();
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('data.json copied to clipboard.', 'success');
+    } catch {
+      const ta = $('#pub-json'); ta.focus(); ta.select();
+      toast('Press ⌘/Ctrl+C to copy the selected JSON.', 'info');
+    }
+  });
+
+  $('#pub-download').addEventListener('click', () => {
+    const blob = new Blob([buildPublishJson()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'data.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast('data.json downloaded — commit it to publish.', 'success');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   IDLE SCREENSAVER BANNER
+   Shows a full-screen HeyVacay banner after 60s of no activity; any
+   mousemove / mousedown / keypress / scroll / touch dismisses it and
+   restarts the countdown.
+   ═══════════════════════════════════════════════════════════════════ */
+function initIdleBanner() {
+  const banner = document.getElementById('idle-banner');
+  if (!banner) return;
+
+  const IDLE_MS = 60000;         // 60 seconds
+  const RESCHEDULE_THROTTLE = 300; // ms — cap timer resets during continuous movement
+  let timer = null;
+  let visible = false;
+  let lastReschedule = 0;
+
+  function showBanner() {
+    if (visible) return;
+    visible = true;
+    // Re-trigger the entrance animations each time by removing/re-adding .show.
+    banner.classList.remove('show');
+    void banner.offsetWidth; // force reflow so animations replay
+    banner.classList.add('show');
+    banner.setAttribute('aria-hidden', 'false');
+  }
+
+  function hideBanner() {
+    if (!visible) return;
+    visible = false;
+    banner.classList.remove('show');
+    banner.setAttribute('aria-hidden', 'true');
+  }
+
+  function scheduleIdle() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(showBanner, IDLE_MS);
+  }
+
+  function onActivity() {
+    if (visible) {
+      // Any activity while showing dismisses it immediately and restarts the clock.
+      hideBanner();
+      scheduleIdle();
+      lastReschedule = Date.now();
+      return;
+    }
+    // While idle-waiting, throttle reschedules so continuous mousemove is cheap.
+    const now = Date.now();
+    if (now - lastReschedule < RESCHEDULE_THROTTLE) return;
+    lastReschedule = now;
+    scheduleIdle();
+  }
+
+  const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keypress', 'keydown', 'scroll', 'touchstart', 'click', 'wheel'];
+  ACTIVITY_EVENTS.forEach(ev =>
+    window.addEventListener(ev, onActivity, { passive: true, capture: true })
+  );
+
+  // Pause the countdown while the tab is hidden; restart it when the user returns.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { if (timer) clearTimeout(timer); }
+    else { hideBanner(); scheduleIdle(); }
+  });
+
+  scheduleIdle(); // start the 60s countdown on load
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOOT
+   ═══════════════════════════════════════════════════════════════════ */
+initTheme();
+initIdleBanner();
+(async () => {
+  const seed = await loadPublishedSeed(); // published data.json (or embedded fallback)
+  applyPublishedSeed(seed);               // published version wins over local drafts
+  render();                               // instant paint (login while Firebase resolves)
+
+  // Then connect Firebase: real-time sync + (if enabled) Firebase Auth login.
+  if (await initFirebase()) {
+    subscribeFirestore(onRemoteChange);
+    if (AUTH_USE_FIREBASE && fb.auth) {
+      initFirebaseAuth();                  // Google + password login via onAuthStateChanged
+    } else {
+      toast('Live sync connected', 'success', 'HeyVacay');
+    }
+  } else if (AUTH_USE_FIREBASE) {
+    // Firebase intended but unreachable (offline / file://) → fall back to local
+    // sign-in so no one is ever locked out.
+    AUTH_STATE = 'local';
+    render();
+  }
+})();
+
+    </script>
+  </body>
+</html>
