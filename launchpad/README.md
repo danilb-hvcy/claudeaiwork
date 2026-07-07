@@ -86,14 +86,20 @@ directly in GitHub — add the entry and bump `version` — no admin panel neede
 
 ## Features
 
+- 🌴 **HeyVacay branded** — the palm-tree logo/wordmark in the header and on the
+  sign-in screen (adapts to light/dark).
+- 👋 **Personalized greeting** — "Welcome, [Name]" plus a time-of-day line
+  ("It's a great morning/afternoon/evening to …") with a rotating, catchy tagline.
 - 🔐 Client-side auth against a seeded user database, 1-year `localStorage` session,
   auto-redirect for signed-in users, one-click sign out.
 - 🧩 Role-filtered app grid — you only ever see the tools you're allowed to open.
 - 🔤 **Google Workspace folder** — an expandable tile revealing Gmail, Drive, Docs,
   Sheets, Calendar, Meet (and Google Admin for Super Admins).
+- 📣 **Announcements** — a section above the apps where **Super Admins post
+  announcements inline** (a "＋ New announcement" composer); everyone else sees and
+  can dismiss them. (Also postable from the Admin Console → Broadcast tab.)
 - ⚙️ **Admin Console** (Super Admin only): add/edit/delete users, add/edit/delete
-  apps with role restrictions, and **broadcast alerts** that appear on everyone's
-  launchpad.
+  apps with role restrictions, and manage announcements.
 - 🔔 Toast notifications for sign in / out and actions.
 - 🖥️ **Idle screensaver** — after 60s of inactivity a full-screen branded banner
   (Ken Burns tropical backdrop, floating glowing logo, animated "Smarter, Cheaper,
