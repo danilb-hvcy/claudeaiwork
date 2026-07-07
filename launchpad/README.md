@@ -7,15 +7,19 @@ access, and routes each employee to the tools they're allowed to use with one cl
 
 ## Quick start
 
-It's a plain static site — no build step.
+`index.html` is **fully self-contained** — all CSS and JS are inlined, no build
+step, no sibling files required. You can:
 
-```bash
-# From this folder, serve it locally with anything, e.g.:
-python3 -m http.server 8000
-# then open http://localhost:8000
-```
+- **Just open it.** Double-click `index.html` (or drag it into a browser). It works
+  straight from your Downloads folder over `file://` — sign-in, roles, folders, admin
+  panel and all. (When opened this way it uses the seed baked into the file; see
+  "Managing users & apps" for how updates work.)
+- **Or serve it.** `python3 -m http.server 8000` from this folder, then open
+  `http://localhost:8000`.
 
-Or just open `index.html` directly in a browser.
+> ⚠️ If you download this to use it, download **`index.html`** — that one file is
+> everything. Earlier versions split styling/logic into `styles.css` and `app.js`;
+> those are now inlined, so a lone `index.html` no longer renders blank.
 
 ## Deploy to Netlify
 
@@ -31,9 +35,15 @@ land straight on your dashboard every time you open a tab.
 
 ## Managing users & apps (the "code + redeploy" database)
 
-There's no backend server. **`data.json` in this folder is the database** — it's the
-source of truth that every employee's launchpad reads on load. To change who can log
-in or which tools appear:
+There's no backend server. The seed data lives in **two places, kept in sync:**
+
+- **Embedded in `index.html`** — used when the file is opened directly (`file://`) or
+  served without `data.json`. This is what a downloaded single file uses.
+- **`data.json`** — when the launchpad is served over HTTP (e.g. Netlify), it fetches
+  this file and, if its `version` is newer, refreshes every employee's user/app lists.
+  This is the "database" for the hosted deployment.
+
+To change who can log in or which tools appear (hosted / Netlify):
 
 1. Open the launchpad as a Super Admin → **⚙️ Admin Console**.
 2. Add / edit / delete users and apps in the **👥 Users** and **🧩 Apps** tabs.
@@ -93,16 +103,17 @@ directly in GitHub — add the entry and bump `version` — no admin panel neede
 
 ```
 launchpad/
-├── index.html     # entry point + animated backdrop shell
-├── styles.css     # premium beachy-concierge design system
-├── app.js         # auth, RBAC, dashboard, admin console, alerts, toasts
-├── data.json      # user & app seed data (source of record / backup)
-└── netlify.toml   # Netlify static config + SPA fallback
+├── index.html     # THE app — self-contained (inlined CSS + JS + embedded seed)
+├── data.json      # user & app seed for hosted deploys (version-synced override)
+├── netlify.toml   # Netlify static config + SPA fallback
+└── README.md
 ```
 
-The seed data is also embedded in `app.js` so the app works with zero network
-requests (important for a new-tab page). On first load it hydrates `localStorage`,
-which then becomes the source of truth so admin edits persist.
+`index.html` is everything — CSS, JS, and a copy of the seed are all inlined, so it
+works with zero network requests (ideal for a downloaded file or new-tab page). When
+served over HTTP it additionally fetches `data.json` and adopts it if the `version`
+is newer, which is how hosted updates reach everyone. On first load it hydrates
+`localStorage`, which then holds any local admin-panel edits until you publish.
 
 ## Roadmap
 

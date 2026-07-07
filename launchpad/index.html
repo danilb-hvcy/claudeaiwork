@@ -12,7 +12,752 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <style>
+/* ═══════════════════════════════════════════════════════════════════
+   HeyVacay Employee Launchpad — Styles
+   Premium travel-tech concierge aesthetic
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Brand palette (per design direction) */
+  --brand-blue: #003D7A;
+  --brand-blue-600: #00539f;
+  --brand-blue-300: #4d82b8;
+  --teal: #00B4D8;
+  --teal-600: #0093b3;
+  --sand: #F5E6D3;
+  --charcoal: #1A1A1A;
+  --white: #FFFFFF;
+  --gray: #E8E8E8;
+
+  /* Semantic */
+  --text: #1A1A1A;
+  --text-soft: #52627a;
+  --text-faint: #8a97ab;
+  --surface: #FFFFFF;
+  --surface-2: #f7f9fc;
+  --border: #e6eaf1;
+  --danger: #e5484d;
+  --success: #1f9d55;
+
+  /* Effects */
+  --shadow-sm: 0 2px 10px rgba(0, 61, 122, 0.08);
+  --shadow: 0 12px 40px rgba(0, 61, 122, 0.14);
+  --shadow-lg: 0 24px 70px rgba(0, 61, 122, 0.22);
+  --shadow-teal: 0 14px 40px rgba(0, 180, 216, 0.32);
+
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 22px;
+
+  --gradient-brand: linear-gradient(135deg, var(--brand-blue) 0%, var(--teal) 100%);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ─── Dark mode ──────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --text: #eef3fa;
+  --text-soft: #a9b6ca;
+  --text-faint: #6f7d93;
+  --surface: #131a24;
+  --surface-2: #0e141d;
+  --border: #26313f;
+  --gray: #26313f;
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+
+/* ─── Reset & base ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  min-height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--text);
+  background: var(--surface-2);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body { position: relative; overflow-x: hidden; }
+
+h1, h2, h3, .display { font-family: 'Poppins', 'Inter', sans-serif; letter-spacing: -0.02em; }
+
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input, select { font-family: inherit; }
+a { color: inherit; text-decoration: none; }
+
+::selection { background: var(--teal); color: #fff; }
+
+/* ─── Animated ocean backdrop ────────────────────────────────────── */
+.ocean {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 700px at 80% -10%, rgba(0, 180, 216, 0.20), transparent 60%),
+    radial-gradient(1000px 800px at 5% 110%, rgba(0, 61, 122, 0.18), transparent 55%),
+    linear-gradient(180deg, #eef6fb 0%, #f8f3ea 100%);
+}
+[data-theme="dark"] .ocean {
+  background:
+    radial-gradient(1200px 700px at 80% -10%, rgba(0, 180, 216, 0.16), transparent 60%),
+    radial-gradient(1000px 800px at 5% 110%, rgba(0, 61, 122, 0.35), transparent 55%),
+    linear-gradient(180deg, #070b11 0%, #0d1420 100%);
+}
+
+.ocean__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.55;
+  animation: drift 22s var(--ease) infinite alternate;
+}
+.ocean__glow--1 { width: 460px; height: 460px; top: -120px; left: -80px; background: var(--teal); }
+.ocean__glow--2 { width: 520px; height: 520px; bottom: -160px; right: -100px; background: var(--brand-blue); animation-delay: -8s; }
+
+.ocean__watermark {
+  position: absolute;
+  right: 4vw;
+  bottom: 8vh;
+  font-size: clamp(180px, 34vw, 460px);
+  line-height: 1;
+  opacity: 0.05;
+  filter: grayscale(0.2);
+  user-select: none;
+  transform: rotate(-8deg);
+}
+
+.ocean__waves {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 42vh;
+  min-height: 260px;
+}
+.wave { opacity: 0.5; }
+.wave--back  { fill: rgba(0, 180, 216, 0.28); animation: swell 12s ease-in-out infinite; }
+.wave--mid   { fill: rgba(0, 83, 159, 0.28);  animation: swell 9s ease-in-out infinite reverse; }
+.wave--front { fill: rgba(0, 61, 122, 0.35);  animation: swell 7s ease-in-out infinite; }
+[data-theme="dark"] .wave { opacity: 0.35; }
+
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(60px, 40px) scale(1.15); }
+}
+@keyframes swell {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50%      { transform: translateX(-3%) translateY(-10px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ocean__glow, .wave { animation: none; }
+}
+
+/* ─── Shared layout ──────────────────────────────────────────────── */
+#app { position: relative; z-index: 1; }
+
+.view-enter { animation: viewIn 0.6s var(--ease) both; }
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.99); }
+  to   { opacity: 1; transform: none; }
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+}
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: var(--gradient-brand);
+  box-shadow: var(--shadow-teal);
+  font-size: 22px;
+}
+.brand__word { font-size: 20px; letter-spacing: -0.02em; }
+.brand__word strong { color: var(--teal); font-weight: 800; }
+[data-theme="dark"] .brand__word { color: #fff; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOGIN VIEW
+   ═══════════════════════════════════════════════════════════════════ */
+.login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+}
+
+.login__card {
+  width: min(440px, 100%);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  border: 1px solid color-mix(in srgb, var(--white) 40%, transparent);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 40px 38px 34px;
+}
+[data-theme="dark"] .login__card {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+
+.login__brand { display: flex; justify-content: center; margin-bottom: 22px; }
+.login__brand .brand__mark { width: 58px; height: 58px; border-radius: 17px; font-size: 30px; }
+
+.login__title {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.login__subtitle {
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 14.5px;
+  margin-bottom: 28px;
+}
+
+.field { margin-bottom: 16px; }
+.field__label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-soft);
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+.field__input {
+  width: 100%;
+  padding: 13px 15px;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.field__input::placeholder { color: var(--text-faint); }
+.field__input:focus {
+  outline: none;
+  border-color: var(--teal);
+  background: var(--surface);
+  box-shadow: 0 0 0 4px rgba(0, 180, 216, 0.15);
+}
+.field--pw { position: relative; }
+.field__toggle {
+  position: absolute;
+  right: 10px;
+  top: 33px;
+  padding: 6px 8px;
+  font-size: 13px;
+  color: var(--text-faint);
+  border-radius: 8px;
+}
+.field__toggle:hover { color: var(--teal); background: var(--surface-2); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 13px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  transition: transform 0.18s var(--ease), box-shadow 0.2s, opacity 0.2s, background 0.2s;
+}
+.btn:active { transform: translateY(1px) scale(0.995); }
+.btn--primary {
+  width: 100%;
+  color: #fff;
+  background: var(--gradient-brand);
+  box-shadow: var(--shadow-teal);
+}
+.btn--primary:hover { transform: translateY(-2px); box-shadow: 0 18px 46px rgba(0, 180, 216, 0.42); }
+.btn--primary:disabled { opacity: 0.7; cursor: progress; transform: none; }
+.btn--ghost { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); }
+.btn--ghost:hover { border-color: var(--teal); color: var(--teal); }
+.btn--danger { background: rgba(229, 72, 77, 0.12); color: var(--danger); }
+.btn--danger:hover { background: var(--danger); color: #fff; }
+.btn--sm { padding: 8px 13px; font-size: 13px; }
+
+.login__error {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 11px 14px;
+  font-size: 13.5px;
+  color: var(--danger);
+  background: rgba(229, 72, 77, 0.1);
+  border: 1px solid rgba(229, 72, 77, 0.28);
+  border-radius: var(--radius-sm);
+}
+.login__error.show { display: flex; animation: shake 0.4s; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.login__foot {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.login__hint {
+  margin-top: 14px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-soft);
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+.login__hint code { color: var(--teal); font-weight: 600; }
+
+/* Spinner */
+.spinner {
+  width: 17px; height: 17px;
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════════════════════════
+   DASHBOARD VIEW
+   ═══════════════════════════════════════════════════════════════════ */
+.shell { max-width: 1180px; margin: 0 auto; padding: 22px clamp(16px, 4vw, 40px) 80px; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  margin-bottom: 30px;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  border: 1px solid color-mix(in srgb, var(--white) 30%, transparent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 14px;
+  z-index: 40;
+}
+[data-theme="dark"] .topbar { border-color: var(--border); }
+
+.topbar__spacer { flex: 1; }
+
+.userchip {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 6px 8px 6px 6px;
+  border-radius: 999px;
+}
+.userchip__avatar {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--gradient-brand);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+}
+.userchip__meta { line-height: 1.25; }
+.userchip__name { font-weight: 600; font-size: 14px; }
+.userchip__role { font-size: 11.5px; color: var(--text-soft); }
+
+.iconbtn {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 11px;
+  font-size: 17px;
+  color: var(--text-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: all 0.18s var(--ease);
+}
+.iconbtn:hover { color: var(--teal); border-color: var(--teal); transform: translateY(-1px); }
+
+.hero {
+  margin-bottom: 26px;
+}
+.hero__eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--teal-600);
+  margin-bottom: 8px;
+}
+.hero__title { font-size: clamp(26px, 4vw, 38px); font-weight: 800; }
+.hero__title span { color: var(--teal); }
+.hero__sub { margin-top: 6px; color: var(--text-soft); font-size: 15px; }
+
+/* Broadcast alerts */
+.alerts { margin-bottom: 24px; display: grid; gap: 12px; }
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(0, 180, 216, 0.14), rgba(0, 61, 122, 0.1));
+  border: 1px solid rgba(0, 180, 216, 0.3);
+  box-shadow: var(--shadow-sm);
+  animation: viewIn 0.5s var(--ease) both;
+}
+.alert__icon { font-size: 20px; line-height: 1.3; }
+.alert__body { flex: 1; }
+.alert__title { font-weight: 700; font-size: 14.5px; }
+.alert__text { font-size: 13.5px; color: var(--text-soft); margin-top: 2px; }
+.alert__time { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+.alert__dismiss { color: var(--text-faint); font-size: 18px; padding: 2px 6px; border-radius: 8px; }
+.alert__dismiss:hover { color: var(--danger); background: rgba(229,72,77,0.1); }
+
+/* App grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px;
+  min-height: 148px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease), border-color 0.22s;
+  overflow: hidden;
+  text-align: left;
+  cursor: pointer;
+}
+.tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-brand);
+  opacity: 0;
+  transition: opacity 0.22s;
+  z-index: 0;
+}
+.tile > * { position: relative; z-index: 1; }
+.tile:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+  border-color: transparent;
+}
+.tile:hover::before { opacity: 0.06; }
+.tile:hover .tile__icon { transform: scale(1.08) rotate(-4deg); }
+
+.tile__icon {
+  width: 52px; height: 52px;
+  display: grid; place-items: center;
+  font-size: 27px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: transform 0.28s var(--ease);
+}
+.tile__name { font-weight: 700; font-size: 16px; font-family: 'Poppins', sans-serif; }
+.tile__desc { font-size: 13px; color: var(--text-soft); line-height: 1.5; }
+.tile__go {
+  margin-top: auto;
+  align-self: flex-start;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--teal-600);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+.tile:hover .tile__go { opacity: 1; transform: none; }
+
+.tile__badge {
+  position: absolute;
+  top: 14px; right: 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  z-index: 2;
+}
+.tile__badge--folder { background: rgba(0, 180, 216, 0.14); color: var(--teal-600); }
+.tile__badge--restricted { background: rgba(0, 61, 122, 0.12); color: var(--brand-blue-600); }
+[data-theme="dark"] .tile__badge--restricted { color: var(--brand-blue-300); }
+
+/* Folder tile (Google) */
+.tile--folder .tile__chev { transition: transform 0.25s var(--ease); font-size: 13px; color: var(--text-faint); }
+.tile--folder.open .tile__chev { transform: rotate(180deg); }
+
+.folder-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 20px;
+  margin-top: -6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 2px 12px rgba(0, 61, 122, 0.05);
+  animation: viewIn 0.4s var(--ease) both;
+}
+.subtile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: all 0.18s var(--ease);
+  cursor: pointer;
+}
+.subtile:hover {
+  transform: translateY(-3px);
+  border-color: var(--teal);
+  box-shadow: var(--shadow-sm);
+}
+.subtile__icon { font-size: 20px; }
+.subtile__name { font-size: 13.5px; font-weight: 600; }
+
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-soft);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL / ADMIN PANEL
+   ═══════════════════════════════════════════════════════════════════ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(9, 20, 35, 0.55);
+  backdrop-filter: blur(6px);
+  animation: fade 0.25s ease both;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  width: min(860px, 100%);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: viewIn 0.35s var(--ease) both;
+}
+.modal__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.modal__title { font-size: 19px; font-weight: 700; }
+.modal__close {
+  margin-left: auto;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  font-size: 18px;
+  color: var(--text-soft);
+}
+.modal__close:hover { background: var(--surface-2); color: var(--danger); }
+.modal__body { padding: 22px 24px; overflow-y: auto; }
+
+.tabs { display: flex; gap: 4px; padding: 6px; background: var(--surface-2); border-radius: 12px; margin-bottom: 20px; }
+.tab {
+  flex: 1;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-soft);
+  border-radius: 9px;
+  transition: all 0.18s;
+}
+.tab.active { background: var(--surface); color: var(--teal-600); box-shadow: var(--shadow-sm); }
+
+.panel-section { margin-bottom: 26px; }
+.panel-section__title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+}
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; align-items: end; }
+.form-grid .field { margin: 0; }
+.field__input--sm { padding: 10px 12px; font-size: 14px; }
+select.field__input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238a97ab' d='M6 8 0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 34px; }
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.data-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  border-bottom: 2px solid var(--border);
+}
+.data-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--surface-2); }
+
+.pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.pill--super_admin { background: rgba(0, 61, 122, 0.14); color: var(--brand-blue-600); }
+.pill--admin_plus { background: rgba(0, 180, 216, 0.16); color: var(--teal-600); }
+.pill--standard { background: var(--surface-2); color: var(--text-soft); border: 1px solid var(--border); }
+[data-theme="dark"] .pill--super_admin { color: var(--brand-blue-300); }
+
+/* Draft banner + Publish tab */
+.draft-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 14px;
+  margin-bottom: 20px;
+  font-size: 12.8px;
+  line-height: 1.5;
+  color: var(--text-soft);
+  background: rgba(245, 166, 35, 0.1);
+  border: 1px solid rgba(245, 166, 35, 0.32);
+  border-radius: var(--radius-sm);
+}
+.draft-note code, .publish-lead code, .publish-steps code, .publish-tip code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+  color: var(--teal-600);
+  background: var(--surface-2);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+.publish-lead { font-size: 13.5px; line-height: 1.6; color: var(--text-soft); margin-bottom: 14px; }
+.publish-steps { margin: 0 0 16px 18px; padding: 0; display: grid; gap: 8px; font-size: 13.5px; line-height: 1.55; color: var(--text-soft); }
+.publish-steps li { padding-left: 4px; }
+.publish-actions { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.publish-code {
+  width: 100%;
+  min-height: 220px;
+  padding: 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  white-space: pre;
+  overflow: auto;
+}
+.publish-tip { margin-top: 12px; font-size: 12.5px; color: var(--text-faint); line-height: 1.55; }
+
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.miniact {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+}
+.miniact:hover { border-color: var(--teal); color: var(--teal); }
+.miniact--del:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   TOASTS
+   ═══════════════════════════════════════════════════════════════════ */
+.toast-stack {
+  position: fixed;
+  right: 20px; bottom: 20px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: min(360px, calc(100vw - 40px));
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 15px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--teal);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  animation: toastIn 0.35s var(--ease) both;
+}
+.toast.out { animation: toastOut 0.3s var(--ease) forwards; }
+.toast--success { border-left-color: var(--success); }
+.toast--error { border-left-color: var(--danger); }
+.toast--info { border-left-color: var(--teal); }
+.toast__icon { font-size: 17px; }
+.toast__msg { font-size: 13.5px; line-height: 1.45; }
+.toast__title { font-weight: 700; display: block; margin-bottom: 1px; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { to { opacity: 0; transform: translateX(30px); } }
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 620px) {
+  .topbar { flex-wrap: wrap; }
+  .userchip__meta { display: none; }
+  .grid { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .data-table { font-size: 12.5px; }
+}
+@media (max-width: 400px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+    </style>
   </head>
   <body>
     <!-- Animated ocean backdrop (shared across states) -->
@@ -33,6 +778,801 @@
     <!-- Toast container -->
     <div id="toast-stack" class="toast-stack" aria-live="assertive"></div>
 
-    <script src="app.js" defer></script>
+    <script>
+/* ═══════════════════════════════════════════════════════════════════
+   HeyVacay Employee Launchpad — Application Logic (vanilla JS)
+   - Client-side auth against seeded user DB
+   - 1-year localStorage session
+   - Role-based app rendering
+   - Super Admin panel (users / apps / broadcast alerts)
+   ═══════════════════════════════════════════════════════════════════ */
+
+'use strict';
+
+/* ─── Storage keys ───────────────────────────────────────────────── */
+const KEY = {
+  users:   'hv_launchpad_users',
+  apps:    'hv_launchpad_apps',
+  session: 'hv_launchpad_session',
+  alerts:  'hv_launchpad_alerts',
+  dismissed: 'hv_launchpad_alerts_dismissed',
+  theme:   'hv_launchpad_theme',
+  seedVersion: 'hv_launchpad_seed_version',
+};
+
+const SESSION_MS = 365 * 24 * 60 * 60 * 1000; // 1 year
+
+const ROLE_LABELS = {
+  super_admin: 'Super Admin',
+  admin_plus:  'Admin Plus',
+  standard:    'Standard User',
+};
+const ROLE_ORDER = ['standard', 'admin_plus', 'super_admin'];
+
+/* ─── Seed data ───────────────────────────────────────────────────
+   data.json (fetched at runtime) is the published source of truth — the
+   "database" in the code + redeploy model. Bump its "version" whenever you
+   change users/apps and every launchpad will refresh on the next load.
+   This embedded copy is only a fallback for offline / file:// use.
+   ────────────────────────────────────────────────────────────────── */
+const SEED = {
+  version: 2,
+  users: [
+    { name: 'DANIL BABADJANOV',     username: 'danilb',   password: 'Danilka2010!', role: 'super_admin' },
+    { name: 'ALEKSEY BABADZHANOV',  username: 'alekseyb', password: 'Aleksey2131!', role: 'super_admin' },
+    { name: 'LEONID BABADJANOV',    username: 'leonidb',  password: 'Danil2010!',   role: 'admin_plus'  },
+    { name: 'Estefania Babadzhanov',username: 'stefb',    password: 'Estefmac2131!',role: 'standard'    },
+  ],
+  apps: [
+    {
+      id: 'google-workspace', name: 'Google Workspace', icon: '🔤',
+      description: 'Email, Drive, Docs, Sheets, Calendar, Meet',
+      roles: ['standard', 'admin_plus', 'super_admin'],
+      subApps: [
+        { name: 'Gmail',            icon: '📬', url: 'https://mail.google.com',     roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Google Drive',     icon: '📁', url: 'https://drive.google.com',    roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Google Docs',      icon: '📄', url: 'https://docs.google.com',     roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Google Sheets',    icon: '📊', url: 'https://sheets.google.com',   roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Google Calendar',  icon: '📅', url: 'https://calendar.google.com', roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Google Meet',      icon: '🎥', url: 'https://meet.google.com',     roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Google Admin',     icon: '🛡️', url: 'https://admin.google.com',    roles: ['super_admin'] },
+      ],
+    },
+    {
+      id: 'support-tools', name: 'Support Tools', icon: '🎧',
+      description: 'Zendesk, Zoom & HeyVacay NOVA',
+      roles: ['standard', 'admin_plus', 'super_admin'],
+      subApps: [
+        { name: 'Zendesk',       icon: '📞', url: 'https://zendesk.com',       roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Zoom',          icon: '📱', url: 'https://zoom.us',           roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'HeyVacay NOVA', icon: '🚀', url: 'https://admin.heyvacay.co', roles: ['standard', 'admin_plus', 'super_admin'] },
+      ],
+    },
+    { id: 'hced',        name: 'HCED System', icon: '🏨', description: 'Hotel Complaint & Escalation', url: 'https://hced.heyvacay.co',         roles: ['standard', 'admin_plus', 'super_admin'] },
+    { id: 'gusto',       name: 'Gusto',       icon: '💰', description: 'Contractor Payroll',          url: 'https://gusto.com',                roles: ['standard', 'admin_plus', 'super_admin'] },
+    { id: 'heyvacay',    name: 'HeyVacay',    icon: '✈️', description: 'Main Booking Platform',        url: 'https://heyvacay.co',              roles: ['standard', 'admin_plus', 'super_admin'] },
+    { id: 'ratehawk',    name: 'RateHawk',    icon: '🔑', description: 'Hotel Inventory Admin',        url: 'https://dashboard.ratehawk.com',   roles: ['admin_plus', 'super_admin'] },
+    { id: 'stripe',      name: 'Stripe',      icon: '💳', description: 'Payment Processing',           url: 'https://dashboard.stripe.com',     roles: ['super_admin'] },
+    { id: 'receptionhq', name: 'ReceptionHQ', icon: '📧', description: 'Email Forwarding & Management',url: 'https://receptionhq.com',          roles: ['super_admin'] },
+  ],
+};
+
+/* ─── Storage helpers ────────────────────────────────────────────── */
+const store = {
+  get(k, fallback) {
+    try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; }
+    catch { return fallback; }
+  },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+
+/* ─── Data accessors (localStorage is the source of truth after seed) */
+function getUsers() {
+  let u = store.get(KEY.users, null);
+  if (!u) { u = structuredCloneSafe(SEED.users); store.set(KEY.users, u); }
+  return u;
+}
+function saveUsers(u) { store.set(KEY.users, u); }
+
+function getApps() {
+  let a = store.get(KEY.apps, null);
+  if (!a) { a = structuredCloneSafe(SEED.apps); store.set(KEY.apps, a); }
+  return a;
+}
+function saveApps(a) { store.set(KEY.apps, a); }
+
+function getAlerts() { return store.get(KEY.alerts, []); }
+function saveAlerts(a) { store.set(KEY.alerts, a); }
+
+function structuredCloneSafe(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+/* ─── Published seed sync (the "code + redeploy" database) ──────────
+   Fetch data.json (the committed source of truth). If its version differs
+   from what this browser last applied, overwrite the local user/app lists —
+   so pushing a new data.json propagates to every employee on their next tab.
+   Falls back to the embedded SEED if the fetch fails (offline / file://).
+   ────────────────────────────────────────────────────────────────── */
+let PUBLISHED_VERSION = SEED.version;
+
+async function loadPublishedSeed() {
+  // Opened as a downloaded local file (file://)? Browsers block fetch and
+  // there's no server to hit — use the embedded seed directly, no error.
+  if (location.protocol === 'file:') {
+    return { version: SEED.version, users: SEED.users, apps: SEED.apps };
+  }
+  try {
+    const res = await fetch('data.json', { cache: 'no-store' });
+    if (res.ok) {
+      const j = await res.json();
+      if (j && Array.isArray(j.users) && Array.isArray(j.apps)) {
+        return { version: Number(j.version) || 1, users: j.users, apps: j.apps };
+      }
+    }
+  } catch { /* offline / file:// — fall through to embedded seed */ }
+  return { version: SEED.version, users: SEED.users, apps: SEED.apps };
+}
+
+function applyPublishedSeed(seed) {
+  PUBLISHED_VERSION = seed.version;
+  const appliedVersion = store.get(KEY.seedVersion, null);
+  const firstRun = store.get(KEY.users, null) === null;
+  // Published version wins: (re)hydrate local lists when the deploy is newer
+  // than what this browser last saw, or on the very first visit.
+  if (appliedVersion !== seed.version || firstRun) {
+    store.set(KEY.users, structuredCloneSafe(seed.users));
+    store.set(KEY.apps, structuredCloneSafe(seed.apps));
+    store.set(KEY.seedVersion, seed.version);
+  }
+}
+
+/* ─── Session ────────────────────────────────────────────────────── */
+function getSession() {
+  const s = store.get(KEY.session, null);
+  if (!s) return null;
+  if (!s.expiresAt || Date.now() > s.expiresAt) { store.del(KEY.session); return null; }
+  return s;
+}
+function currentUser() {
+  const s = getSession();
+  if (!s) return null;
+  return getUsers().find(u => u.username === s.username) || null;
+}
+function startSession(user) {
+  store.set(KEY.session, { username: user.username, expiresAt: Date.now() + SESSION_MS });
+}
+function endSession() { store.del(KEY.session); }
+
+/* ─── Utilities ──────────────────────────────────────────────────── */
+const $ = (sel, root = document) => root.querySelector(sel);
+const app = () => document.getElementById('app');
+
+function esc(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+function initials(name) {
+  return String(name || '').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
+}
+function firstName(name) {
+  const n = String(name || '').trim().split(/\s+/)[0] || '';
+  return n ? n[0].toUpperCase() + n.slice(1).toLowerCase() : 'there';
+}
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60); if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24); return `${d}d ago`;
+}
+function canAccess(item, role) { return Array.isArray(item.roles) && item.roles.includes(role); }
+
+/* ─── Theme ──────────────────────────────────────────────────────── */
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  store.set(KEY.theme, t);
+}
+function initTheme() {
+  const saved = store.get(KEY.theme, null);
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+}
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  toast(next === 'dark' ? '🌙 Dark mode on' : '☀️ Light mode on', 'info');
+}
+
+/* ─── Toast notifications ────────────────────────────────────────── */
+function toast(message, type = 'info', title = '') {
+  const stack = document.getElementById('toast-stack');
+  if (!stack) return;
+  const icons = { success: '✅', error: '⚠️', info: '💡' };
+  const el = document.createElement('div');
+  el.className = `toast toast--${type}`;
+  el.innerHTML = `
+    <span class="toast__icon">${icons[type] || '💡'}</span>
+    <div class="toast__msg">${title ? `<strong class="toast__title">${esc(title)}</strong>` : ''}${esc(message)}</div>`;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('out');
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+  }, 3600);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ROUTER
+   ═══════════════════════════════════════════════════════════════════ */
+function render() {
+  const user = currentUser();
+  if (user) renderDashboard(user);
+  else renderLogin();
+}
+
+/* ─── LOGIN ──────────────────────────────────────────────────────── */
+function renderLogin() {
+  app().innerHTML = `
+    <div class="login view-enter">
+      <form class="login__card" id="login-form" autocomplete="on" novalidate>
+        <div class="login__brand">
+          <span class="brand__mark">🌴</span>
+        </div>
+        <h1 class="login__title">Welcome to HeyVacay Operations</h1>
+        <p class="login__subtitle">Sign in to launch your workspace.</p>
+
+        <div class="login__error" id="login-error">
+          <span>⚠️</span><span id="login-error-msg">Invalid credentials.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="username">Username or Email</label>
+          <input class="field__input" id="username" name="username" type="text"
+                 placeholder="e.g. danilb" autocomplete="username" autofocus required />
+        </div>
+
+        <div class="field field--pw">
+          <label class="field__label" for="password">Password</label>
+          <input class="field__input" id="password" name="password" type="password"
+                 placeholder="••••••••" autocomplete="current-password" required />
+          <button type="button" class="field__toggle" id="pw-toggle" aria-label="Show password">Show</button>
+        </div>
+
+        <button type="submit" class="btn btn--primary" id="login-btn">Sign In</button>
+
+        <div class="login__foot">Sessions stay active for 1 year on this device.</div>
+      </form>
+    </div>`;
+
+  const form = $('#login-form');
+  const errBox = $('#login-error');
+  const pwInput = $('#password');
+
+  $('#pw-toggle').addEventListener('click', () => {
+    const showing = pwInput.type === 'text';
+    pwInput.type = showing ? 'password' : 'text';
+    $('#pw-toggle').textContent = showing ? 'Show' : 'Hide';
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    errBox.classList.remove('show');
+    const username = $('#username').value.trim();
+    const password = pwInput.value;
+    if (!username || !password) return;
+
+    const btn = $('#login-btn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Signing in…`;
+
+    // Simulate a brief auth round-trip for polish
+    setTimeout(() => {
+      const uname = username.toLowerCase();
+      const user = getUsers().find(u =>
+        u.username.toLowerCase() === uname ||
+        (u.email && u.email.toLowerCase() === uname)
+      );
+      if (!user || user.password !== password) {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+        $('#login-error-msg').textContent = 'Invalid username or password. Please try again.';
+        errBox.classList.add('show');
+        pwInput.select();
+        return;
+      }
+      startSession(user);
+      toast(`Signed in as ${firstName(user.name)}`, 'success', 'Welcome back');
+      render();
+    }, 620);
+  });
+}
+
+/* ─── DASHBOARD ──────────────────────────────────────────────────── */
+function renderDashboard(user) {
+  const isSuper = user.role === 'super_admin';
+  const apps = getApps().filter(a => canAccess(a, user.role));
+
+  app().innerHTML = `
+    <div class="shell view-enter">
+      <header class="topbar">
+        <span class="brand">
+          <span class="brand__mark">🌴</span>
+          <span class="brand__word">hey<strong>vacay</strong></span>
+        </span>
+        <div class="topbar__spacer"></div>
+        <button class="iconbtn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">🌓</button>
+        ${isSuper ? `<button class="iconbtn" id="admin-btn" title="Admin panel" aria-label="Admin panel">⚙️</button>` : ''}
+        <div class="userchip">
+          <span class="userchip__avatar">${esc(initials(user.name))}</span>
+          <span class="userchip__meta">
+            <span class="userchip__name">${esc(user.name)}</span>
+            <span class="userchip__role">${esc(ROLE_LABELS[user.role] || user.role)}</span>
+          </span>
+        </div>
+        <button class="btn btn--ghost btn--sm" id="signout-btn">Sign Out</button>
+      </header>
+
+      <section class="hero">
+        <span class="hero__eyebrow">Employee Launchpad</span>
+        <h1 class="hero__title">Welcome, <span>${esc(firstName(user.name))}</span> 👋</h1>
+        <p class="hero__sub">You have access to ${apps.length} tool${apps.length === 1 ? '' : 's'}. Click any card to launch.</p>
+      </section>
+
+      <div class="alerts" id="alerts"></div>
+
+      <main class="grid" id="grid"></main>
+    </div>`;
+
+  $('#theme-btn').addEventListener('click', toggleTheme);
+  $('#signout-btn').addEventListener('click', () => {
+    endSession();
+    toast('You have been signed out.', 'info');
+    render();
+  });
+  if (isSuper) $('#admin-btn').addEventListener('click', openAdmin);
+
+  renderAlerts();
+  renderGrid(user, apps);
+}
+
+function renderAlerts() {
+  const box = $('#alerts');
+  if (!box) return;
+  const dismissed = store.get(KEY.dismissed, []);
+  const alerts = getAlerts().filter(a => !dismissed.includes(a.id));
+  box.innerHTML = alerts.map(a => `
+    <div class="alert" data-id="${esc(a.id)}">
+      <span class="alert__icon">📣</span>
+      <div class="alert__body">
+        <div class="alert__title">${esc(a.title || 'Announcement')}</div>
+        <div class="alert__text">${esc(a.text)}</div>
+        <div class="alert__time">${esc(a.from || 'Admin')} · ${esc(timeAgo(a.ts))}</div>
+      </div>
+      <button class="alert__dismiss" data-dismiss="${esc(a.id)}" aria-label="Dismiss">×</button>
+    </div>`).join('');
+
+  box.querySelectorAll('[data-dismiss]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-dismiss');
+      const d = store.get(KEY.dismissed, []);
+      d.push(id); store.set(KEY.dismissed, d);
+      renderAlerts();
+    });
+  });
+}
+
+function renderGrid(user, apps) {
+  const grid = $('#grid');
+  if (!apps.length) {
+    grid.innerHTML = `<div class="empty">No tools are assigned to your account yet. Contact an administrator.</div>`;
+    return;
+  }
+
+  grid.innerHTML = apps.map(a => {
+    const isFolder = Array.isArray(a.subApps) && a.subApps.length;
+    const restricted = a.roles.length === 1 && a.roles[0] === 'super_admin';
+    return `
+      <button class="tile ${isFolder ? 'tile--folder' : ''}" data-app="${esc(a.id)}">
+        ${isFolder ? `<span class="tile__badge tile__badge--folder">Folder</span>`
+          : restricted ? `<span class="tile__badge tile__badge--restricted">Admin</span>` : ''}
+        <span class="tile__icon">${esc(a.icon || '🔗')}</span>
+        <span class="tile__name">${esc(a.name)}</span>
+        <span class="tile__desc">${esc(a.description || '')}</span>
+        <span class="tile__go">${isFolder ? '<span class="tile__chev">▼ Expand</span>' : 'Open ↗'}</span>
+      </button>`;
+  }).join('');
+
+  grid.querySelectorAll('.tile').forEach(tile => {
+    tile.addEventListener('click', () => {
+      const id = tile.getAttribute('data-app');
+      const a = apps.find(x => x.id === id);
+      if (!a) return;
+      if (Array.isArray(a.subApps) && a.subApps.length) toggleFolder(tile, a, user);
+      else launch(a.url, a.name);
+    });
+  });
+}
+
+function toggleFolder(tile, appData, user) {
+  // Close if already open
+  const existing = tile.nextElementSibling;
+  if (existing && existing.classList.contains('folder-panel')) {
+    existing.remove();
+    tile.classList.remove('open');
+    return;
+  }
+  // Close other open folders
+  document.querySelectorAll('.folder-panel').forEach(p => p.remove());
+  document.querySelectorAll('.tile--folder.open').forEach(t => t.classList.remove('open'));
+
+  tile.classList.add('open');
+  const subs = appData.subApps.filter(s => canAccess(s, user.role));
+  const panel = document.createElement('div');
+  panel.className = 'folder-panel';
+  panel.innerHTML = subs.map(s => `
+    <div class="subtile" data-url="${esc(s.url)}" data-name="${esc(s.name)}" role="button" tabindex="0">
+      <span class="subtile__icon">${esc(s.icon || '🔗')}</span>
+      <span class="subtile__name">${esc(s.name)}</span>
+    </div>`).join('');
+  tile.after(panel);
+
+  panel.querySelectorAll('.subtile').forEach(st => {
+    const go = () => launch(st.getAttribute('data-url'), st.getAttribute('data-name'));
+    st.addEventListener('click', go);
+    st.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  });
+}
+
+function launch(url, name) {
+  if (!url) return;
+  toast(`Opening ${name}…`, 'info');
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ADMIN PANEL (Super Admin only)
+   ═══════════════════════════════════════════════════════════════════ */
+let adminTab = 'users';
+
+function openAdmin() {
+  const user = currentUser();
+  if (!user || user.role !== 'super_admin') { toast('Access denied.', 'error'); return; }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.id = 'admin-overlay';
+  overlay.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Admin panel">
+      <div class="modal__head">
+        <span class="brand__mark" style="width:34px;height:34px;font-size:18px;border-radius:10px;">⚙️</span>
+        <span class="modal__title">Admin Console</span>
+        <button class="modal__close" id="admin-close" aria-label="Close">×</button>
+      </div>
+      <div class="modal__body">
+        <div class="tabs">
+          <button class="tab" data-tab="users">👥 Users</button>
+          <button class="tab" data-tab="apps">🧩 Apps</button>
+          <button class="tab" data-tab="broadcast">📣 Broadcast</button>
+          <button class="tab" data-tab="publish">📦 Publish</button>
+        </div>
+        <div id="admin-content"></div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeAdmin(); });
+  $('#admin-close').addEventListener('click', closeAdmin);
+  document.addEventListener('keydown', escClose);
+
+  overlay.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => { adminTab = t.getAttribute('data-tab'); paintAdmin(); });
+  });
+
+  paintAdmin();
+}
+function escClose(e) { if (e.key === 'Escape') closeAdmin(); }
+function closeAdmin() {
+  const o = $('#admin-overlay');
+  if (o) o.remove();
+  document.removeEventListener('keydown', escClose);
+  // Reflect any changes made in the console (broadcasts, etc.) on the dashboard.
+  if ($('#alerts')) renderAlerts();
+}
+
+function paintAdmin() {
+  document.querySelectorAll('#admin-overlay .tab').forEach(t =>
+    t.classList.toggle('active', t.getAttribute('data-tab') === adminTab));
+  const c = $('#admin-content');
+  if (adminTab === 'users') renderAdminUsers(c);
+  else if (adminTab === 'apps') renderAdminApps(c);
+  else if (adminTab === 'broadcast') renderAdminBroadcast(c);
+  else renderAdminPublish(c);
+}
+
+/* Honest banner: in-panel edits are a browser-local draft until published. */
+function draftBanner() {
+  return `<div class="draft-note">
+    ✏️ <span>Edits here are a <strong>draft on this device</strong>. To make them live for all staff, open the <strong>📦 Publish</strong> tab and commit the exported <code>data.json</code>.</span>
+  </div>`;
+}
+
+/* ── Users tab ── */
+function renderAdminUsers(c) {
+  const users = getUsers();
+  const me = currentUser();
+  c.innerHTML = `
+    ${draftBanner()}
+    <div class="panel-section">
+      <div class="panel-section__title">Add New User</div>
+      <form id="add-user-form" class="form-grid">
+        <div class="field"><label class="field__label">Full Name</label><input class="field__input field__input--sm" name="name" required placeholder="Jane Traveler" /></div>
+        <div class="field"><label class="field__label">Username</label><input class="field__input field__input--sm" name="username" required placeholder="janet" /></div>
+        <div class="field"><label class="field__label">Password</label><input class="field__input field__input--sm" name="password" required placeholder="••••••" /></div>
+        <div class="field"><label class="field__label">Role</label>
+          <select class="field__input field__input--sm" name="role">
+            <option value="standard">Standard User</option>
+            <option value="admin_plus">Admin Plus</option>
+            <option value="super_admin">Super Admin</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn--primary btn--sm">Add User</button>
+      </form>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section__title">All Users (${users.length})</div>
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Username</th><th>Role</th><th style="text-align:right">Actions</th></tr></thead>
+        <tbody>
+          ${users.map((u, i) => `
+            <tr>
+              <td>${esc(u.name)}</td>
+              <td>${esc(u.username)}</td>
+              <td><span class="pill pill--${u.role}">${esc(ROLE_LABELS[u.role] || u.role)}</span></td>
+              <td><div class="row-actions">
+                <button class="miniact" data-edit-user="${i}">Edit role</button>
+                <button class="miniact miniact--del" data-del-user="${i}" ${u.username === me.username ? 'disabled title="You cannot delete yourself"' : ''}>Delete</button>
+              </div></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  $('#add-user-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target;
+    const name = f.name.value.trim(), username = f.username.value.trim().toLowerCase(), password = f.password.value, role = f.role.value;
+    if (!name || !username || !password) return;
+    const users = getUsers();
+    if (users.some(u => u.username.toLowerCase() === username)) { toast('That username already exists.', 'error'); return; }
+    users.push({ name, username, password, role });
+    saveUsers(users);
+    toast(`User "${username}" added.`, 'success');
+    renderAdminUsers(c);
+  });
+
+  c.querySelectorAll('[data-del-user]').forEach(b => b.addEventListener('click', () => {
+    if (b.disabled) return;
+    const i = +b.getAttribute('data-del-user');
+    const users = getUsers();
+    const u = users[i];
+    if (!confirm(`Delete user "${u.name}" (${u.username})?`)) return;
+    users.splice(i, 1);
+    saveUsers(users);
+    toast('User deleted.', 'success');
+    renderAdminUsers(c);
+  }));
+
+  c.querySelectorAll('[data-edit-user]').forEach(b => b.addEventListener('click', () => {
+    const i = +b.getAttribute('data-edit-user');
+    const users = getUsers();
+    const u = users[i];
+    const next = prompt(`Set role for ${u.name}.\nType one of: standard, admin_plus, super_admin`, u.role);
+    if (!next) return;
+    if (!ROLE_ORDER.includes(next.trim())) { toast('Invalid role.', 'error'); return; }
+    users[i].role = next.trim();
+    saveUsers(users);
+    toast('Role updated.', 'success');
+    renderAdminUsers(c);
+  }));
+}
+
+/* ── Apps tab ── */
+function renderAdminApps(c) {
+  const apps = getApps();
+  c.innerHTML = `
+    ${draftBanner()}
+    <div class="panel-section">
+      <div class="panel-section__title">Add New App</div>
+      <form id="add-app-form" class="form-grid">
+        <div class="field"><label class="field__label">App Name</label><input class="field__input field__input--sm" name="name" required placeholder="Notion" /></div>
+        <div class="field"><label class="field__label">Icon (emoji)</label><input class="field__input field__input--sm" name="icon" placeholder="📝" maxlength="4" /></div>
+        <div class="field"><label class="field__label">URL</label><input class="field__input field__input--sm" name="url" type="url" required placeholder="https://…" /></div>
+        <div class="field"><label class="field__label">Description</label><input class="field__input field__input--sm" name="description" placeholder="Docs & wiki" /></div>
+        <div class="field"><label class="field__label">Min. Role</label>
+          <select class="field__input field__input--sm" name="minrole">
+            <option value="standard">Standard &amp; up</option>
+            <option value="admin_plus">Admin Plus &amp; up</option>
+            <option value="super_admin">Super Admin only</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn--primary btn--sm">Add App</button>
+      </form>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section__title">All Apps (${apps.length})</div>
+      <table class="data-table">
+        <thead><tr><th>App</th><th>Access</th><th style="text-align:right">Actions</th></tr></thead>
+        <tbody>
+          ${apps.map((a, i) => `
+            <tr>
+              <td>${esc(a.icon || '🔗')} <strong>${esc(a.name)}</strong>${a.subApps ? ` <span class="pill pill--admin_plus">folder</span>` : ''}<br><span style="color:var(--text-faint);font-size:12px">${esc(a.url || a.description || '')}</span></td>
+              <td>${a.roles.map(r => `<span class="pill pill--${r}">${esc(ROLE_LABELS[r] || r)}</span>`).join(' ')}</td>
+              <td><div class="row-actions">
+                <button class="miniact" data-edit-app="${i}">Access</button>
+                <button class="miniact miniact--del" data-del-app="${i}">Delete</button>
+              </div></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  $('#add-app-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target;
+    const name = f.name.value.trim();
+    const url = f.url.value.trim();
+    if (!name || !url) return;
+    const minrole = f.minrole.value;
+    const roles = ROLE_ORDER.slice(ROLE_ORDER.indexOf(minrole)); // this role & higher
+    const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Math.floor(performance.now());
+    const apps = getApps();
+    apps.push({ id, name, icon: f.icon.value.trim() || '🔗', description: f.description.value.trim(), url, roles });
+    saveApps(apps);
+    toast(`App "${name}" added.`, 'success');
+    renderAdminApps(c);
+  });
+
+  c.querySelectorAll('[data-del-app]').forEach(b => b.addEventListener('click', () => {
+    const i = +b.getAttribute('data-del-app');
+    const apps = getApps();
+    if (!confirm(`Delete app "${apps[i].name}"?`)) return;
+    apps.splice(i, 1);
+    saveApps(apps);
+    toast('App deleted.', 'success');
+    renderAdminApps(c);
+  }));
+
+  c.querySelectorAll('[data-edit-app]').forEach(b => b.addEventListener('click', () => {
+    const i = +b.getAttribute('data-edit-app');
+    const apps = getApps();
+    const a = apps[i];
+    const next = prompt(`Minimum role for "${a.name}".\nType one of: standard, admin_plus, super_admin`, a.roles[0]);
+    if (!next) return;
+    const min = next.trim();
+    if (!ROLE_ORDER.includes(min)) { toast('Invalid role.', 'error'); return; }
+    a.roles = ROLE_ORDER.slice(ROLE_ORDER.indexOf(min));
+    saveApps(apps);
+    toast('Access updated.', 'success');
+    renderAdminApps(c);
+  }));
+}
+
+/* ── Broadcast tab ── */
+function renderAdminBroadcast(c) {
+  const me = currentUser();
+  const alerts = getAlerts();
+  c.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-section__title">Send an Alert to Everyone</div>
+      <form id="broadcast-form">
+        <div class="field"><label class="field__label">Title</label><input class="field__input field__input--sm" name="title" placeholder="System maintenance" required /></div>
+        <div class="field" style="margin-top:12px"><label class="field__label">Message</label><input class="field__input field__input--sm" name="text" placeholder="Zendesk will be down 9–10pm ET tonight." required /></div>
+        <button type="submit" class="btn btn--primary btn--sm" style="margin-top:14px">📣 Broadcast Alert</button>
+      </form>
+      <p style="font-size:12px;color:var(--text-faint);margin-top:10px">Alerts appear on every employee's launchpad on this device until dismissed.</p>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section__title">Active Alerts (${alerts.length})</div>
+      ${alerts.length ? `<table class="data-table"><tbody>
+        ${alerts.slice().reverse().map(a => `
+          <tr>
+            <td><strong>${esc(a.title)}</strong><br><span style="color:var(--text-soft);font-size:12.5px">${esc(a.text)}</span><br><span style="color:var(--text-faint);font-size:11px">${esc(a.from)} · ${esc(timeAgo(a.ts))}</span></td>
+            <td style="text-align:right"><button class="miniact miniact--del" data-del-alert="${esc(a.id)}">Remove</button></td>
+          </tr>`).join('')}
+      </tbody></table>` : `<p style="color:var(--text-faint);font-size:13px">No active alerts.</p>`}
+    </div>`;
+
+  $('#broadcast-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target;
+    const title = f.title.value.trim(), text = f.text.value.trim();
+    if (!title || !text) return;
+    const alerts = getAlerts();
+    alerts.push({ id: 'al_' + Math.floor(performance.now()) + '_' + alerts.length, title, text, from: firstName(me.name), ts: Date.now() });
+    saveAlerts(alerts);
+    // Clear dismissals so the new alert shows for everyone
+    store.del(KEY.dismissed);
+    toast('Alert broadcast to all employees.', 'success');
+    renderAdminBroadcast(c);
+  });
+
+  c.querySelectorAll('[data-del-alert]').forEach(b => b.addEventListener('click', () => {
+    const id = b.getAttribute('data-del-alert');
+    saveAlerts(getAlerts().filter(a => a.id !== id));
+    toast('Alert removed.', 'success');
+    renderAdminBroadcast(c);
+  }));
+}
+
+/* ── Publish tab (export the committed data.json) ── */
+function buildPublishJson() {
+  // Preserve the role labels for readability; bump the version so deployed
+  // launchpads know to refresh.
+  const payload = {
+    version: (Number(PUBLISHED_VERSION) || 1) + 1,
+    roles: ROLE_LABELS,
+    users: getUsers(),
+    apps: getApps(),
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+function renderAdminPublish(c) {
+  const nextVersion = (Number(PUBLISHED_VERSION) || 1) + 1;
+  const json = buildPublishJson();
+  c.innerHTML = `
+    <div class="panel-section">
+      <div class="panel-section__title">Publish to all staff</div>
+      <p class="publish-lead">
+        This launchpad uses a <strong>code + redeploy</strong> database: the file
+        <code>launchpad/data.json</code> in your repo is the source of truth. Your
+        in-panel edits are saved on this device only until you publish them.
+      </p>
+      <ol class="publish-steps">
+        <li><strong>Download</strong> (or copy) the updated <code>data.json</code> below — it already includes every user &amp; app change you made, with the version bumped to <strong>v${nextVersion}</strong>.</li>
+        <li>Replace <code>launchpad/data.json</code> in the repo with it and <code>git commit</code> + <code>git push</code>.</li>
+        <li>Netlify redeploys automatically. Every employee's launchpad refreshes to v${nextVersion} on their next tab.</li>
+      </ol>
+      <div class="publish-actions">
+        <button class="btn btn--primary btn--sm" id="pub-download">⬇ Download data.json</button>
+        <button class="btn btn--ghost btn--sm" id="pub-copy">📋 Copy JSON</button>
+      </div>
+      <textarea class="publish-code" id="pub-json" spellcheck="false" readonly>${esc(json)}</textarea>
+      <p class="publish-tip">💡 No coding needed to add someone in a pinch — you (or anyone) can also just edit this <code>data.json</code> in GitHub directly and bump the <code>version</code> number.</p>
+    </div>`;
+
+  $('#pub-copy').addEventListener('click', async () => {
+    const text = buildPublishJson();
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('data.json copied to clipboard.', 'success');
+    } catch {
+      const ta = $('#pub-json'); ta.focus(); ta.select();
+      toast('Press ⌘/Ctrl+C to copy the selected JSON.', 'info');
+    }
+  });
+
+  $('#pub-download').addEventListener('click', () => {
+    const blob = new Blob([buildPublishJson()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'data.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast('data.json downloaded — commit it to publish.', 'success');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOOT
+   ═══════════════════════════════════════════════════════════════════ */
+initTheme();
+(async () => {
+  const seed = await loadPublishedSeed(); // published data.json (or embedded fallback)
+  applyPublishedSeed(seed);               // published version wins over local drafts
+  render();
+})();
+
+    </script>
   </body>
 </html>
