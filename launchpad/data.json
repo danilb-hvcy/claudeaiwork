@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "roles": {
     "super_admin": "Super Admin",
     "admin_plus": "Admin Plus",
@@ -49,11 +49,15 @@
       "roles": ["standard", "admin_plus", "super_admin"]
     },
     {
-      "id": "zendesk",
-      "name": "Zendesk",
-      "icon": "📞",
-      "description": "Customer Support Ticketing",
-      "url": "https://zendesk.com",
+      "id": "support-tools",
+      "name": "Support Tools",
+      "icon": "🎧",
+      "description": "Zendesk, Zoom & HeyVacay NOVA",
+      "subApps": [
+        { "name": "Zendesk", "icon": "📞", "url": "https://zendesk.com", "roles": ["standard", "admin_plus", "super_admin"] },
+        { "name": "Zoom", "icon": "📱", "url": "https://zoom.us", "roles": ["standard", "admin_plus", "super_admin"] },
+        { "name": "HeyVacay NOVA", "icon": "🚀", "url": "https://admin.heyvacay.co", "roles": ["standard", "admin_plus", "super_admin"] }
+      ],
       "roles": ["standard", "admin_plus", "super_admin"]
     },
     {
@@ -95,14 +99,6 @@
       "description": "Payment Processing",
       "url": "https://dashboard.stripe.com",
       "roles": ["super_admin"]
-    },
-    {
-      "id": "zoom",
-      "name": "Zoom",
-      "icon": "📱",
-      "description": "Phone System & Video",
-      "url": "https://zoom.us",
-      "roles": ["standard", "admin_plus", "super_admin"]
     },
     {
       "id": "receptionhq",

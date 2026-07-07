@@ -35,7 +35,7 @@ const ROLE_ORDER = ['standard', 'admin_plus', 'super_admin'];
    This embedded copy is only a fallback for offline / file:// use.
    ────────────────────────────────────────────────────────────────── */
 const SEED = {
-  version: 1,
+  version: 2,
   users: [
     { name: 'DANIL BABADJANOV',     username: 'danilb',   password: 'Danilka2010!', role: 'super_admin' },
     { name: 'ALEKSEY BABADZHANOV',  username: 'alekseyb', password: 'Aleksey2131!', role: 'super_admin' },
@@ -57,13 +57,21 @@ const SEED = {
         { name: 'Google Admin',     icon: '🛡️', url: 'https://admin.google.com',    roles: ['super_admin'] },
       ],
     },
-    { id: 'zendesk',     name: 'Zendesk',     icon: '📞', description: 'Customer Support Ticketing',   url: 'https://zendesk.com',              roles: ['standard', 'admin_plus', 'super_admin'] },
+    {
+      id: 'support-tools', name: 'Support Tools', icon: '🎧',
+      description: 'Zendesk, Zoom & HeyVacay NOVA',
+      roles: ['standard', 'admin_plus', 'super_admin'],
+      subApps: [
+        { name: 'Zendesk',       icon: '📞', url: 'https://zendesk.com',       roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'Zoom',          icon: '📱', url: 'https://zoom.us',           roles: ['standard', 'admin_plus', 'super_admin'] },
+        { name: 'HeyVacay NOVA', icon: '🚀', url: 'https://admin.heyvacay.co', roles: ['standard', 'admin_plus', 'super_admin'] },
+      ],
+    },
     { id: 'hced',        name: 'HCED System', icon: '🏨', description: 'Hotel Complaint & Escalation', url: 'https://hced.heyvacay.co',         roles: ['standard', 'admin_plus', 'super_admin'] },
     { id: 'gusto',       name: 'Gusto',       icon: '💰', description: 'Contractor Payroll',          url: 'https://gusto.com',                roles: ['standard', 'admin_plus', 'super_admin'] },
     { id: 'heyvacay',    name: 'HeyVacay',    icon: '✈️', description: 'Main Booking Platform',        url: 'https://heyvacay.co',              roles: ['standard', 'admin_plus', 'super_admin'] },
     { id: 'ratehawk',    name: 'RateHawk',    icon: '🔑', description: 'Hotel Inventory Admin',        url: 'https://dashboard.ratehawk.com',   roles: ['admin_plus', 'super_admin'] },
     { id: 'stripe',      name: 'Stripe',      icon: '💳', description: 'Payment Processing',           url: 'https://dashboard.stripe.com',     roles: ['super_admin'] },
-    { id: 'zoom',        name: 'Zoom',        icon: '📱', description: 'Phone System & Video',         url: 'https://zoom.us',                  roles: ['standard', 'admin_plus', 'super_admin'] },
     { id: 'receptionhq', name: 'ReceptionHQ', icon: '📧', description: 'Email Forwarding & Management',url: 'https://receptionhq.com',          roles: ['super_admin'] },
   ],
 };
