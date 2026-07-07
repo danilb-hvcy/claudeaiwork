@@ -482,6 +482,7 @@ a { color: inherit; text-decoration: none; }
 .ann__composer[hidden] { display: none; }
 .ann__msg { resize: vertical; min-height: 52px; line-height: 1.5; }
 .ann__composer-actions { display: flex; gap: 8px; }
+.draft-note--live { background: rgba(31, 157, 85, 0.1); border-color: rgba(31, 157, 85, 0.32); }
 /* keep primary buttons compact here (the base .btn--primary is full-width for login) */
 .section-head .btn--primary,
 .ann__composer-actions .btn--primary { width: auto; }
@@ -1144,17 +1145,17 @@ function getUsers() {
   if (!u) { u = structuredCloneSafe(SEED.users); store.set(KEY.users, u); }
   return u;
 }
-function saveUsers(u) { store.set(KEY.users, u); }
+function saveUsers(u) { store.set(KEY.users, u); pushFirestore('users'); }
 
 function getApps() {
   let a = store.get(KEY.apps, null);
   if (!a) { a = structuredCloneSafe(SEED.apps); store.set(KEY.apps, a); }
   return a;
 }
-function saveApps(a) { store.set(KEY.apps, a); }
+function saveApps(a) { store.set(KEY.apps, a); pushFirestore('apps'); }
 
 function getAlerts() { return store.get(KEY.alerts, []); }
-function saveAlerts(a) { store.set(KEY.alerts, a); }
+function saveAlerts(a) { store.set(KEY.alerts, a); pushFirestore('announcements'); }
 
 function structuredCloneSafe(obj) { return JSON.parse(JSON.stringify(obj)); }
 
@@ -1176,6 +1177,10 @@ async function loadPublishedSeed() {
     const res = await fetch('data.json', { cache: 'no-store' });
     if (res.ok) {
       const j = await res.json();
+      // Pick up an optional firebaseConfig from data.json (no code edit needed).
+      if (j && j.firebaseConfig && typeof j.firebaseConfig === 'object') {
+        PUBLISHED_FIREBASE_CONFIG = j.firebaseConfig;
+      }
       if (j && Array.isArray(j.users) && Array.isArray(j.apps)) {
         return { version: Number(j.version) || 1, users: j.users, apps: j.apps };
       }
@@ -1195,6 +1200,96 @@ function applyPublishedSeed(seed) {
     store.set(KEY.apps, structuredCloneSafe(seed.apps));
     store.set(KEY.seedVersion, seed.version);
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FIREBASE FIRESTORE — real-time org-wide sync (optional)
+   ───────────────────────────────────────────────────────────────────
+   Paste your public-safe firebaseConfig below (or put it in data.json as
+   "firebaseConfig") and the launchpad goes live: users, apps and
+   announcements sync across every device in real time. With no config it
+   silently stays in localStorage-only mode — nothing else changes.
+
+   HOW IT WORKS: localStorage stays the synchronous cache the UI reads.
+   A Firestore listener mirrors each collection INTO localStorage and
+   re-renders on any remote change; every save also pushes to Firestore,
+   which fans the change out to everyone else. Collections are stored one
+   doc per type at hv/{users,apps,announcements} as { list: [...] }.
+   ═══════════════════════════════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyChrf1bco-6Z4Q1madQfyTAHQ0ZmVHei5w",
+  authDomain: "heyvacay-launchpad.firebaseapp.com",
+  projectId: "heyvacay-launchpad",
+  storageBucket: "heyvacay-launchpad.firebasestorage.app",
+  messagingSenderId: "836929030918",
+  appId: "1:836929030918:web:63206ad9f24cb94a23ec87",
+};
+let PUBLISHED_FIREBASE_CONFIG = null;  // ← or set "firebaseConfig" in data.json
+// Which collections sync to Firestore. `users` is OFF by default: our user docs
+// still hold plaintext passwords, and syncing them to an open-rules database
+// would make them world-readable. Turn on only once secured with Firebase Auth.
+const FS_SYNC = { users: false, apps: true, announcements: true };
+const FS_KEYS = { users: KEY.users, apps: KEY.apps, announcements: KEY.alerts };
+let fb = null;          // { db, doc, setDoc, onSnapshot } once loaded
+let fbReady = false;
+let fbApplyingRemote = false; // guard: don't echo a remote snapshot back up
+
+function isLiveSync() { return fbReady; }
+
+async function initFirebase() {
+  const cfg = FIREBASE_CONFIG || PUBLISHED_FIREBASE_CONFIG;
+  if (!cfg || !cfg.projectId || !cfg.apiKey) return false; // not configured → local-only
+  try {
+    const V = '10.12.5';
+    const appMod = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+    const fsMod  = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+    const app = appMod.initializeApp(cfg);
+    const db = fsMod.getFirestore(app);
+    fb = { db, doc: fsMod.doc, setDoc: fsMod.setDoc, onSnapshot: fsMod.onSnapshot };
+    fbReady = true;
+    return true;
+  } catch (e) {
+    console.warn('[launchpad] Firebase unavailable — staying in local mode:', e && e.message);
+    return false;
+  }
+}
+
+function subscribeFirestore(onChange) {
+  if (!fbReady) return;
+  Object.keys(FS_KEYS).forEach(type => {
+    if (!FS_SYNC[type]) return; // collection sync disabled (e.g. users until secured)
+    fb.onSnapshot(fb.doc(fb.db, 'hv', type),
+      snap => {
+        if (!snap.exists()) { pushFirestore(type); return; } // bootstrap empty DB from seed
+        const list = snap.data().list;
+        if (!Array.isArray(list)) return;
+        fbApplyingRemote = true;
+        store.set(FS_KEYS[type], list);
+        fbApplyingRemote = false;
+        onChange(type);
+      },
+      err => console.warn('[launchpad] Firestore listen error:', err && err.message)
+    );
+  });
+}
+
+async function pushFirestore(type) {
+  if (!fbReady || fbApplyingRemote || !FS_SYNC[type]) return; // skip when disabled / mirroring
+  const key = FS_KEYS[type];
+  if (!key) return;
+  const list = store.get(key, []);
+  try {
+    await fb.setDoc(fb.doc(fb.db, 'hv', type), { list, updatedAt: Date.now() });
+  } catch (e) {
+    console.warn('[launchpad] Firestore write failed (' + type + '):', e && e.message);
+  }
+}
+
+// A remote change arrived → refresh the relevant part of the UI live.
+function onRemoteChange(type) {
+  if (!currentUser()) return;             // login screen: nothing to refresh
+  if (type === 'announcements') renderAnnouncements(currentUser());
+  else render();                           // users/apps changed → re-render dashboard
 }
 
 /* ─── Session ────────────────────────────────────────────────────── */
@@ -1659,6 +1754,11 @@ function paintAdmin() {
 
 /* Honest banner: in-panel edits are a browser-local draft until published. */
 function draftBanner() {
+  if (isLiveSync()) {
+    return `<div class="draft-note draft-note--live">
+      ✅ <span><strong>Live sync is on.</strong> Changes here save to Firestore and appear on every employee's launchpad in real time — no publish step needed.</span>
+    </div>`;
+  }
   return `<div class="draft-note">
     ✏️ <span>Edits here are a <strong>draft on this device</strong>. To make them live for all staff, open the <strong>📦 Publish</strong> tab and commit the exported <code>data.json</code>.</span>
   </div>`;
@@ -2006,7 +2106,13 @@ initIdleBanner();
 (async () => {
   const seed = await loadPublishedSeed(); // published data.json (or embedded fallback)
   applyPublishedSeed(seed);               // published version wins over local drafts
-  render();
+  render();                               // instant paint from local cache
+
+  // Then, if a firebaseConfig is present, connect for real-time org-wide sync.
+  if (await initFirebase()) {
+    subscribeFirestore(onRemoteChange);
+    toast('Live sync connected', 'success', 'HeyVacay');
+  }
 })();
 
     </script>
