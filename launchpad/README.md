@@ -95,6 +95,10 @@ directly in GitHub — add the entry and bump `version` — no admin panel neede
   apps with role restrictions, and **broadcast alerts** that appear on everyone's
   launchpad.
 - 🔔 Toast notifications for sign in / out and actions.
+- 🖥️ **Idle screensaver** — after 60s of inactivity a full-screen branded banner
+  (Ken Burns tropical backdrop, floating glowing logo, animated "Smarter, Cheaper,
+  Faster" motto) fades in; any mouse / key / scroll / touch dismisses it and resets
+  the timer.
 - 🌓 Light / dark mode toggle.
 - 🌊 Signature animated ocean/wave backdrop with the HeyVacay palm watermark.
 - 📱 Fully responsive (desktop / tablet / mobile).
