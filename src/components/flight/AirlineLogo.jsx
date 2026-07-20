@@ -1,12 +1,50 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 /**
- * Small rounded logo chip for an airline. We render the carrier's brand color
- * with a plane glyph + IATA code rather than loading remote logos (keeps the
- * bundle self-contained and avoids broken-image states).
+ * Real airline logo on a white chip, with a graceful fallback to a brand-color
+ * plane glyph when no logo is available or the image fails to load.
+ *
+ * Logo source priority:
+ *   1. airline.logo — the hosted logo LiteAPI returns per carrier (live data).
+ *   2. Kiwi.com's public airline logo CDN, keyed by IATA code (demo data + any
+ *      carrier LiteAPI didn't give a logo for).
  */
+function logoUrl(airline) {
+  if (airline.logo) return airline.logo;
+  if (airline.code && /^[A-Z0-9]{2}$/.test(airline.code)) {
+    return `https://images.kiwi.com/airlines/64/${airline.code}.png`;
+  }
+  return '';
+}
+
 export default function AirlineLogo({ airline, size = 40 }) {
+  // Track the specific URL that failed so switching airlines re-tries cleanly.
+  const [failedUrl, setFailedUrl] = useState('');
   if (!airline) return null;
+
+  const url = logoUrl(airline);
+  const showImg = url && failedUrl !== url;
+
+  if (showImg) {
+    return (
+      <div
+        className="fl-airline-logo fl-airline-logo-img"
+        style={{ width: size, height: size }}
+        title={airline.name}
+        aria-label={airline.name}
+      >
+        <img
+          src={url}
+          alt={airline.name}
+          width={size}
+          height={size}
+          loading="lazy"
+          onError={() => setFailedUrl(url)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className="fl-airline-logo"

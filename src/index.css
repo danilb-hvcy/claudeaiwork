@@ -2281,6 +2281,18 @@ html, body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.fl-airline-logo-img {
+  background: white;
+  border: 1px solid var(--hv-border);
+}
+.fl-airline-logo-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+  box-sizing: border-box;
 }
 .fl-card-airline-name { font-size: 13px; font-weight: 600; color: var(--hv-text); }
 

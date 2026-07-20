@@ -151,11 +151,15 @@ export function mapLiteApiJourney(journey) {
   const last = segments[segments.length - 1];
   const stops = Math.max(0, segments.length - 1);
 
-  const carrierCode = first.carrier?.marketingCode || '';
-  const airline = AIRLINES[carrierCode] || {
-    name: first.carrier?.marketingName || carrierCode || 'Airline',
+  const carrier = first.carrier || {};
+  const carrierCode = carrier.marketingCode || '';
+  const known = AIRLINES[carrierCode];
+  const airline = {
+    name: known?.name || carrier.marketingName || carrierCode || 'Airline',
     code: carrierCode || '--',
-    color: '#5A6B7E',
+    color: known?.color || '#5A6B7E',
+    // LiteAPI ships a hosted logo per carrier; keep it so the UI can show it.
+    logo: carrier.marketingLogo || '',
   };
 
   const cheapest = journey.cheapestOffer || journey.offers?.[0] || {};
