@@ -1,5 +1,5 @@
 import React from 'react';
-import { AIRPORTS, airportLabel } from '../../data/airports.js';
+import AirportSelect from './AirportSelect.jsx';
 
 const CABINS = ['Economy', 'Premium', 'Business', 'First'];
 
@@ -42,16 +42,12 @@ export default function FlightSearchBar({ search, setSearch, onSearch }) {
 
       {/* Fields */}
       <div className="fl-search-fields">
-        <div className="fl-field fl-field-airport">
-          <label>From</label>
-          <input
-            list="fl-airport-list"
-            value={search.from}
-            onChange={(e) => set({ from: e.target.value })}
-            placeholder="City or airport code"
-            autoComplete="off"
-          />
-        </div>
+        <AirportSelect
+          label="From"
+          value={search.from}
+          onChange={(v) => set({ from: v })}
+          placeholder="City or airport code"
+        />
 
         <button className="fl-swap" onClick={swap} aria-label="Swap origin and destination">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -59,23 +55,12 @@ export default function FlightSearchBar({ search, setSearch, onSearch }) {
           </svg>
         </button>
 
-        <div className="fl-field fl-field-airport">
-          <label>To</label>
-          <input
-            list="fl-airport-list"
-            value={search.to}
-            onChange={(e) => set({ to: e.target.value })}
-            placeholder="City or airport code"
-            autoComplete="off"
-          />
-        </div>
-
-        {/* Shared airport autocomplete for both From and To */}
-        <datalist id="fl-airport-list">
-          {AIRPORTS.map((a) => (
-            <option key={a.code} value={airportLabel(a)}>{a.name}, {a.country}</option>
-          ))}
-        </datalist>
+        <AirportSelect
+          label="To"
+          value={search.to}
+          onChange={(v) => set({ to: v })}
+          placeholder="City or airport code"
+        />
 
         <div className="fl-field">
           <label>Date</label>

@@ -3,6 +3,7 @@ import FlightSearchBar from './FlightSearchBar.jsx';
 import FlightFilters, { TIME_SLOTS } from './FlightFilters.jsx';
 import FlightResults from './FlightResults.jsx';
 import FareDetailsPanel from './FareDetailsPanel.jsx';
+import CheckoutPage from './CheckoutPage.jsx';
 import { searchFlights } from '../../utils/liteApi.js';
 import { resolveAirportCode } from '../../data/airports.js';
 import { buildDateStrip, toISO } from '../../utils/dates.js';
@@ -57,6 +58,7 @@ export default function FlightSearchPage({ onExit }) {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [sort, setSort] = useState('cheapest');
   const [selectedFlight, setSelectedFlight] = useState(null);
+  const [checkout, setCheckout] = useState(null);
 
   const runSearch = useCallback(async (params) => {
     setLoading(true);
@@ -136,6 +138,19 @@ export default function FlightSearchPage({ onExit }) {
 
   const resetFilters = () => setFilters(DEFAULT_FILTERS);
 
+  // A selected fare moves the user into the checkout flow.
+  if (checkout) {
+    return (
+      <CheckoutPage
+        flight={checkout.flight}
+        fare={checkout.fare}
+        passengers={search.travelers}
+        onBack={() => setCheckout(null)}
+        onHome={onExit}
+      />
+    );
+  }
+
   return (
     <div className="fl-page">
       {/* Top nav */}
@@ -203,9 +218,8 @@ export default function FlightSearchPage({ onExit }) {
           passengers={search.travelers}
           onClose={() => setSelectedFlight(null)}
           onSelectFare={(fare) => {
-            // In production this would deep-link into the HeyVacay booking flow.
-            // eslint-disable-next-line no-alert
-            alert(`Selected ${fare.name} — $${fare.price.toFixed(2)} on ${selectedFlight.airline.name}.\nProceeding to checkout…`);
+            // Move into the checkout flow with the chosen flight + fare.
+            setCheckout({ flight: selectedFlight, fare });
             setSelectedFlight(null);
           }}
         />
