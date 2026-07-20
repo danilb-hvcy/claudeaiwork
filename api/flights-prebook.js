@@ -106,11 +106,14 @@ function buildParties(params, isDebug) {
       passengers: Array.isArray(params.passengers) ? params.passengers : [],
     };
   }
-  const contact = { title: 'MR', firstName: 'Test', lastName: 'Traveller', email: 'test@example.com', phoneNumber: '+15551234567' };
+  const contact = {
+    title: 'MR', firstName: 'Jordan', lastName: 'Rivera', email: 'jordan.rivera@example.com',
+    phoneNumber: '2015550123', phoneCountryCode: '1',
+  };
   const passengers = [{
     title: 'MR',
-    firstName: 'Test',
-    lastName: 'Traveller',
+    firstName: 'Jordan',
+    lastName: 'Rivera',
     birthday: '1990-01-01',
     dateOfBirth: '1990-01-01',
     gender: 'M',
@@ -121,7 +124,7 @@ function buildParties(params, isDebug) {
     documentType: 'passport',
     documentNumber: 'X1234567',
     documentIssueCountry: 'US',
-    documentExpiryDate: '2032-01-01',
+    documentExpiry: '2032-01-01',
     documentNationality: 'US',
   }];
   return { contact, passengers };
