@@ -111,6 +111,7 @@ function buildParties(params, isDebug) {
     title: 'MR',
     firstName: 'Test',
     lastName: 'Traveller',
+    birthday: '1990-01-01',
     dateOfBirth: '1990-01-01',
     gender: 'MALE',
     nationality: 'US',
