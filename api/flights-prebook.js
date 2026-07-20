@@ -118,7 +118,7 @@ function buildParties(params, isDebug) {
     type: 'ADULT',
     passengerId: 1,
     // LiteAPI wants document fields flat on the passenger (documentType, ...).
-    documentType: 'PASSPORT',
+    documentType: 'passport',
     documentNumber: 'X1234567',
     documentIssuingCountry: 'US',
     documentExpiryDate: '2032-01-01',
