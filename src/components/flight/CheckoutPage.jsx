@@ -126,8 +126,14 @@ export default function CheckoutPage({ flight, fare, passengers = 1, live = fals
 
       const ref = pickField(bk.data, [
         'bookingReference', 'bookingId', 'bookingID', 'confirmationCode',
-        'reference', 'pnr', 'supplierBookingId', 'supplierReference',
-      ]) || makeBookingRef();
+        'reference', 'pnr', 'supplierBookingId', 'supplierReference', 'orderId',
+      ]);
+      if (!ref) {
+        // Book returned OK but issued nothing (e.g. account can't settle payment).
+        // Never fabricate a reference on the live path — tell the truth.
+        setError("We couldn't complete this booking — the travel provider didn't issue a ticket (usually an account payment/credit setting). No charge was made. Your details are fine.");
+        return;
+      }
       setConfirmed({ ref, demo: false });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
