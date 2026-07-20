@@ -113,7 +113,7 @@ function buildParties(params, isDebug) {
     lastName: 'Traveller',
     birthday: '1990-01-01',
     dateOfBirth: '1990-01-01',
-    gender: 'MALE',
+    gender: 'M',
     nationality: 'US',
     type: 'ADULT',
     passengerId: 1,
