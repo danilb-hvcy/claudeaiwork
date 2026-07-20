@@ -33,7 +33,7 @@ export default async function handler(req, res) {
 
   const params = isDebug ? (req.query || {}) : await readBody(req);
   let { prebookId, holder, passengers, contact } = params;
-  const paymentMethod = params.paymentMethod || 'WALLET';
+  const paymentMethod = params.paymentMethod || 'ACC_CREDIT_CARD';
 
   // Debug convenience: with no prebookId, run the whole chain (search → prebook)
   // to get a fresh one, so book can be tested from a single URL.
@@ -84,6 +84,8 @@ export default async function handler(req, res) {
         chain,
         sentToLiteApi: liteApiBody,
         upstreamStatus: upstream.status,
+        upstreamContentType: upstream.headers.get('content-type') || null,
+        upstreamBodyLength: text.length,
         upstreamResponse: safeParse(text) || text,
       });
       return;
