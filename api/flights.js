@@ -24,24 +24,26 @@
 const LITEAPI_FLIGHTS_URL = 'https://api.liteapi.travel/v3.0/flights/rates';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed. Use POST.' });
+  // GET  → browser-friendly debug: shows what we send AND the raw LiteAPI reply.
+  //        e.g. /api/flights?origin=SYD&destination=LAX&departureDate=2026-08-15
+  // POST → normal path used by the app (raw upstream status + body passthrough).
+  const isDebug = req.method === 'GET';
+  if (req.method !== 'POST' && req.method !== 'GET') {
+    res.status(405).json({ error: 'Method not allowed. Use POST (or GET to debug).' });
     return;
   }
 
   const key = process.env.LITEAPI_KEY;
   if (!key) {
-    // No key configured → tell the client so it can fall back to demo data.
     res.status(503).json({ error: 'LITEAPI_KEY is not set on the server.', demo: true });
     return;
   }
 
-  // Read the body robustly. Vercel usually pre-parses JSON into req.body, but
-  // depending on runtime/config it can arrive as a string, a Buffer, or not at
-  // all — in which case we must read the raw stream ourselves. If we don't, all
-  // fields (including legs[0].date) go out undefined and LiteAPI rejects with
-  // "field 'Date' is required" (code 41002).
-  const params = await readBody(req);
+  // Read params from the query string (GET) or the request body (POST). The
+  // body read is robust: Vercel usually pre-parses req.body, but it can arrive
+  // as a string, Buffer, or unconsumed stream — if we don't handle that, fields
+  // like legs[0].date go out undefined and LiteAPI rejects with 41002.
+  const params = isDebug ? (req.query || {}) : await readBody(req);
   const {
     origin = 'SYD',
     destination = 'LAX',
@@ -54,10 +56,10 @@ export default async function handler(req, res) {
     currency = 'USD',
   } = params;
 
-  // Fail fast with a clear message rather than sending a broken request upstream.
   if (!departureDate) {
     res.status(400).json({
       error: "Missing 'departureDate' (YYYY-MM-DD).",
+      hint: isDebug ? 'Add ?departureDate=2026-08-15 to the URL.' : undefined,
       received: params,
     });
     return;
@@ -70,9 +72,9 @@ export default async function handler(req, res) {
   }
 
   const passengers = [
-    ...Array(Math.max(1, adults)).fill({ type: 'ADULT' }),
-    ...Array(Math.max(0, children)).fill({ type: 'CHILD' }),
-    ...Array(Math.max(0, infants)).fill({ type: 'INFANT' }),
+    ...Array(Math.max(1, Number(adults) || 1)).fill({ type: 'ADULT' }),
+    ...Array(Math.max(0, Number(children) || 0)).fill({ type: 'CHILD' }),
+    ...Array(Math.max(0, Number(infants) || 0)).fill({ type: 'INFANT' }),
   ];
 
   const liteApiBody = {
@@ -94,18 +96,26 @@ export default async function handler(req, res) {
     });
 
     const text = await upstream.text();
-    // Pass the upstream status + body straight through so the client can map it.
-    res
-      .status(upstream.status)
-      .setHeader('Content-Type', 'application/json')
-      .send(text || '{}');
+
+    if (isDebug) {
+      // Show everything, so the exact request + response are visible in-browser.
+      res.status(200).json({
+        sentToLiteApi: liteApiBody,
+        upstreamStatus: upstream.status,
+        upstreamResponse: safeParse(text) || text,
+      });
+      return;
+    }
+
+    // App path: pass the upstream status + body straight through for the client.
+    res.status(upstream.status).setHeader('Content-Type', 'application/json').send(text || '{}');
   } catch (err) {
     res.status(502).json({ error: `Upstream request failed: ${err.message}` });
   }
 }
 
 function safeParse(s) {
-  try { return JSON.parse(s); } catch { return {}; }
+  try { return JSON.parse(s); } catch { return null; }
 }
 
 /**
@@ -115,13 +125,13 @@ function safeParse(s) {
 async function readBody(req) {
   const b = req.body;
   if (b && typeof b === 'object' && !Buffer.isBuffer(b)) return b;
-  if (typeof b === 'string') return safeParse(b);
-  if (Buffer.isBuffer(b)) return safeParse(b.toString('utf8'));
+  if (typeof b === 'string') return safeParse(b) || {};
+  if (Buffer.isBuffer(b)) return safeParse(b.toString('utf8')) || {};
   try {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     if (!chunks.length) return {};
-    return safeParse(Buffer.concat(chunks).toString('utf8'));
+    return safeParse(Buffer.concat(chunks).toString('utf8')) || {};
   } catch {
     return {};
   }
