@@ -36,8 +36,12 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Vercel parses JSON bodies automatically; guard in case it arrives as a string.
-  const params = typeof req.body === 'string' ? safeParse(req.body) : (req.body || {});
+  // Read the body robustly. Vercel usually pre-parses JSON into req.body, but
+  // depending on runtime/config it can arrive as a string, a Buffer, or not at
+  // all — in which case we must read the raw stream ourselves. If we don't, all
+  // fields (including legs[0].date) go out undefined and LiteAPI rejects with
+  // "field 'Date' is required" (code 41002).
+  const params = await readBody(req);
   const {
     origin = 'SYD',
     destination = 'LAX',
@@ -49,6 +53,15 @@ export default async function handler(req, res) {
     cabin = 'ECONOMY',
     currency = 'USD',
   } = params;
+
+  // Fail fast with a clear message rather than sending a broken request upstream.
+  if (!departureDate) {
+    res.status(400).json({
+      error: "Missing 'departureDate' (YYYY-MM-DD).",
+      received: params,
+    });
+    return;
+  }
 
   // LiteAPI /flights/rates is legs-based: one leg for one-way, two for round-trip.
   const legs = [{ origin, destination, date: departureDate, direction: 'OUTBOUND' }];
@@ -93,4 +106,23 @@ export default async function handler(req, res) {
 
 function safeParse(s) {
   try { return JSON.parse(s); } catch { return {}; }
+}
+
+/**
+ * Return the request body as a plain object, whatever form it arrives in:
+ * an already-parsed object, a JSON string, a Buffer, or an unconsumed stream.
+ */
+async function readBody(req) {
+  const b = req.body;
+  if (b && typeof b === 'object' && !Buffer.isBuffer(b)) return b;
+  if (typeof b === 'string') return safeParse(b);
+  if (Buffer.isBuffer(b)) return safeParse(b.toString('utf8'));
+  try {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    if (!chunks.length) return {};
+    return safeParse(Buffer.concat(chunks).toString('utf8'));
+  } catch {
+    return {};
+  }
 }
