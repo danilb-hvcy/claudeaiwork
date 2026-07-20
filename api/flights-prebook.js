@@ -51,9 +51,14 @@ export default async function handler(req, res) {
     return;
   }
 
+  // LiteAPI flight prebook wants traveller/contact details up front. The app
+  // (POST) sends the real ones; the debug GET path synthesizes a full dummy set
+  // so every remaining required field surfaces in as few round-trips as possible.
+  const parties = buildParties(params, isDebug);
+
   // usePaymentSdk:false → LiteAPI returns a transactionId we can pass straight
   // to book (no card tokenization needed for sandbox test bookings).
-  const liteApiBody = { offerId, usePaymentSdk: false };
+  const liteApiBody = { offerId, usePaymentSdk: false, ...parties };
 
   try {
     const upstream = await fetch(PREBOOK_URL, {
@@ -87,6 +92,36 @@ export default async function handler(req, res) {
 
 function safeParse(s) {
   try { return JSON.parse(s); } catch { return null; }
+}
+
+/**
+ * Build the contact + passengers block LiteAPI flight prebook requires. The app
+ * supplies real values via POST; the debug GET path uses a complete dummy set
+ * (nested + flat field variants) so any remaining required field is revealed.
+ */
+function buildParties(params, isDebug) {
+  if (!isDebug) {
+    return {
+      contact: params.contact || {},
+      passengers: Array.isArray(params.passengers) ? params.passengers : [],
+    };
+  }
+  const contact = { title: 'MR', firstName: 'Test', lastName: 'Traveller', email: 'test@example.com', phone: '+15551234567' };
+  const passengers = [{
+    title: 'MR',
+    firstName: 'Test',
+    lastName: 'Traveller',
+    dateOfBirth: '1990-01-01',
+    gender: 'MALE',
+    nationality: 'US',
+    type: 'ADULT',
+    passengerId: 1,
+    // Include both nested and flat document variants so whichever LiteAPI wants is present.
+    passportNumber: 'X1234567',
+    passportExpiry: '2032-01-01',
+    document: { type: 'PASSPORT', number: 'X1234567', issuingCountry: 'US', expiryDate: '2032-01-01', nationality: 'US' },
+  }];
+  return { contact, passengers };
 }
 
 /** YYYY-MM-DD roughly a month out — a safe default future date for debugging. */
