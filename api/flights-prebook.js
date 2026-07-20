@@ -106,7 +106,7 @@ function buildParties(params, isDebug) {
       passengers: Array.isArray(params.passengers) ? params.passengers : [],
     };
   }
-  const contact = { title: 'MR', firstName: 'Test', lastName: 'Traveller', email: 'test@example.com', phone: '+15551234567' };
+  const contact = { title: 'MR', firstName: 'Test', lastName: 'Traveller', email: 'test@example.com', phoneNumber: '+15551234567' };
   const passengers = [{
     title: 'MR',
     firstName: 'Test',
