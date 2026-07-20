@@ -71,15 +71,13 @@ export default async function handler(req, res) {
     legs.push({ origin: destination, destination: origin, date: returnDate, direction: 'INBOUND' });
   }
 
-  const passengers = [
-    ...Array(Math.max(1, Number(adults) || 1)).fill({ type: 'ADULT' }),
-    ...Array(Math.max(0, Number(children) || 0)).fill({ type: 'CHILD' }),
-    ...Array(Math.max(0, Number(infants) || 0)).fill({ type: 'INFANT' }),
-  ];
-
+  // LiteAPI expects passenger counts as top-level fields (bodyRequest.adults),
+  // not a passengers array.
   const liteApiBody = {
     legs,
-    passengers,
+    adults: Math.max(1, Number(adults) || 1),
+    children: Math.max(0, Number(children) || 0),
+    infants: Math.max(0, Number(infants) || 0),
     cabinClass: String(cabin || 'ECONOMY').toUpperCase(),
     currency,
   };
