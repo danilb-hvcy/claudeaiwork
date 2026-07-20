@@ -34,6 +34,8 @@ export default async function handler(req, res) {
   const params = isDebug ? (req.query || {}) : await readBody(req);
   let { prebookId, holder, passengers, contact } = params;
   const paymentMethod = params.paymentMethod || 'ACC_CREDIT_CARD';
+  // Our own tracking id so we can look the booking up afterwards.
+  const clientReference = params.clientReference || `HV-${Date.now()}`;
 
   // Debug convenience: with no prebookId, run the whole chain (search → prebook)
   // to get a fresh one, so book can be tested from a single URL.
@@ -68,6 +70,7 @@ export default async function handler(req, res) {
   };
   const liteApiBody = {
     prebookId,
+    clientReference,
     holder: holderObj,
     contact: { ...holderObj, ...c },
     passengers: Array.isArray(passengers) ? passengers : [],
@@ -83,6 +86,8 @@ export default async function handler(req, res) {
     const text = await upstream.text();
 
     if (isDebug) {
+      // Look the booking up by our clientReference to prove whether it landed.
+      const verify = await verifyBooking(key, clientReference);
       res.status(200).json({
         url: BOOK_URL,
         chain,
@@ -91,6 +96,7 @@ export default async function handler(req, res) {
         upstreamContentType: upstream.headers.get('content-type') || null,
         upstreamBodyLength: text.length,
         upstreamResponse: safeParse(text) || text,
+        verifyByClientReference: verify,
       });
       return;
     }
@@ -163,6 +169,22 @@ async function runPrebook(key, offerId, parties) {
     return { status: r.status, prebookId: rec?.prebookId || null, error: json?.error || null };
   } catch (err) {
     return { status: 'error', prebookId: null, error: err.message };
+  }
+}
+
+const BOOKINGS_URL = process.env.LITEAPI_BOOKINGS_URL || 'https://book.liteapi.travel/v3.0/bookings';
+
+/** Fetch bookings filtered by our clientReference to confirm the book landed. */
+async function verifyBooking(key, clientReference) {
+  try {
+    const r = await fetch(`${BOOKINGS_URL}?clientReference=${encodeURIComponent(clientReference)}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json', 'X-API-Key': key },
+    });
+    const text = await r.text();
+    return { status: r.status, bodyLength: text.length, response: safeParse(text) || text };
+  } catch (err) {
+    return { status: 'error', error: err.message };
   }
 }
 
