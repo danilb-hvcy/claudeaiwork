@@ -14,6 +14,7 @@
  */
 
 const PREBOOK_URL = process.env.LITEAPI_PREBOOK_URL || 'https://book.liteapi.travel/v3.0/flights/prebook';
+const RATES_URL = 'https://api.liteapi.travel/v3.0/flights/rates';
 
 export default async function handler(req, res) {
   const isDebug = req.method === 'GET';
@@ -29,12 +30,22 @@ export default async function handler(req, res) {
   }
 
   const params = isDebug ? (req.query || {}) : await readBody(req);
-  const { offerId } = params;
+  let { offerId } = params;
+
+  // Debug convenience: with no offerId, run a live search and grab a fresh one
+  // so the whole prebook can be tested from a single clean URL (offerIds are
+  // huge and get mangled if pasted into a browser address bar).
+  let autoOffer = null;
+  if (!offerId && isDebug) {
+    autoOffer = await fetchFirstOffer(key, params);
+    offerId = autoOffer.offerId;
+  }
 
   if (!offerId) {
     res.status(400).json({
       error: "Missing 'offerId'.",
-      hint: isDebug ? 'Add ?offerId=... to the URL (grab one from /api/flights debug).' : undefined,
+      hint: isDebug ? 'Just open this URL bare to auto-fetch one, or add ?departureDate=YYYY-MM-DD.' : undefined,
+      autoOffer,
       received: params,
     });
     return;
@@ -60,6 +71,7 @@ export default async function handler(req, res) {
     if (isDebug) {
       res.status(200).json({
         url: PREBOOK_URL,
+        autoOffer,
         sentToLiteApi: liteApiBody,
         upstreamStatus: upstream.status,
         upstreamResponse: safeParse(text) || text,
@@ -75,6 +87,48 @@ export default async function handler(req, res) {
 
 function safeParse(s) {
   try { return JSON.parse(s); } catch { return null; }
+}
+
+/** YYYY-MM-DD roughly a month out — a safe default future date for debugging. */
+function defaultDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Run a live flight search and return the first journey's cheapest offerId.
+ * Used only by the debug GET path so prebook can be tested from one URL.
+ */
+async function fetchFirstOffer(key, params) {
+  const origin = params.origin || 'SYD';
+  const destination = params.destination || 'LAX';
+  const departureDate = params.departureDate || defaultDate();
+  const body = {
+    legs: [{ origin, destination, date: departureDate, direction: 'OUTBOUND' }],
+    adults: 1, children: 0, infants: 0,
+    cabinClass: String(params.cabin || 'ECONOMY').toUpperCase(),
+    currency: params.currency || 'USD',
+  };
+  try {
+    const r = await fetch(RATES_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-API-Key': key },
+      body: JSON.stringify(body),
+    });
+    const json = safeParse(await r.text());
+    const journeys = (json?.data || []).flatMap((d) => d.journeys || []);
+    const first = journeys[0]?.cheapestOffer;
+    return {
+      searchStatus: r.status,
+      searchedFor: { origin, destination, departureDate },
+      journeysFound: journeys.length,
+      offerId: first?.offerId || null,
+      offerPrice: first?.pricing?.display?.total ?? null,
+    };
+  } catch (err) {
+    return { searchStatus: 'error', error: err.message, offerId: null };
+  }
 }
 
 async function readBody(req) {
