@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import SkyeWidget from './components/SkyeWidget.jsx';
+import FlightSearchPage from './components/flight/FlightSearchPage.jsx';
 
 // Mock HeyVacay page — replace with your actual website
-function HeyVacayPage() {
+function HeyVacayPage({ onNavigate }) {
   return (
     <div className="hv-page">
       {/* Nav */}
@@ -17,7 +18,7 @@ function HeyVacayPage() {
           </div>
           <div className="hv-nav-links">
             <a href="#" className="hv-nav-link">Hotels</a>
-            <a href="#" className="hv-nav-link">Flights</a>
+            <a href="#" className="hv-nav-link" onClick={(e) => { e.preventDefault(); onNavigate('flights'); }}>Flights</a>
             <a href="#" className="hv-nav-link">Packages</a>
             <span className="hv-nav-skye">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -44,7 +45,7 @@ function HeyVacayPage() {
           {/* Search Tabs */}
           <div className="hv-tabs">
             <button className="hv-tab hv-tab-active">🏨 Hotels</button>
-            <button className="hv-tab">✈️ Flights</button>
+            <button className="hv-tab" onClick={() => onNavigate('flights')}>✈️ Flights</button>
             <button className="hv-tab">📦 Packages</button>
             <button className="hv-tab hv-tab-skye">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -121,9 +122,15 @@ function HeyVacayPage() {
 }
 
 export default function App() {
+  const [view, setView] = useState('home');
+
   return (
     <>
-      <HeyVacayPage />
+      {view === 'flights' ? (
+        <FlightSearchPage onExit={() => setView('home')} />
+      ) : (
+        <HeyVacayPage onNavigate={setView} />
+      )}
       <SkyeWidget />
     </>
   );
