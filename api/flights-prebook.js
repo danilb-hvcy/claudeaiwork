@@ -117,10 +117,12 @@ function buildParties(params, isDebug) {
     nationality: 'US',
     type: 'ADULT',
     passengerId: 1,
-    // Include both nested and flat document variants so whichever LiteAPI wants is present.
-    passportNumber: 'X1234567',
-    passportExpiry: '2032-01-01',
-    document: { type: 'PASSPORT', number: 'X1234567', issuingCountry: 'US', expiryDate: '2032-01-01', nationality: 'US' },
+    // LiteAPI wants document fields flat on the passenger (documentType, ...).
+    documentType: 'PASSPORT',
+    documentNumber: 'X1234567',
+    documentIssuingCountry: 'US',
+    documentExpiryDate: '2032-01-01',
+    documentNationality: 'US',
   }];
   return { contact, passengers };
 }
