@@ -27,11 +27,13 @@ import { mockFlights, AIRLINES } from '../data/mockFlights.js';
 
 const LITEAPI_BASE_URL = 'https://api.liteapi.travel/v3.0';
 
-/** Client-facing backend proxy endpoint (empty => use mock data). */
-const FLIGHTS_API_URL = import.meta.env.VITE_FLIGHTS_API_URL || '';
-
-/** Public key is safe to expose; only used when a proxy explicitly needs it. */
-const PUBLIC_KEY = import.meta.env.VITE_LITEAPI_PUBLIC_KEY || '';
+/**
+ * Client-facing endpoint. Defaults to the bundled serverless proxy at
+ * `/api/flights` (see api/flights.js) so a deployed site shows live prices
+ * with zero client config — you only set LITEAPI_KEY on the server. Override
+ * with VITE_FLIGHTS_API_URL if your proxy lives elsewhere.
+ */
+const FLIGHTS_API_URL = import.meta.env.VITE_FLIGHTS_API_URL || '/api/flights';
 
 /**
  * Convert an ISO-ish duration or minutes value into { hours, minutes, total }.
@@ -126,37 +128,36 @@ export async function searchFlights({
   infants = 0,
   cabin = 'Economy',
 } = {}) {
-  // No backend configured → return mock inventory (simulate a small latency).
-  if (!FLIGHTS_API_URL) {
-    await new Promise((r) => setTimeout(r, 650));
-    return { flights: mockFlights, source: 'mock' };
+  const payload = { origin, destination, departureDate, returnDate, adults, children, infants, cabin };
+
+  try {
+    const response = await fetch(FLIGHTS_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    // Any non-OK (e.g. 503 = key not set on server, 404 = opened as a local
+    // file with no function) → silently fall back to demo data so the UI is
+    // never empty. The banner tells the user how to enable live results.
+    if (!response.ok) return mockResult();
+
+    const data = await response.json();
+    const offers = data.offers || data.itineraries || data.data || [];
+    const flights = offers.map(mapLiteApiOffer).filter((f) => f && f.price);
+
+    // A configured key with real results → live. Otherwise keep the demo full.
+    return flights.length ? { flights, source: 'liteapi' } : mockResult();
+  } catch {
+    // Network error / offline / local file → demo data.
+    return mockResult();
   }
+}
 
-  const payload = {
-    origin,
-    destination,
-    departureDate,
-    returnDate,
-    passengers: { adults, children, infants },
-    cabinClass: cabin,
-  };
-
-  const response = await fetch(FLIGHTS_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(PUBLIC_KEY ? { 'X-API-Key': PUBLIC_KEY } : {}),
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Flight search failed (${response.status}). Please try again.`);
-  }
-
-  const data = await response.json();
-  const offers = data.offers || data.data || [];
-  return { flights: offers.map(mapLiteApiOffer), source: 'liteapi' };
+/** Bundled demo inventory, with a touch of latency so loading states show. */
+async function mockResult() {
+  await new Promise((r) => setTimeout(r, 500));
+  return { flights: mockFlights, source: 'mock' };
 }
 
 /**

@@ -141,7 +141,7 @@ export default function FlightSearchPage({ onExit }) {
 
       {source === 'mock' && (
         <div className="fl-demo-note">
-          Showing demo flight data. Set <code>VITE_FLIGHTS_API_URL</code> to a LiteAPI backend proxy for live results.
+          Showing demo flight data. Add your <code>LITEAPI_KEY</code> in your deployment's environment settings to show live prices — see <code>api/flights.js</code>.
         </div>
       )}
 
