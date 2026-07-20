@@ -20,12 +20,27 @@
  *    LiteAPI with the private key in the `X-API-Key` header.
  * 3. Set VITE_FLIGHTS_API_URL to that endpoint. The client calls your proxy,
  *    never LiteAPI directly.
- * 4. Map LiteAPI's response to the HeyVacay flight schema via `mapLiteApiOffer`.
+ * 4. Map LiteAPI's response to the HeyVacay flight schema via `mapLiteApiJourney`.
+ *
+ * RESPONSE SHAPE (confirmed against a live /flights/rates 200):
+ *   { data: [ { journeys: [ {
+ *       journeyKey, isCheapest,
+ *       segments: [ { originCode, destinationCode, departureTime, arrivalTime,
+ *                     carrier: { marketingCode, marketingName }, duration:{minutes} } ],
+ *       totalDuration: { iso8601, minutes },
+ *       cheapestOffer: { offerId, pricing:{ display:{ total, currency } }, fare:{ family } },
+ *       offers: [ { offerId, pricing:{display:{total,currency}}, fare:{family},
+ *                   baggage:{...}, seats:{...}, terms:{...}, segmentFares:[{cabin}] } ]
+ *   } ] } ] }
  */
 
 import { mockFlights, AIRLINES } from '../data/mockFlights.js';
+import { AIRPORTS } from '../data/airports.js';
 
 const LITEAPI_BASE_URL = 'https://api.liteapi.travel/v3.0';
+
+/** IATA code → { city, name, country } for enriching bare segment codes. */
+const AIRPORT_BY_CODE = new Map(AIRPORTS.map((a) => [a.code, a]));
 
 /**
  * Client-facing endpoint. Defaults to the bundled serverless proxy at
@@ -43,62 +58,138 @@ function normalizeDuration(totalMinutes) {
   return { hours: Math.floor(safe / 60), minutes: safe % 60, totalMinutes: safe };
 }
 
+/** "2026-08-15T09:30:00" → "09:30". */
+function hhmm(iso) {
+  return (iso || '').slice(11, 16);
+}
+
+/** { city, name, country } for an IATA code, or {} if unknown. */
+function airportInfo(code) {
+  return AIRPORT_BY_CODE.get(code) || {};
+}
+
+/** Human-readable baggage lines from a LiteAPI offer's baggage object. */
+function baggageLines(baggage) {
+  if (!baggage) return [];
+  const lines = [];
+  for (const item of baggage.included || []) {
+    const label = item.description || (item.bagType === 'checked' ? 'Checked bag' : 'Cabin bag');
+    lines.push(item.pieces ? `${label} included (${item.pieces})` : `${label} included`);
+  }
+  if (!baggage.hasCheckedBag) lines.push('Checked baggage for a fee');
+  if (!lines.length) lines.push(baggage.hasCarryOnBag ? 'Hand baggage included' : 'No baggage included');
+  return lines;
+}
+
+/** Human-readable flexibility lines from a LiteAPI offer's terms object. */
+function flexibilityLines(terms) {
+  if (!terms) return [];
+  if (Array.isArray(terms.summary) && terms.summary.length) {
+    return terms.summary.filter((t) => t.level !== 'info').map((t) => t.message).filter(Boolean);
+  }
+  return [
+    terms.refundable ? 'Refundable' : 'Non-refundable',
+    terms.changeable ? 'Changes allowed' : 'Non-changeable',
+  ];
+}
+
 /**
- * Map a raw LiteAPI flight offer to the HeyVacay flight schema used by the UI.
- * Defensive about missing fields — LiteAPI segment shapes vary by carrier.
- *
- * @param {Object} offer - Raw LiteAPI offer/itinerary object
- * @returns {Object} HeyVacay-compatible flight object
+ * Turn a journey's `offers[]` into the fare columns the FareDetailsPanel shows.
+ * De-dupes to the cheapest offer per fare family, sorts cheapest-first, caps at
+ * four columns, and flags a sensible middle tier as recommended (mirrors the UI).
  */
-export function mapLiteApiOffer(offer) {
-  const segments = offer.segments || offer.slices?.[0]?.segments || [];
-  const first = segments[0] || {};
-  const last = segments[segments.length - 1] || first;
+function buildFaresFromOffers(offers, fallbackPrice) {
+  const byFamily = new Map();
+  for (const offer of offers || []) {
+    const price = Number(offer.pricing?.display?.total);
+    if (!price) continue;
+    const family = offer.fare?.family || 'Standard';
+    const existing = byFamily.get(family);
+    if (!existing || price < existing.price) {
+      byFamily.set(family, {
+        id: offer.offerId,
+        name: family,
+        price,
+        cabin: offer.segmentFares?.[0]?.cabin || offer.fare?.family || 'Economy',
+        recommended: false,
+        seat: offer.seats?.seatReservation?.description || 'Seat selection available for purchase',
+        bags: baggageLines(offer.baggage),
+        flexibility: flexibilityLines(offer.terms),
+      });
+    }
+  }
+
+  const list = [...byFamily.values()].sort((a, b) => a.price - b.price).slice(0, 4);
+  if (list.length >= 2) list[1].recommended = true;
+
+  if (!list.length && fallbackPrice) {
+    list.push({
+      id: 'fare-standard',
+      name: 'Economy',
+      price: fallbackPrice,
+      cabin: 'Economy',
+      recommended: false,
+      seat: 'Seat selection available for purchase',
+      bags: [],
+      flexibility: [],
+    });
+  }
+  return list;
+}
+
+/**
+ * Map one LiteAPI journey (from data[].journeys[]) to the HeyVacay flight schema
+ * used by the UI. Defensive about missing fields — carrier/segment shapes vary.
+ *
+ * @param {Object} journey - A single journey object
+ * @returns {Object|null} HeyVacay-compatible flight object, or null if unusable
+ */
+export function mapLiteApiJourney(journey) {
+  const segments = journey?.segments || [];
+  if (!segments.length) return null;
+  const first = segments[0];
+  const last = segments[segments.length - 1];
   const stops = Math.max(0, segments.length - 1);
 
-  const carrierCode = first.marketingCarrier || first.carrierCode || offer.carrier;
+  const carrierCode = first.carrier?.marketingCode || '';
   const airline = AIRLINES[carrierCode] || {
-    name: first.carrierName || carrierCode || 'Airline',
+    name: first.carrier?.marketingName || carrierCode || 'Airline',
     code: carrierCode || '--',
     color: '#5A6B7E',
   };
 
-  const price = Number(offer.price?.total ?? offer.totalPrice ?? offer.amount) || null;
+  const cheapest = journey.cheapestOffer || journey.offers?.[0] || {};
+  const price = Number(cheapest.pricing?.display?.total) || null;
+  const currency = cheapest.pricing?.display?.currency || 'USD';
+
+  const oInfo = airportInfo(first.originCode);
+  const dInfo = airportInfo(last.destinationCode);
 
   return {
-    id: offer.id || offer.offerId,
+    id: cheapest.offerId || journey.journeyKey,
     airline,
     origin: {
-      code: first.departure?.iataCode || first.origin,
-      city: first.departure?.city || '',
-      airport: first.departure?.airportName || '',
-      country: first.departure?.country || '',
+      code: first.originCode,
+      city: oInfo.city || first.originName || first.originCode,
+      airport: first.originName || oInfo.name || '',
+      country: oInfo.country || '',
     },
     destination: {
-      code: last.arrival?.iataCode || last.destination,
-      city: last.arrival?.city || '',
-      airport: last.arrival?.airportName || '',
-      country: last.arrival?.country || '',
+      code: last.destinationCode,
+      city: dInfo.city || last.destinationName || last.destinationCode,
+      airport: last.destinationName || dInfo.name || '',
+      country: dInfo.country || '',
     },
-    departure: { time: (first.departure?.at || '').slice(11, 16) },
-    arrival: { time: (last.arrival?.at || '').slice(11, 16) },
-    duration: normalizeDuration(offer.durationMinutes ?? offer.totalDuration),
+    departure: { time: hhmm(first.departureTime) },
+    arrival: { time: hhmm(last.arrivalTime) },
+    duration: normalizeDuration(journey.totalDuration?.minutes),
     stops,
-    stopCities: segments.slice(0, -1).map((s) => s.arrival?.iataCode).filter(Boolean),
+    stopCities: segments.slice(0, -1).map((s) => s.destinationCode).filter(Boolean),
     price,
-    originalPrice: Number(offer.price?.base) || null,
-    currency: offer.price?.currency || offer.currency || 'USD',
-    cabin: offer.cabinClass || 'Economy',
-    fares: (offer.fareOptions || []).map((f, i) => ({
-      id: f.id || `fare-${i}`,
-      name: f.brandName || f.name,
-      price: Number(f.price?.total ?? f.amount) || price,
-      cabin: f.cabinClass || 'Economy',
-      recommended: Boolean(f.recommended),
-      seat: f.seatSelection || 'Seat choice for a fee',
-      bags: f.baggage || [],
-      flexibility: f.flexibility || [],
-    })),
+    originalPrice: null,
+    currency,
+    cabin: cheapest.fare?.family || cheapest.segmentFares?.[0]?.cabin || 'Economy',
+    fares: buildFaresFromOffers(journey.offers, price),
   };
 }
 
@@ -143,8 +234,12 @@ export async function searchFlights({
     if (!response.ok) return mockResult();
 
     const data = await response.json();
-    const offers = data.offers || data.itineraries || data.data || [];
-    const flights = offers.map(mapLiteApiOffer).filter((f) => f && f.price);
+
+    // Live shape: { data: [ { journeys: [ ... ] } ] }. Each journey becomes one
+    // flight card. Flatten every itinerary's journeys, then map + keep priced.
+    const itineraries = Array.isArray(data.data) ? data.data : [];
+    const journeys = itineraries.flatMap((it) => it.journeys || []);
+    const flights = journeys.map(mapLiteApiJourney).filter((f) => f && f.price);
 
     // A configured key with real results → live. Otherwise keep the demo full.
     return flights.length ? { flights, source: 'liteapi' } : mockResult();
