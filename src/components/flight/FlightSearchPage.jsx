@@ -4,6 +4,8 @@ import FlightFilters, { TIME_SLOTS } from './FlightFilters.jsx';
 import FlightResults from './FlightResults.jsx';
 import FareDetailsPanel from './FareDetailsPanel.jsx';
 import { searchFlights } from '../../utils/liteApi.js';
+import { resolveAirportCode } from '../../data/airports.js';
+import { buildDateStrip, toISO } from '../../utils/dates.js';
 
 const PRICE_BOUNDS = { min: 200, max: 4000 };
 
@@ -15,13 +17,21 @@ const DEFAULT_FILTERS = {
   arrivalSlots: [],
 };
 
+/** Default dates: two/three weeks out from today so the search is valid live. */
+function defaultDates() {
+  const dep = new Date();
+  dep.setDate(dep.getDate() + 14);
+  const ret = new Date();
+  ret.setDate(ret.getDate() + 21);
+  return { departureDate: toISO(dep), returnDate: toISO(ret) };
+}
+
 const DEFAULT_SEARCH = {
   tripType: 'oneway',
   cabin: 'Economy',
-  from: 'Australia (SYD)',
+  from: 'Sydney (SYD)',
   to: 'Los Angeles (LAX)',
-  departureDate: '2025-12-26',
-  returnDate: '2026-01-02',
+  ...defaultDates(),
   travelers: 1,
 };
 
@@ -46,7 +56,6 @@ export default function FlightSearchPage({ onExit }) {
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [sort, setSort] = useState('cheapest');
-  const [activeDate, setActiveDate] = useState(DEFAULT_SEARCH.departureDate);
   const [selectedFlight, setSelectedFlight] = useState(null);
 
   const runSearch = useCallback(async (params) => {
@@ -54,8 +63,8 @@ export default function FlightSearchPage({ onExit }) {
     setError(null);
     setSelectedFlight(null);
     try {
-      const [origin] = (params.from.match(/\(([A-Z]{3})\)/) || [null, 'SYD']).slice(1);
-      const [destination] = (params.to.match(/\(([A-Z]{3})\)/) || [null, 'LAX']).slice(1);
+      const origin = resolveAirportCode(params.from) || 'SYD';
+      const destination = resolveAirportCode(params.to) || 'LAX';
       const { flights, source: src } = await searchFlights({
         origin,
         destination,
@@ -78,6 +87,17 @@ export default function FlightSearchPage({ onExit }) {
   useEffect(() => {
     runSearch(DEFAULT_SEARCH);
   }, [runSearch]);
+
+  // Picking a date from the strip updates the search and re-runs it.
+  const handlePickDate = useCallback((dateISO) => {
+    setSearch((s) => {
+      const next = { ...s, departureDate: dateISO };
+      runSearch(next);
+      return next;
+    });
+  }, [runSearch]);
+
+  const dateStripItems = useMemo(() => buildDateStrip(search.departureDate), [search.departureDate]);
 
   // Airline options derived from the current result set (dynamic filter list).
   const airlineOptions = useMemo(() => {
@@ -160,8 +180,9 @@ export default function FlightSearchPage({ onExit }) {
           error={error}
           sort={sort}
           setSort={setSort}
-          activeDate={activeDate}
-          onPickDate={(d) => { setActiveDate(d); }}
+          dates={dateStripItems}
+          activeDate={search.departureDate}
+          onPickDate={handlePickDate}
           selectedFlightId={selectedFlight?.id}
           onViewDetails={setSelectedFlight}
           onRetry={() => runSearch(search)}

@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import FlightCard from './FlightCard.jsx';
-import { dateStrip, promoOffers } from '../../data/mockFlights.js';
+import { promoOffers } from '../../data/mockFlights.js';
 
 const SORTS = [
   { id: 'cheapest', label: 'Cheapest', icon: '🏷️' },
@@ -9,7 +9,7 @@ const SORTS = [
 
 const STEPS = ['Choose departing flight', 'Choose returning flight', 'Review flight'];
 
-function DateStrip({ activeDate, onPick }) {
+function DateStrip({ dates, activeDate, onPick }) {
   const scroller = useRef(null);
   const nudge = (dir) => {
     if (scroller.current) scroller.current.scrollBy({ left: dir * 240, behavior: 'smooth' });
@@ -18,7 +18,7 @@ function DateStrip({ activeDate, onPick }) {
     <div className="fl-datestrip">
       <button className="fl-datestrip-arrow" onClick={() => nudge(-1)} aria-label="Previous dates">‹</button>
       <div className="fl-datestrip-track" ref={scroller}>
-        {dateStrip.map((d) => (
+        {dates.map((d) => (
           <button
             key={d.value}
             className={`fl-date${activeDate === d.value ? ' fl-date-active' : ''}`}
@@ -60,6 +60,7 @@ export default function FlightResults({
   error,
   sort,
   setSort,
+  dates,
   activeDate,
   onPickDate,
   selectedFlightId,
@@ -68,7 +69,7 @@ export default function FlightResults({
 }) {
   return (
     <section className="fl-results">
-      <DateStrip activeDate={activeDate} onPick={onPickDate} />
+      <DateStrip dates={dates} activeDate={activeDate} onPick={onPickDate} />
 
       {/* Promo banners */}
       <div className="fl-promos">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { AIRPORTS, airportLabel } from '../../data/airports.js';
 
 const CABINS = ['Economy', 'Premium', 'Business', 'First'];
 
@@ -43,7 +44,13 @@ export default function FlightSearchBar({ search, setSearch, onSearch }) {
       <div className="fl-search-fields">
         <div className="fl-field fl-field-airport">
           <label>From</label>
-          <input value={search.from} onChange={(e) => set({ from: e.target.value })} placeholder="City or airport" />
+          <input
+            list="fl-airport-list"
+            value={search.from}
+            onChange={(e) => set({ from: e.target.value })}
+            placeholder="City or airport code"
+            autoComplete="off"
+          />
         </div>
 
         <button className="fl-swap" onClick={swap} aria-label="Swap origin and destination">
@@ -54,8 +61,21 @@ export default function FlightSearchBar({ search, setSearch, onSearch }) {
 
         <div className="fl-field fl-field-airport">
           <label>To</label>
-          <input value={search.to} onChange={(e) => set({ to: e.target.value })} placeholder="City or airport" />
+          <input
+            list="fl-airport-list"
+            value={search.to}
+            onChange={(e) => set({ to: e.target.value })}
+            placeholder="City or airport code"
+            autoComplete="off"
+          />
         </div>
+
+        {/* Shared airport autocomplete for both From and To */}
+        <datalist id="fl-airport-list">
+          {AIRPORTS.map((a) => (
+            <option key={a.code} value={airportLabel(a)}>{a.name}, {a.country}</option>
+          ))}
+        </datalist>
 
         <div className="fl-field">
           <label>Date</label>
