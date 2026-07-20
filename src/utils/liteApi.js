@@ -49,6 +49,8 @@ const AIRPORT_BY_CODE = new Map(AIRPORTS.map((a) => [a.code, a]));
  * with VITE_FLIGHTS_API_URL if your proxy lives elsewhere.
  */
 const FLIGHTS_API_URL = import.meta.env.VITE_FLIGHTS_API_URL || '/api/flights';
+const PREBOOK_API_URL = import.meta.env.VITE_FLIGHTS_PREBOOK_URL || '/api/flights-prebook';
+const BOOK_API_URL = import.meta.env.VITE_FLIGHTS_BOOK_URL || '/api/flights-book';
 
 /**
  * Convert an ISO-ish duration or minutes value into { hours, minutes, total }.
@@ -251,6 +253,54 @@ export async function searchFlights({
     // Network error / offline / local file → demo data.
     return mockResult();
   }
+}
+
+/**
+ * Prebook a flight offer (locks price, returns prebookId + transactionId).
+ * @param {string} offerId - The chosen fare's offerId (fare.id on live flights).
+ * @returns {Promise<{ok:boolean, status:number, data:Object}>}
+ */
+export async function prebookFlight(offerId) {
+  const res = await fetch(PREBOOK_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ offerId }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+
+/**
+ * Book a prebooked flight.
+ * @param {Object} payload - { prebookId, transactionId, holder, passengers }
+ * @returns {Promise<{ok:boolean, status:number, data:Object}>}
+ */
+export async function bookFlight(payload) {
+  const res = await fetch(BOOK_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+
+/** Pull the first present value across common LiteAPI response nestings. */
+export function pickField(resp, keys) {
+  const buckets = [resp, resp?.data, resp?.data?.data];
+  for (const b of buckets) {
+    if (!b || typeof b !== 'object') continue;
+    for (const k of keys) if (b[k] != null && b[k] !== '') return b[k];
+  }
+  return null;
+}
+
+/** Human-readable error text from a LiteAPI-style error response. */
+export function errorText(resp) {
+  const e = resp?.error ?? resp?.data?.error;
+  if (typeof e === 'string') return e;
+  if (e && typeof e === 'object') return e.message || e.code || 'Request failed.';
+  return resp?.message || resp?.data?.message || 'Request failed.';
 }
 
 /** Bundled demo inventory, with a touch of latency so loading states show. */

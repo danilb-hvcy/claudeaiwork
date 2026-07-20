@@ -145,6 +145,7 @@ export default function FlightSearchPage({ onExit }) {
         flight={checkout.flight}
         fare={checkout.fare}
         passengers={search.travelers}
+        live={source === 'liteapi'}
         onBack={() => setCheckout(null)}
         onHome={onExit}
       />

@@ -2680,6 +2680,29 @@ html, body {
   transition: border-color 0.15s;
 }
 .fl-input input:focus { border-color: var(--hv-flight-cyan); }
+.fl-input select {
+  border: 1px solid var(--hv-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--hv-text);
+  background: white;
+  outline: none;
+  cursor: pointer;
+}
+.fl-input select:focus { border-color: var(--hv-flight-cyan); }
+
+.fl-checkout-sandbox {
+  font-size: 13px;
+  color: var(--hv-text-secondary);
+  line-height: 1.5;
+  background: var(--hv-primary-light);
+  border: 1px solid #b7ecef;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.fl-checkout-pay:disabled { opacity: 0.6; cursor: default; }
 
 .fl-checkout-error {
   color: var(--hv-flight-red);
