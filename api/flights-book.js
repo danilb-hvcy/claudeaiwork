@@ -58,15 +58,19 @@ export default async function handler(req, res) {
   }
 
   const c = contact || {};
+  const holderObj = {
+    title: holder?.title || c.title || 'MR',
+    firstName: holder?.firstName || c.firstName || passengers?.[0]?.firstName || '',
+    lastName: holder?.lastName || c.lastName || passengers?.[0]?.lastName || '',
+    email: holder?.email || c.email || '',
+    phoneNumber: holder?.phoneNumber || c.phoneNumber || '',
+    phoneCountryCode: holder?.phoneCountryCode || c.phoneCountryCode || '',
+  };
   const liteApiBody = {
     prebookId,
-    holder: {
-      firstName: holder?.firstName || c.firstName || passengers?.[0]?.firstName || '',
-      lastName: holder?.lastName || c.lastName || passengers?.[0]?.lastName || '',
-      email: holder?.email || c.email || '',
-      phoneNumber: holder?.phoneNumber || c.phoneNumber || '',
-      phoneCountryCode: holder?.phoneCountryCode || c.phoneCountryCode || '',
-    },
+    holder: holderObj,
+    contact: { ...holderObj, ...c },
+    passengers: Array.isArray(passengers) ? passengers : [],
     payment: { method: paymentMethod },
   };
 
