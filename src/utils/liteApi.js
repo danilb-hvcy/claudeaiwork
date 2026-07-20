@@ -43,6 +43,16 @@ const LITEAPI_BASE_URL = 'https://api.liteapi.travel/v3.0';
 const AIRPORT_BY_CODE = new Map(AIRPORTS.map((a) => [a.code, a]));
 
 /**
+ * Carriers to hide from results. LiteAPI's sandbox injects a placeholder
+ * "Nuitée Air" (Nuitée is LiteAPI's parent) — not a real airline, so we drop
+ * it so demos only ever show genuine carriers. Matches é or e.
+ */
+const HIDDEN_AIRLINE = /nuit[eé]e/i;
+function isHiddenAirline(airline) {
+  return HIDDEN_AIRLINE.test(airline?.name || '') || HIDDEN_AIRLINE.test(airline?.code || '');
+}
+
+/**
  * Client-facing endpoint. Defaults to the bundled serverless proxy at
  * `/api/flights` (see api/flights.js) so a deployed site shows live prices
  * with zero client config — you only set LITEAPI_KEY on the server. Override
@@ -245,7 +255,9 @@ export async function searchFlights({
     // flight card. Flatten every itinerary's journeys, then map + keep priced.
     const itineraries = Array.isArray(data.data) ? data.data : [];
     const journeys = itineraries.flatMap((it) => it.journeys || []);
-    const flights = journeys.map(mapLiteApiJourney).filter((f) => f && f.price);
+    const flights = journeys
+      .map(mapLiteApiJourney)
+      .filter((f) => f && f.price && !isHiddenAirline(f.airline));
 
     // A configured key with real results → live. Otherwise keep the demo full.
     return flights.length ? { flights, source: 'liteapi' } : mockResult();
