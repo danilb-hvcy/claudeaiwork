@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import FlightSearchBar from './FlightSearchBar.jsx';
 import FlightFilters, { TIME_SLOTS } from './FlightFilters.jsx';
 import FlightResults from './FlightResults.jsx';
@@ -51,9 +51,10 @@ function stopBucket(stops) {
 export default function FlightSearchPage({ onExit }) {
   const [search, setSearch] = useState(DEFAULT_SEARCH);
   const [rawFlights, setRawFlights] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [source, setSource] = useState('mock');
+  const [hasSearched, setHasSearched] = useState(false);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [sort, setSort] = useState('cheapest');
@@ -85,10 +86,12 @@ export default function FlightSearchPage({ onExit }) {
     }
   }, []);
 
-  // Initial load.
-  useEffect(() => {
-    runSearch(DEFAULT_SEARCH);
-  }, [runSearch]);
+  // Kick off a search from the landing page (or the "Search" button), switching
+  // from the search form to the results view.
+  const startSearch = useCallback(() => {
+    setHasSearched(true);
+    runSearch(search);
+  }, [runSearch, search]);
 
   // Picking a date from the strip updates the search and re-runs it.
   const handlePickDate = useCallback((dateISO) => {
@@ -173,37 +176,50 @@ export default function FlightSearchPage({ onExit }) {
         </div>
       </header>
 
-      <FlightSearchBar search={search} setSearch={setSearch} onSearch={() => runSearch(search)} />
-
-      {source === 'mock' && (
-        <div className="fl-demo-note">
-          Showing demo flight data. Add your <code>LITEAPI_KEY</code> in your deployment's environment settings to show live prices — see <code>api/flights.js</code>.
+      {!hasSearched ? (
+        /* Search landing: just the form until the user runs a search. */
+        <div className="fl-hero">
+          <div className="fl-hero-inner">
+            <h1 className="fl-hero-title">Where do you want to fly?</h1>
+            <p className="fl-hero-sub">Search live fares across hundreds of airlines and destinations.</p>
+            <FlightSearchBar search={search} setSearch={setSearch} onSearch={startSearch} ctaLabel="Search flights" />
+          </div>
         </div>
-      )}
+      ) : (
+        <>
+          <FlightSearchBar search={search} setSearch={setSearch} onSearch={() => runSearch(search)} ctaLabel="Modify" />
 
-      <div className="fl-layout">
-        <FlightFilters
-          filters={filters}
-          setFilters={setFilters}
-          airlineOptions={airlineOptions}
-          stopCounts={stopCounts}
-          priceBounds={PRICE_BOUNDS}
-          onReset={resetFilters}
-        />
-        <FlightResults
-          flights={visibleFlights}
-          loading={loading}
-          error={error}
-          sort={sort}
-          setSort={setSort}
-          dates={dateStripItems}
-          activeDate={search.departureDate}
-          onPickDate={handlePickDate}
-          selectedFlightId={selectedFlight?.id}
-          onViewDetails={setSelectedFlight}
-          onRetry={() => runSearch(search)}
-        />
-      </div>
+          {source === 'mock' && (
+            <div className="fl-demo-note">
+              Showing demo flight data. Add your <code>LITEAPI_KEY</code> in your deployment's environment settings to show live prices — see <code>api/flights.js</code>.
+            </div>
+          )}
+
+          <div className="fl-layout">
+            <FlightFilters
+              filters={filters}
+              setFilters={setFilters}
+              airlineOptions={airlineOptions}
+              stopCounts={stopCounts}
+              priceBounds={PRICE_BOUNDS}
+              onReset={resetFilters}
+            />
+            <FlightResults
+              flights={visibleFlights}
+              loading={loading}
+              error={error}
+              sort={sort}
+              setSort={setSort}
+              dates={dateStripItems}
+              activeDate={search.departureDate}
+              onPickDate={handlePickDate}
+              selectedFlightId={selectedFlight?.id}
+              onViewDetails={setSelectedFlight}
+              onRetry={() => runSearch(search)}
+            />
+          </div>
+        </>
+      )}
 
       <footer className="fl-footer">
         <span>© 2025 Heyvacay</span>

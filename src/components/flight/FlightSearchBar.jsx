@@ -7,7 +7,7 @@ const CABINS = ['Economy', 'Premium', 'Business', 'First'];
  * Top search row: trip type, cabin, from/to (with swap), dates, travelers,
  * and the "Modify" button that re-runs the search. Controlled by the parent.
  */
-export default function FlightSearchBar({ search, setSearch, onSearch }) {
+export default function FlightSearchBar({ search, setSearch, onSearch, ctaLabel = 'Search' }) {
   const set = (patch) => setSearch((s) => ({ ...s, ...patch }));
   const swap = () => set({ from: search.to, to: search.from });
 
@@ -83,7 +83,7 @@ export default function FlightSearchBar({ search, setSearch, onSearch }) {
           </select>
         </div>
 
-        <button className="fl-modify-btn" onClick={onSearch}>Modify</button>
+        <button className="fl-modify-btn" onClick={onSearch}>{ctaLabel}</button>
       </div>
     </div>
   );
