@@ -3006,3 +3006,263 @@ html, body {
   .ht-results { padding: 16px; }
   .ht-grid { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   FLIGHTS — modern "clean & airy" redesign (scoped override layer)
+   ═══════════════════════════════════════════════════════════════════ */
+.fl-page, .fl-checkout {
+  --c-text: #1d1d1f;
+  --c-2: #5f6368;
+  --c-3: #9aa0a6;
+
+  --c-border: #ececf0;
+  --c-border-strong: #dcdce1;
+  --c-soft: #f6f7f9;
+  --c-accent: #23e3ef;
+  --c-accent-deep: #0fb8c4;
+  --c-ink: #063b3f;
+  --r-card: 18px;
+  --r-input: 12px;
+  --sh-sm: 0 1px 2px rgba(16,24,40,.04), 0 2px 10px rgba(16,24,40,.05);
+  --sh-md: 0 12px 34px rgba(16,24,40,.12);
+  --sh-search: 0 10px 34px rgba(16,24,40,.10);
+  background: #fff;
+  color: var(--c-text);
+}
+.fl-page { letter-spacing: -0.01em; }
+
+/* Center content at a comfortable max width */
+.fl-page .fl-nav,
+.fl-page .fl-searchbar,
+.fl-page .fl-demo-note {
+  padding-inline: max(24px, calc((100% - 1200px) / 2));
+}
+.fl-page .fl-layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 24px 40px;
+  gap: 28px;
+}
+
+/* ── Nav ── */
+.fl-page .fl-nav { height: 72px; border-bottom: 1px solid var(--c-border); background: rgba(255,255,255,.9); backdrop-filter: blur(10px); }
+.fl-page .fl-nav-logo { font-size: 21px; font-weight: 700; }
+.fl-page .fl-logo-text strong { color: var(--c-accent-deep); }
+.fl-page .fl-nav-link { color: var(--c-2); border-radius: 999px; font-weight: 500; padding: 9px 14px; }
+.fl-page .fl-nav-link:hover { background: var(--c-soft); }
+
+/* ── Hero landing ── */
+.fl-page .fl-hero {
+  background:
+    radial-gradient(900px 420px at 50% -140px, rgba(35,227,239,.18), transparent 70%),
+    linear-gradient(180deg, #fbfdff, #fff 60%);
+  padding: 72px 24px 96px;
+}
+.fl-page .fl-hero-inner { max-width: 1060px; }
+.fl-page .fl-hero-title { font-size: 46px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; }
+.fl-page .fl-hero-sub { font-size: 17px; color: var(--c-2); margin: 14px 0 30px; }
+
+/* ── Search bar ── */
+.fl-page .fl-searchbar { border-bottom: 1px solid var(--c-border); padding-block: 18px; background: #fff; }
+.fl-page .fl-hero .fl-searchbar {
+  border: 1px solid var(--c-border);
+  border-radius: 22px;
+  box-shadow: var(--sh-search);
+  padding: 16px;
+}
+.fl-page .fl-search-options { gap: 22px; margin-bottom: 16px; }
+.fl-page .fl-radio { font-size: 14px; font-weight: 500; color: var(--c-2); }
+.fl-page .fl-radio input:checked + .fl-radio-dot { border-color: var(--c-accent-deep); }
+.fl-page .fl-radio input:checked + .fl-radio-dot::after { background: var(--c-accent-deep); }
+.fl-page .fl-cabin-select select { border: 1px solid var(--c-border); border-radius: 999px; padding: 8px 16px; font-weight: 500; color: var(--c-text); }
+.fl-page .fl-search-fields { gap: 10px; align-items: stretch; }
+.fl-page .fl-field {
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-input);
+  padding: 10px 16px;
+  background: #fff;
+  transition: border-color .15s, box-shadow .15s;
+}
+.fl-page .fl-field:focus-within { border-color: var(--c-accent-deep); box-shadow: 0 0 0 3px rgba(35,227,239,.18); }
+.fl-page .fl-field label { font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--c-3); }
+.fl-page .fl-field input, .fl-page .fl-field select { font-size: 15px; font-weight: 500; color: var(--c-text); }
+.fl-page .fl-swap { width: 40px; height: 40px; border: 1px solid var(--c-border); color: var(--c-accent-deep); box-shadow: var(--sh-sm); }
+.fl-page .fl-swap:hover { background: var(--c-accent); color: #fff; border-color: var(--c-accent); }
+.fl-page .fl-modify-btn {
+  background: var(--c-accent);
+  color: var(--c-ink);
+  border-radius: var(--r-input);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 0 30px;
+  box-shadow: 0 6px 18px rgba(35,227,239,.35);
+  transition: transform .1s, box-shadow .15s, background .15s;
+}
+.fl-page .fl-modify-btn:hover { background: var(--c-accent-deep); color: #fff; box-shadow: 0 10px 24px rgba(15,184,196,.4); }
+.fl-page .fl-modify-btn:active { transform: translateY(1px); }
+
+/* Airport autocomplete menu */
+.fl-page .fl-airport-menu { border-radius: 14px; box-shadow: var(--sh-md); border-color: var(--c-border); padding: 8px; }
+.fl-page .fl-airport-option { border-radius: 10px; padding: 9px 11px; }
+.fl-page .fl-airport-option-active { background: rgba(35,227,239,.12); }
+.fl-page .fl-airport-code { background: var(--c-soft); color: var(--c-accent-deep); border-radius: 8px; font-weight: 700; }
+
+/* ── Demo note ── */
+.fl-page .fl-demo-note { background: #fff8e6; border-bottom: 1px solid #ffe6a1; color: #7a5b00; padding-block: 10px; font-size: 12.5px; }
+
+/* ── Filters ── */
+.fl-page .fl-filters {
+  background: #fff;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-sm);
+  padding: 20px;
+  align-self: start;
+  position: sticky;
+  top: 20px;
+}
+.fl-page .fl-filters-head { margin-bottom: 8px; }
+.fl-page .fl-filters-head h3 { font-size: 17px; font-weight: 700; }
+.fl-page .fl-reset { color: var(--c-accent-deep); font-weight: 600; }
+.fl-page .fl-filter-group { border-top: 1px solid var(--c-border); padding: 18px 0; }
+.fl-page .fl-filter-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+.fl-page .fl-check { font-size: 14px; color: var(--c-2); gap: 10px; padding: 5px 0; }
+.fl-page .fl-check-box { border-radius: 6px; border: 1.5px solid var(--c-border-strong); }
+.fl-page .fl-check input:checked + .fl-check-box { background: var(--c-accent-deep); border-color: var(--c-accent-deep); }
+.fl-page .fl-price-current { font-weight: 700; color: var(--c-text); }
+.fl-page .fl-price-slider { accent-color: var(--c-accent-deep); }
+.fl-page .fl-time-grid { gap: 8px; }
+.fl-page .fl-time-grid button {
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  padding: 10px 6px;
+  background: #fff;
+  color: var(--c-2);
+  transition: all .15s;
+}
+.fl-page .fl-time-grid button.active,
+.fl-page .fl-time-grid button[aria-pressed="true"] { border-color: var(--c-accent-deep); background: rgba(35,227,239,.1); color: var(--c-ink); }
+
+/* ── Date strip ── */
+.fl-page .fl-datestrip { gap: 8px; margin-bottom: 20px; }
+.fl-page .fl-date {
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-2);
+  background: #fff;
+  transition: all .15s;
+}
+.fl-page .fl-date:hover { border-color: var(--c-border-strong); }
+.fl-page .fl-date-active { background: var(--c-accent); border-color: var(--c-accent); color: var(--c-ink); font-weight: 700; }
+.fl-page .fl-datestrip-arrow { border: 1px solid var(--c-border); border-radius: 50%; color: var(--c-2); box-shadow: var(--sh-sm); }
+
+/* ── Promos ── */
+.fl-page .fl-promo { border-radius: 14px; font-weight: 500; }
+
+/* ── Results bar / sort ── */
+.fl-page .fl-results-bar { margin: 6px 0 18px; }
+.fl-page .fl-breadcrumb { font-size: 13px; }
+.fl-page .fl-crumb { color: var(--c-3); }
+.fl-page .fl-crumb-active { color: var(--c-text); font-weight: 600; }
+.fl-page .fl-sort { gap: 8px; }
+.fl-page .fl-sort-btn {
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-2);
+  background: #fff;
+  transition: all .15s;
+}
+.fl-page .fl-sort-btn:hover { border-color: var(--c-border-strong); }
+.fl-page .fl-sort-active { background: var(--c-text); color: #fff; border-color: var(--c-text); }
+.fl-page .fl-results-count { font-size: 14px; color: var(--c-2); margin-bottom: 14px; font-weight: 500; }
+.fl-page .fl-results-list { gap: 14px; }
+
+/* ── Flight card (the centerpiece) ── */
+.fl-page .fl-card {
+  grid-template-columns: 190px 1fr auto;
+  gap: 26px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-sm);
+  padding: 22px 26px;
+  transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .18s, border-color .18s;
+}
+.fl-page .fl-card:hover { transform: translateY(-3px); box-shadow: var(--sh-md); border-color: var(--c-border-strong); }
+.fl-page .fl-card-selected { border-color: var(--c-accent-deep); box-shadow: 0 0 0 2px rgba(35,227,239,.3), var(--sh-md); }
+.fl-page .fl-airline-logo { border-radius: 12px; box-shadow: var(--sh-sm); }
+.fl-page .fl-card-airline-name { font-size: 14px; font-weight: 600; }
+.fl-page .fl-card-time { font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+.fl-page .fl-card-airport { font-size: 12.5px; color: var(--c-3); font-weight: 500; }
+.fl-page .fl-card-duration { font-size: 12px; color: var(--c-2); font-weight: 500; }
+.fl-page .fl-stop-badge { font-size: 11px; font-weight: 600; color: var(--c-2); background: var(--c-soft); padding: 3px 10px; border-radius: 999px; }
+.fl-page .fl-stop-direct { color: #0a8f3c; background: rgba(16,185,60,.1); }
+.fl-page .fl-card-track { background: var(--c-border-strong); }
+.fl-page .fl-card-dot { background: var(--c-accent-deep); }
+.fl-page .fl-card-plane { color: var(--c-accent-deep); }
+.fl-page .fl-card-pricing { align-items: flex-end; gap: 2px; }
+.fl-page .fl-card-price { font-size: 26px; font-weight: 800; letter-spacing: -1px; color: var(--c-text); }
+.fl-page .fl-card-price-original { font-size: 13px; color: var(--c-3); text-decoration: line-through; }
+.fl-page .fl-card-price-note { font-size: 11.5px; color: var(--c-3); }
+.fl-page .fl-card-details-btn {
+  margin-top: 10px;
+  background: var(--c-accent);
+  color: var(--c-ink);
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13.5px;
+  padding: 10px 18px;
+  border: none;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.fl-page .fl-card-details-btn:hover { background: var(--c-accent-deep); color: #fff; }
+.fl-page .fl-card-details-btn:active { transform: translateY(1px); }
+
+/* ── Empty / error / skeleton ── */
+.fl-page .fl-error, .fl-page .fl-empty { background: #fff; border: 1px solid var(--c-border); border-radius: var(--r-card); box-shadow: var(--sh-sm); padding: 40px; }
+.fl-page .fl-card-skeleton { border-radius: var(--r-card); border: 1px solid var(--c-border); }
+
+/* ── Fare panel ── */
+.fl-page .fl-panel { border-top-left-radius: 22px; border-bottom-left-radius: 22px; }
+.fl-page .fl-panel-head { padding: 26px 28px 18px; }
+.fl-page .fl-panel-title { font-size: 20px; font-weight: 800; letter-spacing: -.5px; }
+.fl-page .fl-panel-fares { padding: 24px 28px 32px; gap: 16px; }
+.fl-page .fl-fare { border: 1px solid var(--c-border); border-radius: 16px; padding: 20px 16px; box-shadow: var(--sh-sm); transition: box-shadow .15s, transform .15s; }
+.fl-page .fl-fare:hover { box-shadow: var(--sh-md); transform: translateY(-2px); }
+.fl-page .fl-fare-recommended { border-color: var(--c-accent-deep); box-shadow: 0 0 0 2px rgba(35,227,239,.25); }
+.fl-page .fl-fare-badge { background: var(--c-accent); color: var(--c-ink); }
+.fl-page .fl-fare-price { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+.fl-page .fl-fare-select { background: var(--c-accent); color: var(--c-ink); border-radius: 10px; font-weight: 700; padding: 12px; }
+.fl-page .fl-fare-select:hover { background: var(--c-accent-deep); color: #fff; }
+
+/* ═══ Checkout ═══ */
+.fl-checkout { background: var(--c-soft); }
+.fl-checkout .fl-nav { background: #fff; border-bottom: 1px solid var(--c-border); }
+.fl-checkout .fl-checkout-section, .fl-checkout .fl-summary-card, .fl-checkout .fl-confirm-card {
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-sm);
+}
+.fl-checkout .fl-checkout-h2 { font-size: 17px; font-weight: 700; }
+.fl-checkout .fl-input input, .fl-checkout .fl-input select { border: 1px solid var(--c-border); border-radius: 10px; }
+.fl-checkout .fl-input input:focus, .fl-checkout .fl-input select:focus { border-color: var(--c-accent-deep); box-shadow: 0 0 0 3px rgba(35,227,239,.18); }
+.fl-checkout .fl-checkout-back { color: var(--c-accent-deep); font-weight: 600; }
+.fl-checkout .fl-checkout-pay {
+  background: var(--c-accent);
+  color: var(--c-ink);
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(35,227,239,.35);
+}
+.fl-checkout .fl-checkout-pay:hover { background: var(--c-accent-deep); color: #fff; }
+.fl-checkout .fl-confirm-check { background: rgba(35,227,239,.14); color: var(--c-accent-deep); }
+.fl-checkout .fl-confirm-title { font-size: 26px; font-weight: 800; letter-spacing: -.5px; }
+.fl-checkout .fl-summary-stops { color: var(--c-accent-deep); }
