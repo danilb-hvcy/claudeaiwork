@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import SkyeWidget from './components/SkyeWidget.jsx';
 import FlightSearchPage from './components/flight/FlightSearchPage.jsx';
+import HotelSearchPage from './components/hotel/HotelSearchPage.jsx';
 
 // Mock HeyVacay page — replace with your actual website
 function HeyVacayPage({ onNavigate }) {
@@ -17,7 +18,7 @@ function HeyVacayPage({ onNavigate }) {
             <span className="hv-wordmark">hey<strong>vacay</strong></span>
           </div>
           <div className="hv-nav-links">
-            <a href="#" className="hv-nav-link">Hotels</a>
+            <a href="#" className="hv-nav-link" onClick={(e) => { e.preventDefault(); onNavigate('hotels'); }}>Hotels</a>
             <a href="#" className="hv-nav-link" onClick={(e) => { e.preventDefault(); onNavigate('flights'); }}>Flights</a>
             <a href="#" className="hv-nav-link">Packages</a>
             <span className="hv-nav-skye">
@@ -44,7 +45,7 @@ function HeyVacayPage({ onNavigate }) {
 
           {/* Search Tabs */}
           <div className="hv-tabs">
-            <button className="hv-tab hv-tab-active">🏨 Hotels</button>
+            <button className="hv-tab hv-tab-active" onClick={() => onNavigate('hotels')}>🏨 Hotels</button>
             <button className="hv-tab" onClick={() => onNavigate('flights')}>✈️ Flights</button>
             <button className="hv-tab">📦 Packages</button>
             <button className="hv-tab hv-tab-skye">
@@ -71,7 +72,7 @@ function HeyVacayPage({ onNavigate }) {
               <label>Room and Guest</label>
               <input type="text" placeholder="1 Room, 2 Guests" />
             </div>
-            <button className="hv-search-btn">Search</button>
+            <button className="hv-search-btn" onClick={() => onNavigate('hotels')}>Search</button>
           </div>
         </div>
       </section>
@@ -128,6 +129,8 @@ export default function App() {
     <>
       {view === 'flights' ? (
         <FlightSearchPage onExit={() => setView('home')} />
+      ) : view === 'hotels' ? (
+        <HotelSearchPage onExit={() => setView('home')} />
       ) : (
         <HeyVacayPage onNavigate={setView} />
       )}
