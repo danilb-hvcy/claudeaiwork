@@ -3,7 +3,7 @@
  * Manages conversation history and structured JSON responses from Claude.
  */
 
-import mockHotels from '../data/mockHotels.js';
+import mockHotels, { getCanonicalHotel } from '../data/mockHotels.js';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-sonnet-4-20250514';
@@ -32,41 +32,35 @@ Use one of these response types:
 }
 
 ### Type 2 – Hotel recommendations
+Reference hotels ONLY by their inventory "id". The app fills in every factual
+field (name, prices, rating, amenities, images, room types) from the inventory,
+so you MUST NOT type prices or other numbers yourself.
 {
   "type": "hotels",
   "message": "Intro message before the cards, e.g. 'Here are my top picks for you...'",
   "hotels": [
-    {
-      "id": "hotel-id-from-inventory",
-      "name": "Hotel Name",
-      "location": "City, Country",
-      "stars": 5,
-      "rating": 4.9,
-      "price_per_night": 289,
-      "original_price": 459,
-      "amenities": ["Amenity 1", "Amenity 2"],
-      "perks": ["Perk 1", "Perk 2"],
-      "image_url": "url from inventory",
-      "refundable": true,
-      "description": "Brief enticing description"
-    }
+    { "id": "hotel-id-from-inventory" },
+    { "id": "another-hotel-id-from-inventory" }
   ],
   "quick_replies": ["Show cheaper options", "Filter by pool & spa", "Tell me more about #1"]
 }
 
 ### Type 3 – Booking intake (after user selects a hotel)
+Reference the hotel by "id" only — the app resolves the full record.
 {
   "type": "booking_intake",
   "message": "Great choice! Let me get a few details to complete your booking.",
-  "hotel": { ...hotel object from inventory... },
+  "hotel": { "id": "hotel-id-from-inventory" },
   "fields_needed": ["full_name", "email", "phone"]
 }
 
 ### Type 4 – Booking summary (after collecting guest details)
+Reference the hotel by "id" only. Do NOT include prices, totals, or savings —
+the app calculates all money from the canonical nightly rate × nights.
 {
   "type": "booking_summary",
   "message": "Here's your booking summary. Everything look good?",
-  "hotel": { ...hotel object... },
+  "hotel": { "id": "hotel-id-from-inventory" },
   "booking": {
     "full_name": "Guest Name",
     "email": "guest@email.com",
@@ -75,12 +69,7 @@ Use one of these response types:
     "check_in": "YYYY-MM-DD",
     "check_out": "YYYY-MM-DD",
     "nights": 3,
-    "guests": 2,
-    "price_per_night": 289,
-    "original_price": 459,
-    "total": 867,
-    "savings": 510,
-    "refundable": true
+    "guests": 2
   }
 }
 
@@ -95,7 +84,8 @@ Use one of these response types:
 8. When a user selects a hotel, smoothly transition to collecting their booking details (name, email, phone).
 9. Use quick_replies to guide the conversation forward. Include 2-4 chips per response when appropriate.
 10. If a user asks something unrelated to travel/hotels, gently redirect them to travel planning.
-11. ALWAYS return valid JSON. Never return plain text.`;
+11. ALWAYS return valid JSON. Never return plain text.
+12. PRICING IS APP-CONTROLLED. Reference hotels only by their inventory "id". Never type prices, discounts, totals, or savings into your JSON — the app fills every number from the canonical inventory. If you invent or alter a number it will be discarded.`;
 
 /**
  * Sends a message to Claude and returns a parsed SkyeResponse.
@@ -156,7 +146,7 @@ function parseRawResponse(raw) {
     .trim();
 
   try {
-    return JSON.parse(cleaned);
+    return reconcileResponse(JSON.parse(cleaned));
   } catch {
     // Fallback: wrap in text response
     return {
@@ -165,6 +155,67 @@ function parseRawResponse(raw) {
       quick_replies: ['Search hotels', 'Start over'],
     };
   }
+}
+
+/**
+ * Replace any model-authored hotel object with its canonical inventory record.
+ *
+ * The language model is only responsible for SELECTING which hotels to show and
+ * for the surrounding copy — it must never be the source of prices, ratings, or
+ * any other factual field. Free-typed numbers drift (e.g. "$24,000" for a $240
+ * room), which is what produces the search-vs-detail price discrepancy. Grounding
+ * every card to inventory by id guarantees the search card, detail modal, intake
+ * form and booking summary all show identical, correct prices.
+ *
+ * A referenced hotel that matches nothing in inventory is dropped rather than
+ * shown with fabricated data.
+ *
+ * @param {Object} response - Parsed SkyeResponse from the model.
+ * @returns {Object} The response with all hotel objects grounded to inventory.
+ */
+function reconcileResponse(response) {
+  if (!response || typeof response !== 'object') return response;
+
+  if (response.type === 'hotels' && Array.isArray(response.hotels)) {
+    const grounded = response.hotels
+      .map((h) => getCanonicalHotel(h))
+      .filter(Boolean);
+
+    // If every referenced hotel was a hallucination, fall back to plain text
+    // instead of rendering an empty (or fabricated) results list.
+    if (grounded.length === 0) {
+      return {
+        type: 'text',
+        message:
+          response.message ||
+          "I couldn't find those in our current inventory. Want me to pull up our top available stays?",
+        quick_replies: ['Show me top picks', 'Beach getaway 🏖️', 'City escape 🏙️'],
+      };
+    }
+    return { ...response, hotels: grounded };
+  }
+
+  if (
+    (response.type === 'booking_intake' || response.type === 'booking_summary') &&
+    response.hotel
+  ) {
+    const canonical = getCanonicalHotel(response.hotel);
+    if (!canonical) return response;
+
+    const grounded = { ...response, hotel: canonical };
+
+    // Drop any model-authored money fields on the booking so the summary is
+    // always recomputed from the canonical nightly rate × nights.
+    if (grounded.type === 'booking_summary' && grounded.booking) {
+      const {
+        price_per_night, original_price, total, savings, ...rest
+      } = grounded.booking;
+      grounded.booking = rest;
+    }
+    return grounded;
+  }
+
+  return response;
 }
 
 /**

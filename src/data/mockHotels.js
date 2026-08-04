@@ -448,6 +448,40 @@ export const mockHotels = [
 ];
 
 /**
+ * Fast id → hotel lookup. This inventory is the single source of truth for
+ * all factual hotel fields (prices, ratings, refundability, room types…).
+ */
+const hotelsById = new Map(mockHotels.map((h) => [h.id, h]));
+
+/**
+ * Normalize a hotel name for fuzzy fallback matching (lowercase, alnum only).
+ */
+const normalizeName = (name = '') =>
+  name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+const hotelsByName = new Map(
+  mockHotels.map((h) => [normalizeName(h.name), h])
+);
+
+/**
+ * Look up the canonical hotel record by id (preferred) or, as a fallback,
+ * by normalized name. Returns undefined if the reference doesn't match any
+ * real property in inventory.
+ *
+ * @param {{id?: string, name?: string}} ref
+ * @returns {Object|undefined} The canonical hotel object from inventory.
+ */
+export function getCanonicalHotel(ref) {
+  if (!ref) return undefined;
+  if (ref.id && hotelsById.has(ref.id)) return hotelsById.get(ref.id);
+  if (ref.name) {
+    const byName = hotelsByName.get(normalizeName(ref.name));
+    if (byName) return byName;
+  }
+  return undefined;
+}
+
+/**
  * Helper: search hotels by tags, region, city, or country.
  * Used internally by the Skye AI response handler.
  */
