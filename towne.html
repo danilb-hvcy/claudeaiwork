@@ -32,13 +32,13 @@
   --font-body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 
-html,body{height:100%}
 body{
   font-family:var(--font-body);
   color:var(--ink);
   background:#ffe9f0;
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
+  -webkit-text-size-adjust:100%;text-size-adjust:100%;   /* no browser font boosting */
   overflow-x:hidden;
   overscroll-behavior-y:none;
 }
@@ -104,7 +104,7 @@ main{position:relative;z-index:10}
 .scene{display:none}
 .scene.on{display:block}
 .stage{
-  min-height:100vh;min-height:100dvh;
+  min-height:100vh;min-height:100dvh;min-height:var(--vh,100dvh);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding: calc(env(safe-area-inset-top) + 64px) var(--pad) calc(env(safe-area-inset-bottom) + 48px);
   text-align:center;
@@ -161,13 +161,6 @@ main{position:relative;z-index:10}
 }
 @keyframes glowPulse{50%{text-shadow:0 2px 40px rgba(224,53,95,.75)}}
 
-.skip{
-  margin-top:38px;border:0;background:none;cursor:pointer;
-  font-family:var(--font-body);font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;
-  color:rgba(163,18,63,.4);padding:10px 14px;opacity:0;transition:opacity .8s ease,color .3s ease;
-}
-.skip.show{opacity:1}
-.skip:active{color:var(--rose-deep)}
 
 /* ---- buttons ---- */
 .btn{
@@ -233,40 +226,60 @@ main{position:relative;z-index:10}
 .px{position:absolute;color:var(--rose);will-change:transform;animation:pxFloat ease-in-out infinite alternate}
 @keyframes pxFloat{from{filter:blur(0)}to{filter:blur(.4px)}}
 
-/* ---- timeline ---- */
-.story-head{
-  min-height:64vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;padding:90px var(--pad) 40px;
+/* ---- the journey (one step at a time, no scrolling) ---- */
+.journey{
+  height:100vh;height:100dvh;height:var(--vh,100dvh);
+  display:flex;flex-direction:column;align-items:center;
+  padding: calc(env(safe-area-inset-top) + 14px) var(--pad) calc(env(safe-area-inset-bottom) + 14px);
 }
-.story-head .script{font-size:clamp(3rem,15vw,5.6rem)}
-.story-head p{margin-top:14px;font-size:.74rem;letter-spacing:.4em;text-transform:uppercase;color:rgba(163,18,63,.5);font-weight:500}
-.scroll-cue{margin-top:34px;font-size:1.5rem;animation:cue 2.2s ease-in-out infinite}
-@keyframes cue{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(10px);opacity:1}}
+.jhead{font-family:var(--font-script);font-size:1.9rem;color:var(--wine);line-height:1;opacity:.75;flex:0 0 auto}
 
-.timeline{position:relative;max-width:620px;margin:0 auto;padding:10px var(--pad) 40px 0;padding-left:calc(var(--pad) + 46px)}
-.rail{position:absolute;left:calc(var(--pad) + 15px);top:0;bottom:0;width:2px;background:linear-gradient(180deg,transparent,rgba(224,53,95,.28) 8%,rgba(224,53,95,.28) 92%,transparent);}
-.rail i{position:absolute;left:-.5px;top:0;width:3px;border-radius:3px;background:linear-gradient(180deg,var(--rose),var(--rose-deep));box-shadow:0 0 12px rgba(255,111,150,.85);height:0;transition:height .25s linear}
-
-.node{position:relative;margin-bottom:34px}
-.dot{
-  position:absolute;left:-46px;top:22px;width:32px;height:32px;border-radius:50%;
-  display:grid;place-items:center;font-size:.85rem;
-  background:#fff;box-shadow:0 0 0 2px rgba(224,53,95,.3),0 8px 18px -8px rgba(163,18,63,.6);
-  transform:scale(0);transition:transform .6s cubic-bezier(.34,1.56,.64,1) .1s;
+/* progress rail */
+.jrail{width:100%;max-width:520px;flex:0 0 auto;margin:26px 0 4px;position:relative;padding:0 4px}
+.jtrack{position:relative;height:2px;border-radius:2px;background:rgba(224,53,95,.2);margin:0 5px}
+.jtrack i{
+  position:absolute;left:0;top:-1px;height:4px;border-radius:4px;width:0;
+  background:linear-gradient(90deg,var(--rose),var(--rose-deep));
+  box-shadow:0 0 12px rgba(255,111,150,.9);
+  transition:width .65s cubic-bezier(.16,1,.3,1);
 }
-.node.in .dot{transform:scale(1)}
-.card{
-  background:rgba(255,255,255,.74);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border:1px solid rgba(255,255,255,.8);
-  border-radius:24px;padding:22px 20px;
-  box-shadow:var(--shadow);
-  text-align:left;
-  opacity:0;transform:translate3d(0,44px,0) scale(.97);
-  transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1),box-shadow .5s ease;
+.jdots{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center}
+.jdot{
+  -webkit-tap-highlight-color:transparent;
+  width:10px;height:10px;padding:0;border:0;border-radius:50%;cursor:pointer;
+  background:#fff;box-shadow:0 0 0 1.5px rgba(224,53,95,.3);
+  transition:transform .45s cubic-bezier(.34,1.56,.64,1),box-shadow .45s ease,background .45s ease;
+}
+.jdot.done{background:var(--rose);box-shadow:0 0 0 1.5px rgba(224,53,95,.45)}
+.jdot.now{transform:scale(1.75);background:var(--rose-deep);box-shadow:0 0 0 3px rgba(255,111,150,.35),0 0 14px rgba(224,53,95,.8)}
+.jdot.gold.now{background:var(--gold);box-shadow:0 0 0 3px rgba(255,201,120,.45),0 0 18px rgba(255,201,120,.95)}
+.jwhen{
+  margin-top:16px;text-align:center;font-size:.68rem;letter-spacing:.34em;text-transform:uppercase;
+  font-weight:600;color:rgba(163,18,63,.55);transition:opacity .35s ease;
+}
+
+/* card stage */
+.jstage{position:relative;width:100%;max-width:520px;flex:1 1 auto;min-height:0;margin-top:10px}
+.jcard{
+  position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+  opacity:0;pointer-events:none;
+  transform:translate3d(52px,0,0) scale(.94);
+  transition:opacity .62s cubic-bezier(.16,1,.3,1),transform .62s cubic-bezier(.16,1,.3,1);
   will-change:opacity,transform;
 }
-.node.in .card{opacity:1;transform:none}
+.jcard.past{transform:translate3d(-52px,0,0) scale(.94)}
+.jcard.live{opacity:1;pointer-events:auto;transform:none}
+
+.card{
+  background:rgba(255,255,255,.76);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.85);
+  border-radius:26px;padding:24px 20px;
+  box-shadow:var(--shadow);
+  text-align:left;
+  max-height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+}
+.card::-webkit-scrollbar{width:0}
 .badge{
   display:inline-block;font-size:.66rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
   color:#fff;background:linear-gradient(135deg,var(--rose),var(--rose-deep));
@@ -274,68 +287,84 @@ main{position:relative;z-index:10}
 }
 .card h3{
   font-family:var(--font-display);font-weight:600;
-  font-size:clamp(1.35rem,5.6vw,1.7rem);color:var(--wine);margin:14px 0 9px;line-height:1.2;
+  font-size:clamp(1.4rem,6vw,1.85rem);color:var(--wine);margin:13px 0 9px;line-height:1.2;
 }
-.card p{font-size:1rem;line-height:1.65;color:rgba(74,34,51,.86);font-weight:300}
-.card p+p{margin-top:11px}
+.card p{font-size:.98rem;line-height:1.6;color:rgba(74,34,51,.86);font-weight:300}
+.card p+p{margin-top:10px}
+.jcard.live .card{animation:cardIn .8s cubic-bezier(.16,1,.3,1)}
+@keyframes cardIn{from{opacity:.4}to{opacity:1}}
 
 /* special cards */
-.node.big .card{
-  padding:30px 22px;
-  background:linear-gradient(160deg,rgba(255,255,255,.9),rgba(255,236,242,.82));
-  border:1px solid rgba(255,201,120,.7);
-  box-shadow:0 26px 60px -22px rgba(163,18,63,.6),0 0 0 1px rgba(255,201,120,.35),0 0 44px rgba(255,201,120,.35);
+.jcard.big .card{
+  background:linear-gradient(160deg,rgba(255,255,255,.93),rgba(255,236,242,.86));
+  border:1px solid rgba(255,201,120,.75);
+  box-shadow:0 26px 60px -22px rgba(163,18,63,.6),0 0 0 1px rgba(255,201,120,.35),0 0 46px rgba(255,201,120,.4);
 }
-.node.big .badge{background:linear-gradient(135deg,var(--gold),#ff9a6b);color:#5a2a12}
-.node.big .card h3{font-size:clamp(1.7rem,7.4vw,2.3rem)}
-.node.big .dot{box-shadow:0 0 0 2px var(--gold),0 0 24px rgba(255,201,120,.95)}
-.node.big.in .card{animation:bigPop 1.2s cubic-bezier(.16,1,.3,1)}
-@keyframes bigPop{0%{transform:translate3d(0,44px,0) scale(.9)}55%{transform:translate3d(0,0,0) scale(1.035)}100%{transform:none}}
-.halo{position:absolute;inset:-6px;border-radius:28px;pointer-events:none;opacity:0}
-.node.big.in .halo{animation:halo 2.6s ease-out .35s 2}
-@keyframes halo{0%{opacity:.9;transform:scale(.96);box-shadow:0 0 0 0 rgba(255,201,120,.75)}100%{opacity:0;transform:scale(1.06);box-shadow:0 0 0 26px rgba(255,201,120,0)}}
+.jcard.big .badge{background:linear-gradient(135deg,var(--gold),#ff9a6b);color:#5a2a12}
+.jcard.big .card h3{font-size:clamp(1.6rem,7.2vw,2.15rem);margin-top:11px}
+.jcard.big.live .card{animation:bigPop 1.15s cubic-bezier(.16,1,.3,1)}
+@keyframes bigPop{0%{transform:scale(.9)}55%{transform:scale(1.03)}100%{transform:none}}
+.halo{position:absolute;inset:-8px;border-radius:32px;pointer-events:none;opacity:0}
+.jcard.big.live .halo{animation:halo 2.6s ease-out .3s 2}
+@keyframes halo{0%{opacity:.9;transform:scale(.96);box-shadow:0 0 0 0 rgba(255,201,120,.75)}100%{opacity:0;transform:scale(1.06);box-shadow:0 0 0 28px rgba(255,201,120,0)}}
 .yes{
-  display:block;margin-top:16px;font-family:var(--font-script);
-  font-size:clamp(2.6rem,13vw,4rem);color:var(--rose-deep);text-align:center;
-  text-shadow:0 4px 26px rgba(255,111,150,.6);
-  opacity:0;
+  display:block;margin-top:8px;font-family:var(--font-script);
+  font-size:clamp(2.4rem,12vw,3.6rem);color:var(--rose-deep);text-align:center;
+  text-shadow:0 4px 26px rgba(255,111,150,.6);opacity:0;
 }
-.node.in .yes{animation:yesIn 1.4s cubic-bezier(.16,1,.3,1) .7s forwards,glowPulse 4s 2.1s ease-in-out infinite}
+.jcard.live .yes{animation:yesIn 1.4s cubic-bezier(.16,1,.3,1) .65s forwards,glowPulse 4s 2s ease-in-out infinite}
 @keyframes yesIn{from{opacity:0;transform:scale(.6) rotate(-6deg)}to{opacity:1;transform:none}}
 
-.node.joy .card{background:linear-gradient(160deg,rgba(255,255,255,.9),rgba(255,229,238,.86));box-shadow:0 24px 55px -24px rgba(163,18,63,.6),0 0 32px rgba(255,111,150,.3)}
-.node.joy.in .card{animation:joyPop 1s cubic-bezier(.34,1.56,.64,1)}
-@keyframes joyPop{0%{transform:translate3d(0,40px,0) scale(.92) rotate(-1.2deg)}60%{transform:translate3d(0,0,0) scale(1.03) rotate(.6deg)}100%{transform:none}}
+.jcard.joy .card{background:linear-gradient(160deg,rgba(255,255,255,.92),rgba(255,229,238,.88));box-shadow:0 24px 55px -24px rgba(163,18,63,.6),0 0 34px rgba(255,111,150,.35)}
+.jcard.joy.live .card{animation:joyPop .95s cubic-bezier(.34,1.56,.64,1)}
+@keyframes joyPop{0%{transform:scale(.92) rotate(-1.2deg)}60%{transform:scale(1.03) rotate(.6deg)}100%{transform:none}}
 
 /* photo slot */
 .photo{
-  margin-top:16px;width:100%;aspect-ratio:4/5;border-radius:18px;overflow:hidden;position:relative;
+  margin-top:14px;width:100%;aspect-ratio:4/5;max-height:38vh;border-radius:18px;overflow:hidden;position:relative;
   background:linear-gradient(150deg,#ffe6ee,#ffd0de);
   border:1px dashed rgba(224,53,95,.4);
   display:grid;place-items:center;
 }
 .photo img{width:100%;height:100%;object-fit:cover;display:block}
-.photo .ph{padding:20px;text-align:center;color:rgba(163,18,63,.6);font-size:.86rem;line-height:1.6}
-.photo .ph b{display:block;font-size:1.7rem;margin-bottom:8px}
+.photo .ph{padding:18px;text-align:center;color:rgba(163,18,63,.6);font-size:.84rem;line-height:1.6}
+.photo .ph b{display:block;font-size:1.6rem;margin-bottom:6px}
 
 /* finale */
-.node.finale .card{
-  text-align:center;padding:36px 22px 30px;
-  background:linear-gradient(160deg,rgba(255,255,255,.94),rgba(255,224,236,.9));
-  border:1px solid rgba(255,201,120,.65);
-  box-shadow:0 30px 70px -22px rgba(163,18,63,.65),0 0 60px rgba(255,201,120,.4);
+.jcard.finale .card{
+  text-align:center;padding:32px 22px 28px;
+  background:linear-gradient(160deg,rgba(255,255,255,.95),rgba(255,224,236,.92));
+  border:1px solid rgba(255,201,120,.7);
+  box-shadow:0 30px 70px -22px rgba(163,18,63,.65),0 0 62px rgba(255,201,120,.45);
 }
-.node.finale .card h3{font-family:var(--font-script);font-size:clamp(2.1rem,10vw,3.2rem);line-height:1.1}
-.node.finale .card p{text-align:center}
+.jcard.finale .card h3{font-family:var(--font-script);font-size:clamp(2.1rem,10vw,3.1rem);line-height:1.12}
+.jcard.finale .card p{text-align:center}
 
-/* next pill */
-#nextPill{
-  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 18px);transform:translateX(-50%);
-  z-index:40;opacity:0;pointer-events:none;transition:opacity .5s ease,transform .5s cubic-bezier(.16,1,.3,1);
-  padding:13px 24px;font-size:.9rem;
+/* journey nav */
+.jnav{
+  flex:0 0 auto;width:100%;max-width:520px;margin-top:14px;
+  display:flex;align-items:center;gap:12px;
 }
-#nextPill.show{opacity:1;pointer-events:auto}
-#nextPill:active{transform:translateX(-50%) scale(.95)}
+.jbtn{
+  -webkit-tap-highlight-color:transparent;
+  flex:0 0 auto;width:48px;height:48px;border:0;border-radius:50%;cursor:pointer;
+  display:grid;place-items:center;font-size:1.5rem;line-height:1;padding-bottom:3px;
+  color:var(--wine);background:rgba(255,255,255,.72);
+  box-shadow:0 10px 24px -14px rgba(163,18,63,.5),inset 0 0 0 1px rgba(224,53,95,.2);
+  transition:transform .25s cubic-bezier(.16,1,.3,1),opacity .3s ease;
+}
+.jbtn:active{transform:scale(.92)}
+.jbtn[disabled]{opacity:.28;pointer-events:none}
+.jnav .btn{flex:1 1 auto}
+.jcount{
+  flex:0 0 auto;font-size:.72rem;font-weight:600;letter-spacing:.1em;color:rgba(163,18,63,.5);
+  font-variant-numeric:tabular-nums;min-width:42px;text-align:center;
+}
+.jhint{
+  flex:0 0 auto;text-align:center;width:100%;max-width:520px;margin-top:9px;
+  font-size:.63rem;letter-spacing:.24em;text-transform:uppercase;color:rgba(163,18,63,.32);font-weight:500;
+  transition:opacity .6s ease;
+}
 
 /* ---- portal ---- */
 #portal .wrap{max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 70px) var(--pad) calc(env(safe-area-inset-bottom) + 70px)}
@@ -417,26 +446,113 @@ input.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14
 
 /* music toggle */
 #music{
-  position:fixed;top:calc(env(safe-area-inset-top) + 14px);right:14px;z-index:70;
-  width:44px;height:44px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;
+  position:fixed;top:calc(env(safe-area-inset-top) + 10px);right:10px;z-index:70;
+  width:40px;height:40px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;
   background:rgba(255,255,255,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   box-shadow:0 8px 22px -10px rgba(163,18,63,.55),inset 0 0 0 1px rgba(255,255,255,.7);
-  font-size:1.1rem;line-height:1;transition:transform .25s cubic-bezier(.34,1.56,.64,1),opacity .3s ease;
+  font-size:1rem;line-height:1;transition:transform .25s cubic-bezier(.34,1.56,.64,1),opacity .3s ease;
   opacity:.5;-webkit-tap-highlight-color:transparent;
 }
 #music:active{transform:scale(.9)}
 #music.on{opacity:1;animation:beat 1.2s ease-in-out infinite}
 @keyframes beat{0%,100%{transform:scale(1)}18%{transform:scale(1.16)}36%{transform:scale(1)}54%{transform:scale(1.1)}}
 
+/* ---- modal (surprise HQ) ---- */
+.modal{
+  position:fixed;inset:0;z-index:80;display:flex;align-items:flex-end;justify-content:center;
+  pointer-events:none;overflow:hidden;                 /* keeps the off-screen sheet from adding page scroll */
+  visibility:hidden;transition:visibility 0s linear .55s;
+}
+.modal.open{pointer-events:auto;visibility:visible;transition-delay:0s}
+.modal-back{
+  position:absolute;inset:0;background:rgba(120,20,50,.42);
+  backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  opacity:0;transition:opacity .4s ease;
+}
+.modal.open .modal-back{opacity:1}
+.modal-card{
+  position:relative;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;
+  background:linear-gradient(165deg,rgba(255,252,246,.98),rgba(255,235,243,.98));
+  border:1px solid rgba(255,201,120,.7);
+  border-radius:30px 30px 0 0;
+  padding:30px 22px calc(env(safe-area-inset-bottom) + 26px);
+  box-shadow:0 -20px 60px -18px rgba(163,18,63,.55);
+  transform:translate3d(0,100%,0);
+  transition:transform .55s cubic-bezier(.16,1,.3,1);
+  will-change:transform;
+}
+.modal.open .modal-card{transform:none}
+.modal-grab{width:44px;height:4px;border-radius:4px;background:rgba(224,53,95,.25);margin:-14px auto 18px}
+.modal-x{
+  position:absolute;top:16px;right:16px;width:34px;height:34px;border:0;border-radius:50%;cursor:pointer;
+  background:rgba(224,53,95,.1);color:var(--wine);font-size:1rem;line-height:1;display:grid;place-items:center;
+  -webkit-tap-highlight-color:transparent;transition:transform .2s ease,background .2s ease;
+}
+.modal-x:active{transform:scale(.9);background:rgba(224,53,95,.2)}
+.modal-card h2{
+  font-family:var(--font-display);font-weight:600;font-size:1.45rem;color:var(--wine);
+  display:flex;align-items:center;gap:10px;margin-bottom:8px;
+}
+.modal-card .note{font-size:.9rem;color:rgba(74,34,51,.66);line-height:1.62;font-weight:300;margin-bottom:18px}
+@media (min-width:560px){
+  .modal{align-items:center}
+  .modal-card{border-radius:30px;padding-bottom:26px;transform:translate3d(0,26px,0) scale(.96);opacity:0;transition:transform .5s cubic-bezier(.16,1,.3,1),opacity .4s ease}
+  .modal.open .modal-card{transform:none;opacity:1}
+}
+
+/* ---- sound hint pill ---- */
+#soundHint{
+  position:fixed;top:calc(env(safe-area-inset-top) + 22px);right:66px;z-index:69;
+  font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;
+  color:rgba(163,18,63,.55);background:rgba(255,255,255,.6);
+  padding:8px 12px;border-radius:999px;white-space:nowrap;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 6px 18px -10px rgba(163,18,63,.5);
+  opacity:0;transform:translateX(8px);transition:opacity .6s ease,transform .6s cubic-bezier(.16,1,.3,1);
+  pointer-events:none;
+}
+#soundHint.show{opacity:1;transform:none}
+
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.15s !important}
-  .line,.card,.panel{opacity:1 !important;transform:none !important;filter:none !important}
+  .line,.card,.panel,.jcard.live{opacity:1 !important;filter:none !important}
 }
 @media (min-width:560px){
   .row2{gap:14px}
-  .timeline{padding-left:calc(var(--pad) + 56px)}
-  .dot{left:-56px;width:36px;height:36px}
-  .rail{left:calc(var(--pad) + 18px)}
+  .card{padding:28px 26px}
+  .journey{padding-top:calc(env(safe-area-inset-top) + 26px)}
+}
+/* short screens: tighten the journey so every stop still fits without scrolling */
+@media (max-height:780px){
+  .jhead{font-size:1.55rem}
+  .jrail{margin:22px 0 3px}
+  .jwhen{margin-top:12px}
+  .card{padding:19px 17px}
+  .card h3{font-size:1.4rem;margin:10px 0 7px}
+  .card p{font-size:.93rem;line-height:1.5}
+  .card p+p{margin-top:8px}
+  .yes{font-size:2.4rem;margin-top:10px}
+  .photo{max-height:30vh}
+  .jnav{margin-top:11px}
+  .jbtn{width:44px;height:44px}
+  .jnav .btn{padding:15px 22px}
+}
+@media (max-height:700px){
+  .jhead{display:none}
+  .journey{padding-top:calc(env(safe-area-inset-top) + 10px)}
+  .jrail{margin:48px 0 3px}
+  .jwhen{margin-top:10px;font-size:.62rem}
+  .jstage{margin-top:6px}
+  .card{padding:16px 15px;border-radius:22px}
+  .card h3{font-size:1.26rem;margin:9px 0 6px}
+  .card p{font-size:.87rem;line-height:1.46}
+  .card p+p{margin-top:7px}
+  .badge{font-size:.6rem;padding:6px 11px}
+  .yes{font-size:2rem;margin-top:8px}
+  .photo{max-height:26vh}
+  .jhint{display:none}
+  .jnav{margin-top:9px}
+  .jnav .btn{padding:13px 20px;font-size:.94rem}
 }
 </style>
 </head>
@@ -465,7 +581,6 @@ input.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14
   <section class="scene" id="message">
     <div class="stage">
       <div class="seq" id="msgLines"></div>
-      <button class="skip" id="msgSkip" type="button">skip ahead</button>
     </div>
   </section>
 
@@ -488,28 +603,33 @@ input.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14
   <section class="scene" id="gratitude">
     <div class="stage">
       <div class="seq" id="gratLines"></div>
-      <button class="skip" id="gratSkip" type="button">skip ahead</button>
       <div id="gratGo" style="display:none;margin-top:34px">
         <button class="btn big fadein" id="toStory" type="button">Take me through it ➜</button>
       </div>
     </div>
   </section>
 
-  <!-- 5 ─ OUR STORY ───────────────────────────────────────── -->
+  <!-- 5 ─ OUR STORY · a guided journey, one stop at a time ─ -->
   <section class="scene" id="story">
-    <div class="story-head">
-      <h2 class="script">Our Story</h2>
-      <p>may 9 — august 22</p>
-      <div class="scroll-cue">︾</div>
-    </div>
-    <div class="timeline" id="timeline">
-      <div class="rail"><i id="railFill"></i></div>
-    </div>
-    <div style="text-align:center;padding:0 var(--pad) 90px">
-      <button class="btn big" id="toPortal" type="button" style="display:none">Open your Girlfriend Portal 💗</button>
+    <div class="journey">
+      <p class="jhead">Our Story</p>
+
+      <div class="jrail">
+        <div class="jtrack"><i id="jfill"></i></div>
+        <div class="jdots" id="jdots"></div>
+      </div>
+      <p class="jwhen" id="jwhen"></p>
+
+      <div class="jstage" id="jstage"></div>
+
+      <div class="jnav">
+        <button class="jbtn" id="jprev" type="button" aria-label="Previous stop">‹</button>
+        <span class="jcount"><b id="jnow">1</b> / <span id="jtotal">12</span></span>
+        <button class="btn" id="jnext" type="button">Next ›</button>
+      </div>
+      <p class="jhint" id="jhint">swipe or tap next</p>
     </div>
   </section>
-  <button class="btn ghost" id="nextPill" type="button">Next ↓</button>
 
   <!-- 6 ─ GIRLFRIEND PORTAL ───────────────────────────────── -->
   <section class="scene" id="portal">
@@ -578,23 +698,10 @@ input.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14
       <div class="panel hq">
         <h2>🎁 Surprise Planning HQ</h2>
         <p class="note">
-          Okay, hear me out. I want to team up with your parents to plan surprises for you —
-          good ones, I promise. Drop their numbers here and then pretend you never saw this section 🤫
+          Okay, hear me out. There is something I want to set up with your parents,
+          and I need one small thing from you 🤫
         </p>
-        <form id="hqForm" novalidate>
-          <div class="field">
-            <label class="f" for="momNum">Mom's number</label>
-            <input class="f" id="momNum" name="mom" type="tel" inputmode="tel" autocomplete="off" placeholder="(555) 555-5555">
-          </div>
-          <div class="field">
-            <label class="f" for="dadNum">Dad's number</label>
-            <input class="f" id="dadNum" name="dad" type="tel" inputmode="tel" autocomplete="off" placeholder="(555) 555-5555">
-          </div>
-          <div class="field">
-            <button class="btn wide" type="submit" id="hqBtn">Send to Danil 🤫</button>
-          </div>
-        </form>
-        <p class="form-msg" id="hqMsg"></p>
+        <button class="btn wide" id="hqOpen" type="button">Open the secret file 🎁</button>
       </div>
 
       <div class="sig">
@@ -606,6 +713,36 @@ input.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14
   </section>
 
 </main>
+
+<p id="soundHint">tap for music 🎵</p>
+
+<!-- surprise planning HQ · modal -->
+<div class="modal" id="hqModal" role="dialog" aria-modal="true" aria-labelledby="hqTitle" aria-hidden="true">
+  <div class="modal-back" id="hqBack"></div>
+  <div class="modal-card">
+    <div class="modal-grab"></div>
+    <button class="modal-x" id="hqClose" type="button" aria-label="Close">✕</button>
+    <h2 id="hqTitle">🎁 Surprise Planning HQ</h2>
+    <p class="note">
+      I want to team up with your parents to plan surprises for you — good ones, I promise.
+      Drop their numbers here and then pretend you never saw this 🤫
+    </p>
+    <form id="hqForm" novalidate>
+      <div class="field">
+        <label class="f" for="momNum">Mom's number</label>
+        <input class="f" id="momNum" name="mom" type="tel" inputmode="tel" autocomplete="off" placeholder="(555) 555-5555">
+      </div>
+      <div class="field">
+        <label class="f" for="dadNum">Dad's number</label>
+        <input class="f" id="dadNum" name="dad" type="tel" inputmode="tel" autocomplete="off" placeholder="(555) 555-5555">
+      </div>
+      <div class="field">
+        <button class="btn wide" type="submit" id="hqBtn">Send to Danil 🤫</button>
+      </div>
+    </form>
+    <p class="form-msg" id="hqMsg"></p>
+  </div>
+</div>
 
 <style>
   .scene.on{animation:sceneIn 1.1s cubic-bezier(.16,1,.3,1)}
@@ -623,9 +760,12 @@ const CONFIG = {
   // ── PLACEHOLDERS TO REPLACE ──────────────────────────────────
   myPhone:      '+15551234567',     // <-- your number (sms: links)
   formspreeId:  'FORM_ID',          // <-- formspree.io form id, e.g. 'xldwabcd'
-  musicUrl:     'MUSIC_URL_HERE',   // <-- direct .mp3 link for background music
+  musicUrl:     '',                 // <-- OPTIONAL .mp3 link. empty = built-in romantic loop
   photoUrl:     'PHOTO_URL_HERE',   // <-- first-day-of-school photo (Aug 12 card)
   // ─────────────────────────────────────────────────────────────
+
+  sound:        true,               // sound effects on/off
+  musicVolume:  0.42,               // 0 – 1
 
   anniversary:  { y: 2026, m: 5, d: 22 },  // May 22, 2026 — the yes
   monthiversaryDay: 22,
@@ -737,8 +877,236 @@ const rand = (a,b) => a + Math.random()*(b-a);
 const pick = a => a[Math.floor(Math.random()*a.length)];
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* the one height we can trust on a phone: what she can actually see right now */
+function setVH(){
+  const h = (window.visualViewport && window.visualViewport.height) || innerHeight;
+  document.documentElement.style.setProperty('--vh', Math.round(h) + 'px');
+}
+setVH();
+addEventListener('resize', setVH);
+addEventListener('orientationchange', () => setTimeout(setVH, 250));
+if(window.visualViewport) visualViewport.addEventListener('resize', setVH);
+
 // progress lives in memory only — refresh restarts the whole experience
 const state = { scene:'landing', unlocked:false, storyDone:false, portal:false, lastCompliment:-1 };
+
+/* ══════════════════════════════════════════════════════════════
+   SOUND — every note is synthesized on the fly with Web Audio,
+   so there is nothing to host and it all works offline.
+   Set CONFIG.musicUrl to play your own track instead of the loop.
+   ══════════════════════════════════════════════════════════════ */
+const Sound = (function(){
+  let ctx = null, master, verb, sfxBus, musBus, arpBus, noiseBuf;
+  let looping = false, timer = 0, nextAt = 0, bar = 0;
+  const el = document.getElementById('bgm');
+  const useFile = () => !!(CONFIG.musicUrl && CONFIG.musicUrl.trim());
+  const nf = m => 440 * Math.pow(2, (m - 69) / 12);
+
+  function impulse(dur, decay){
+    const n = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(2, n, ctx.sampleRate);
+    for(let c = 0; c < 2; c++){
+      const d = buf.getChannelData(c);
+      for(let i = 0; i < n; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/n, decay);
+    }
+    return buf;
+  }
+
+  function boot(){
+    if(ctx) return ctx;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;
+    try { ctx = new AC(); } catch(e){ return null; }
+
+    master = ctx.createGain(); master.gain.value = .9; master.connect(ctx.destination);
+
+    verb = ctx.createConvolver(); verb.buffer = impulse(2.8, 2.6);
+    const vg = ctx.createGain(); vg.gain.value = .4;
+    verb.connect(vg); vg.connect(master);
+
+    sfxBus = ctx.createGain(); sfxBus.gain.value = .5;
+    sfxBus.connect(master); sfxBus.connect(verb);
+
+    musBus = ctx.createGain(); musBus.gain.value = 0;
+    musBus.connect(master); musBus.connect(verb);
+
+    const dly = ctx.createDelay(1), fb = ctx.createGain();
+    dly.delayTime.value = .42; fb.gain.value = .3;
+    dly.connect(fb); fb.connect(dly); dly.connect(musBus);
+    arpBus = ctx.createGain(); arpBus.gain.value = 1;
+    arpBus.connect(musBus); arpBus.connect(dly);
+
+    noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 1.2), ctx.sampleRate);
+    const nd = noiseBuf.getChannelData(0);
+    for(let i = 0; i < nd.length; i++) nd[i] = Math.random()*2 - 1;
+    return ctx;
+  }
+
+  function wake(){
+    if(!boot()) return null;
+    if(ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function note(midi, at, dur, o){
+    o = o || {};
+    const t = ctx.currentTime + at;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = o.type || 'sine';
+    osc.frequency.setValueAtTime(nf(midi), t);
+    if(o.glide) osc.frequency.exponentialRampToValueAtTime(nf(midi + o.glide), t + dur*.85);
+    const peak = o.gain == null ? .16 : o.gain;
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + (o.attack == null ? .012 : o.attack));
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    osc.connect(g); g.connect(o.bus || sfxBus);
+    osc.start(t); osc.stop(t + dur + .05);
+  }
+
+  function thump(at, gain){
+    const t = ctx.currentTime + at;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(88, t);
+    osc.frequency.exponentialRampToValueAtTime(42, t + .3);
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain || .5, t + .015);
+    g.gain.exponentialRampToValueAtTime(.0001, t + .34);
+    osc.connect(g); g.connect(master);
+    osc.start(t); osc.stop(t + .4);
+  }
+
+  function noise(at, dur, f0, f1, gain){
+    const t = ctx.currentTime + at;
+    const src = ctx.createBufferSource(); src.buffer = noiseBuf;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.1;
+    f.frequency.setValueAtTime(f0, t);
+    f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain, t + dur*.32);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(sfxBus);
+    src.start(t); src.stop(t + dur + .05);
+  }
+
+  function arp(list, at, sp, o){ list.forEach((m, i) => note(m, at + i*sp, (o && o.dur) || .8, o)); }
+  function sparkle(at, n){
+    const pool = [84,86,88,91,93,96,98];
+    for(let i = 0; i < (n || 6); i++)
+      note(pool[Math.floor(Math.random()*pool.length)], at + i*.055 + Math.random()*.04, .5,
+           {type:'triangle', gain:.07});
+  }
+
+  const CUES = {
+    line:    () => note(88, 0, .9, {type:'sine', gain:.03, attack:.06}),
+    ui:      () => note(79, 0, .16, {type:'sine', gain:.09}),
+    next:    () => { note(74, 0, .22, {type:'triangle', gain:.11}); note(81, .07, .4, {type:'sine', gain:.09}); },
+    back:    () => { note(79, 0, .2,  {type:'triangle', gain:.09}); note(72, .07, .36,{type:'sine', gain:.07}); },
+    pop:     () => note(76, 0, .3, {type:'sine', gain:.13, glide:12}),
+    chime:   () => arp([72,76,79,84], 0, .09, {type:'sine', gain:.1, dur:1.1}),
+    wrong:   () => { note(63, 0, .26, {type:'triangle', gain:.13}); note(58, .13, .42, {type:'triangle', gain:.11}); },
+    joy:     () => { arp([76,81,84,88], 0, .075, {type:'triangle', gain:.1, dur:.9}); sparkle(.18, 5); },
+    unlock:  () => { thump(0, .45); arp([72,76,79,84,88], .04, .085, {type:'sine', gain:.13, dur:1.4});
+                     sparkle(.4, 8); noise(0, .7, 400, 4200, .07); },
+    big:     () => { thump(0, .55); thump(.28, .4);
+                     arp([72,79,84,88,91,96], .05, .095, {type:'sine', gain:.14, dur:1.7});
+                     sparkle(.55, 10); noise(0, .9, 300, 5000, .08); },
+    finale:  () => { thump(0, .6); thump(.5, .5); thump(1.0, .45);
+                     arp([60,64,67,72,76,79,84,88,91,96], .05, .1, {type:'sine', gain:.13, dur:2});
+                     [.6,1.1,1.7,2.3].forEach(t => sparkle(t, 9));
+                     noise(0, 1.4, 250, 6000, .09); },
+    heart:   () => { thump(0, .35); thump(.22, .24); },
+    whoosh:  () => noise(0, .55, 2600, 320, .06),
+    sent:    () => arp([72,79,84], 0, .08, {type:'sine', gain:.12, dur:1.1})
+  };
+
+  function sfx(name){
+    if(!CONFIG.sound || !CUES[name]) return;
+    if(!ctx || ctx.state !== 'running') return;   // waits for her first tap
+    try { CUES[name](); } catch(e){}
+  }
+
+  /* ── the built-in loop: a slow I–V–vi–IV in F, pads + arpeggio ── */
+  const BAR = 4.8;
+  const CH = [
+    { pad:[53,57,60,64], arp:[65,69,72,76,79,72] },  // Fmaj9
+    { pad:[48,52,55,59], arp:[60,64,67,71,74,67] },  // Cmaj7
+    { pad:[50,53,57,60], arp:[62,65,69,72,74,69] },  // Dm7
+    { pad:[46,50,53,57], arp:[58,62,65,69,72,65] }   // Bbmaj7
+  ];
+  function padVoice(midi, at, dur, gain){
+    const t = ctx.currentTime + at;
+    const a = ctx.createOscillator(), b = ctx.createOscillator();
+    const f = ctx.createBiquadFilter(), g = ctx.createGain();
+    a.type = 'sine'; b.type = 'triangle';
+    a.frequency.value = nf(midi); b.frequency.value = nf(midi) * 1.004;
+    f.type = 'lowpass'; f.frequency.value = 950; f.Q.value = .5;
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain, t + 1.3);
+    g.gain.setValueAtTime(gain, t + dur*.6);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    a.connect(f); b.connect(f); f.connect(g); g.connect(musBus);
+    a.start(t); b.start(t); a.stop(t + dur + .1); b.stop(t + dur + .1);
+  }
+  function scheduleBar(){
+    const c = CH[bar % CH.length], off = nextAt - ctx.currentTime;
+    c.pad.forEach(m => padVoice(m, off, BAR * 1.08, .05));
+    for(let k = 0; k < 8; k++)
+      note(c.arp[(k*3 + bar) % c.arp.length] + (k === 5 ? 12 : 0), off + k*(BAR/8), 1.4,
+           {type:'triangle', gain:.045, attack:.03, bus:arpBus});
+    bar++; nextAt += BAR;
+  }
+  function pump(){
+    if(!looping || !ctx) return;
+    if(nextAt < ctx.currentTime) nextAt = ctx.currentTime + .1;
+    let guard = 0;
+    while(nextAt < ctx.currentTime + 1.6 && guard++ < 4) scheduleBar();
+  }
+
+  function music(on){
+    if(!wake()) return false;
+    if(useFile()){
+      if(!el.src) { el.src = CONFIG.musicUrl; el.volume = 0; }
+      if(on){
+        const p = el.play();
+        if(p && p.catch) p.catch(() => {});
+        ramp(v => el.volume = v, el.volume, CONFIG.musicVolume, 1600);
+      } else {
+        ramp(v => el.volume = v, el.volume, 0, 600, () => el.pause());
+      }
+      return true;
+    }
+    const now = ctx.currentTime;
+    musBus.gain.cancelScheduledValues(now);
+    musBus.gain.setValueAtTime(musBus.gain.value, now);
+    if(on){
+      looping = true;
+      nextAt = now + .2;
+      if(!timer) timer = setInterval(pump, 400);
+      pump();
+      musBus.gain.linearRampToValueAtTime(CONFIG.musicVolume, now + 2.6);
+    } else {
+      musBus.gain.linearRampToValueAtTime(0, now + 1);
+      setTimeout(() => { looping = false; clearInterval(timer); timer = 0; }, 1100);
+    }
+    return true;
+  }
+  function ramp(set, from, to, dur, done){
+    const t0 = performance.now();
+    (function s(now){
+      const k = Math.min(1, (now - t0)/dur);
+      set(from + (to - from)*k);
+      if(k < 1) requestAnimationFrame(s); else if(done) done();
+    })(performance.now());
+  }
+
+  return { wake, sfx, music, ready: () => !!ctx && ctx.state === 'running' };
+})();
+
+// the audio context can only start from a real gesture — take the first one
+['pointerdown','touchstart','keydown'].forEach(ev =>
+  addEventListener(ev, () => Sound.wake(), {passive:true}));
 
 /* ══════════════════════════════════════════════════════════════
    AMBIENT FLOATING HEARTS
@@ -878,12 +1246,12 @@ function show(id){
   $$('.scene').forEach(s => s.classList.toggle('on', s.id === id));
   state.scene = id;
   scrollTo(0,0);
+  // every scene but the portal is exactly one --vh tall, so nothing scrolls
   $('#parallax').classList.toggle('on', id === 'gratitude');
-  $('#nextPill').classList.toggle('show', false);
 }
 
 /* ── line-by-line sequence runner ───────────────────────────── */
-function runSequence(host, lines, perLine, onDone, skipBtn){
+function runSequence(host, lines, perLine, onDone){
   host.innerHTML = '';
   let i = 0, timers = [], finished = false;
 
@@ -904,6 +1272,7 @@ function runSequence(host, lines, perLine, onDone, skipBtn){
     const p = document.createElement('p');
     p.className = 'line'; p.innerHTML = lines[i];
     host.appendChild(p);
+    Sound.sfx('line');
     requestAnimationFrame(() => requestAnimationFrame(() => p.classList.add('in')));
     refresh();
     i++;
@@ -913,13 +1282,7 @@ function runSequence(host, lines, perLine, onDone, skipBtn){
     if(finished) return;
     finished = true;
     timers.forEach(clearTimeout);
-    if(skipBtn) skipBtn.classList.remove('show');
     onDone();
-  }
-  if(skipBtn){
-    skipBtn.classList.remove('show');
-    timers.push(setTimeout(() => skipBtn.classList.add('show'), 5000));
-    skipBtn.onclick = done;
   }
   step();
   return done;
@@ -944,7 +1307,7 @@ setTimeout(startMessage, 10300);
 function startMessage(){
   if(state.scene !== 'landing') return;   // she already moved on
   show('message');
-  runSequence($('#msgLines'), CONFIG.openingLines, 4000, () => show('gate'), $('#msgSkip'));
+  runSequence($('#msgLines'), CONFIG.openingLines, 4000, () => { Sound.sfx('whoosh'); show('gate'); });
 }
 
 /* ── 3. ACCESS GATE ─────────────────────────────────────────── */
@@ -973,6 +1336,8 @@ function tryCode(){
     const r = $('.card-glass').getBoundingClientRect();
     const cx = r.left + r.width/2, cy = r.top + r.height/2;
     glowFlash();
+    Sound.sfx('unlock');
+    setMusic(true);                 // the moment the site becomes hers
     FX.hearts(60, cx, cy, 16);
     FX.confetti(140, cx, cy, 18);
     setTimeout(() => FX.fireworksShow(4), 300);
@@ -983,6 +1348,7 @@ function tryCode(){
   } else {
     const card = $('.card-glass');
     card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    Sound.sfx('wrong');
     gateErr.textContent = pick(wrongLines);
     gateErr.classList.add('show');
     codeInput.value = '';
@@ -1042,25 +1408,35 @@ function startGratitude(){
   runSequence($('#gratLines'), CONFIG.gratitudeLines, 4200, () => {
     $('#gratGo').style.display = 'block';
     FX.hearts(22, innerWidth/2, innerHeight*.75, 10);
-  }, $('#gratSkip'));
+    Sound.sfx('chime');
+  });
 }
-$('#toStory').addEventListener('click', () => { show('story'); buildTimeline(); });
+$('#toStory').addEventListener('click', () => { Sound.sfx('whoosh'); show('story'); buildJourney(); });
 
-/* ── 5. TIMELINE ────────────────────────────────────────────── */
-let nodes = [], finaleFired = false;
+/* ── 5. OUR STORY — a guided journey, one stop at a time ───────
+   No scrolling: each date is its own full-screen stop. Next / back /
+   swipe / arrow keys / tapping a dot on the rail all move her along. */
+const J = {
+  i: 0,
+  n: CONFIG.timeline.length,
+  cards: [],
+  dots: [],
+  built: false,
+  seen: new Set()
+};
 
-function buildTimeline(){
-  const tl = $('#timeline');
-  if(tl.dataset.built) return;
-  tl.dataset.built = '1';
+function buildJourney(){
+  if(J.built) return;
+  J.built = true;
 
-  const frag = document.createDocumentFragment();
-  CONFIG.timeline.forEach(item => {
-    const node = document.createElement('div');
-    node.className = 'node' + (item.kind ? ' ' + item.kind : '');
+  const stage = $('#jstage'), dots = $('#jdots');
 
-    let inner = '<div class="dot">' + item.icon + '</div><div class="card">';
-    if(item.kind === 'big') inner += '<div class="halo"></div>';
+  CONFIG.timeline.forEach((item, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'jcard' + (item.kind ? ' ' + item.kind : '');
+
+    let inner = item.kind === 'big' ? '<div class="halo"></div>' : '';
+    inner += '<div class="card">';
     inner += '<span class="badge">' + (item.badge || item.date) + '</span>';
     inner += '<h3>' + item.title + (item.kind === 'big' ? ' 💍' : '') + '</h3>';
     item.body.forEach(p => inner += '<p>' + p + '</p>');
@@ -1073,82 +1449,120 @@ function buildTimeline(){
         + '</div>';
     }
     inner += '</div>';
-    node.innerHTML = inner;
-    frag.appendChild(node);
+    wrap.innerHTML = inner;
+    stage.appendChild(wrap);
+    J.cards.push(wrap);
+
+    const d = document.createElement('button');
+    d.className = 'jdot' + (item.kind === 'big' || item.kind === 'finale' ? ' gold' : '');
+    d.type = 'button';
+    d.setAttribute('aria-label', item.date + ' — ' + item.title);
+    d.addEventListener('click', () => step(idx));
+    dots.appendChild(d);
+    J.dots.push(d);
   });
-  tl.appendChild(frag);
-  nodes = [...tl.querySelectorAll('.node')];
 
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(en => {
-      if(!en.isIntersecting) return;
-      en.target.classList.add('in');
-      io.unobserve(en.target);
-      const idx = nodes.indexOf(en.target);
-      const item = CONFIG.timeline[idx];
-      const r = en.target.getBoundingClientRect();
-      const cx = r.left + r.width/2, cy = r.top + Math.min(r.height/2, innerHeight/2);
-
-      if(item.kind === 'big'){
-        setTimeout(() => { glowFlash(); FX.hearts(44, cx, cy, 14); FX.confetti(60, cx, cy, 13); }, 500);
-        if(navigator.vibrate) navigator.vibrate([18,50,18,50,40]);
-      } else if(item.kind === 'joy'){
-        setTimeout(() => FX.hearts(28, cx, cy, 12), 350);
-      } else if(item.kind === 'finale'){
-        if(!finaleFired){
-          finaleFired = true;
-          setTimeout(() => { glowFlash(); FX.show(); FX.fireworksShow(9); }, 400);
-          setTimeout(() => {
-            const b = $('#toPortal');
-            b.style.display = 'inline-block';
-            b.classList.add('fadein');
-            state.storyDone = true;
-          }, 2000);
-        }
-      } else {
-        FX.hearts(4, cx, cy, 5);
-      }
-      updatePill();
-    });
-  }, { threshold:.25, rootMargin:'0px 0px -8% 0px' });
-
-  nodes.forEach(n => io.observe(n));
-  addEventListener('scroll', onStoryScroll, {passive:true});
-  setTimeout(() => { onStoryScroll(); updatePill(); }, 400);
+  $('#jtotal').textContent = J.n;
+  step(0, true);
 }
 
-function onStoryScroll(){
+function step(i, first){
+  i = Math.max(0, Math.min(J.n - 1, i));
+  const back = i < J.i;
+  J.i = i;
+  const item = CONFIG.timeline[i];
+
+  J.cards.forEach((c, idx) => {
+    c.classList.toggle('live', idx === i);
+    c.classList.toggle('past', idx < i);
+  });
+  J.dots.forEach((d, idx) => {
+    d.classList.toggle('now', idx === i);
+    d.classList.toggle('done', idx < i);
+  });
+
+  $('#jfill').style.width = (J.n > 1 ? (i/(J.n-1))*100 : 100).toFixed(2) + '%';
+  $('#jnow').textContent = i + 1;
+  $('#jwhen').textContent = item.date;
+  $('#jprev').disabled = i === 0;
+
+  const last = i === J.n - 1;
+  $('#jnext').textContent = last ? 'Open your Girlfriend Portal 💗' : 'Next ›';
+  $('#jhint').style.opacity = last ? '0' : (i > 1 ? '0' : '1');
+
+  if(!first) Sound.sfx(back ? 'back' : 'next');
+  celebrate(item, i);
+}
+
+// each stop gets its own little moment
+function celebrate(item, i){
+  const cx = innerWidth/2, cy = innerHeight*0.46;
+  const firstVisit = !J.seen.has(i);
+  J.seen.add(i);
+
+  if(item.kind === 'big'){
+    setTimeout(() => {
+      glowFlash();
+      FX.hearts(46, cx, cy, 15);
+      FX.confetti(70, cx, cy, 14);
+      Sound.sfx('big');
+      if(navigator.vibrate) navigator.vibrate([18,50,18,50,60]);
+    }, 380);
+  } else if(item.kind === 'joy'){
+    setTimeout(() => { FX.hearts(30, cx, cy, 12); Sound.sfx('joy'); }, 300);
+  } else if(item.kind === 'finale'){
+    setTimeout(() => {
+      glowFlash();
+      FX.show();
+      FX.fireworksShow(9);
+      Sound.sfx('finale');
+      if(navigator.vibrate) navigator.vibrate([20,60,20,60,20,60,120]);
+    }, 320);
+  } else if(firstVisit){
+    setTimeout(() => FX.hearts(7, cx, cy + 40, 6), 260);
+  }
+}
+
+$('#jnext').addEventListener('click', () => {
+  if(J.i === J.n - 1) openPortal();
+  else step(J.i + 1);
+});
+$('#jprev').addEventListener('click', () => step(J.i - 1));
+
+// swipe
+(function swipe(){
+  const stage = $('#jstage');
+  let x0 = 0, y0 = 0, t0 = 0;
+  stage.addEventListener('touchstart', e => {
+    x0 = e.changedTouches[0].clientX; y0 = e.changedTouches[0].clientY; t0 = e.timeStamp;
+  }, {passive:true});
+  stage.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = e.changedTouches[0].clientY - y0;
+    if(e.timeStamp - t0 > 700) return;
+    if(Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+    if(dx < 0 && J.i < J.n - 1) step(J.i + 1);
+    else if(dx > 0) step(J.i - 1);
+  }, {passive:true});
+})();
+
+addEventListener('keydown', e => {
   if(state.scene !== 'story') return;
-  const tl = $('#timeline');
-  const r = tl.getBoundingClientRect();
-  const p = Math.max(0, Math.min(1, (innerHeight*.6 - r.top) / r.height));
-  $('#railFill').style.height = (p*100).toFixed(2) + '%';
-  updatePill();
-}
-
-function nextNode(){
-  return nodes.find(n => n.getBoundingClientRect().top > innerHeight * .42);
-}
-function updatePill(){
-  if(state.scene !== 'story') return;
-  $('#nextPill').classList.toggle('show', !!nextNode());
-}
-$('#nextPill').addEventListener('click', () => {
-  const nx = nextNode();
-  if(!nx) return;
-  const y = scrollY + nx.getBoundingClientRect().top - innerHeight*.22;
-  scrollTo({ top:y, behavior:'smooth' });
+  if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); if(J.i < J.n-1) step(J.i+1); else openPortal(); }
+  if(e.key === 'ArrowLeft') step(J.i - 1);
 });
 
-$('#toPortal').addEventListener('click', () => {
+function openPortal(){
+  if(state.portal) return;
   state.portal = true;
   glowFlash();
+  Sound.sfx('unlock');
   show('portal');
   FX.show();
   const panels = $$('#portal .panel, #portal .portal-head');
   panels.forEach((p,i) => setTimeout(() => p.classList.add('in'), 120 + i*110));
   startCountdown();
-});
+}
 
 /* ══════════════════════════════════════════════════════════════
    6. GIRLFRIEND PORTAL
@@ -1224,6 +1638,7 @@ $('#icsBtn').addEventListener('click', () => {
   a.href = url; a.download = 'our-monthiversary.ics';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+  Sound.sfx('chime');
   FX.hearts(16, innerWidth/2, innerHeight*.5, 9);
 });
 
@@ -1242,6 +1657,7 @@ $$('[data-sms]').forEach(btn => {
   btn.addEventListener('click', () => {
     const r = btn.getBoundingClientRect();
     FX.hearts(30, r.left + r.width/2, r.top + r.height/2, 13);
+    Sound.sfx('heart');
     if(navigator.vibrate) navigator.vibrate(26);
     setTimeout(() => { location.href = smsHref(CONFIG.texts[btn.dataset.sms]); }, 420);
   });
@@ -1268,6 +1684,7 @@ function riggedMeter(){
     meterFill.style.transform = 'scaleX(1)';
     if(v < 100){
       meterMsg.textContent = meterLines[meterIdx++ % meterLines.length];
+      Sound.sfx('pop');
       const r = meter.getBoundingClientRect();
       FX.hearts(10, r.left + r.width, r.top, 8);
     } else {
@@ -1289,12 +1706,38 @@ $('#compBtn').addEventListener('click', () => {
   setTimeout(() => {
     compEl.textContent = CONFIG.compliments[i];
     compEl.classList.remove('swap');
+    Sound.sfx('chime');
     const r = compEl.getBoundingClientRect();
     FX.hearts(9, r.left + r.width/2, r.top + r.height/2, 7);
   }, 320);
 });
 
-/* ── surprise planning HQ ───────────────────────────────────── */
+/* ── surprise planning HQ · modal ───────────────────────────── */
+const hqModal = $('#hqModal');
+let hqLastFocus = null;
+
+function openHQ(){
+  hqLastFocus = document.activeElement;
+  hqModal.classList.add('open');
+  hqModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  Sound.sfx('whoosh');
+  FX.hearts(12, innerWidth/2, innerHeight*.8, 8);
+  setTimeout(() => $('#momNum').focus({preventScroll:true}), 480);
+}
+function closeHQ(){
+  hqModal.classList.remove('open');
+  hqModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+  Sound.sfx('ui');
+  if(hqLastFocus) hqLastFocus.focus({preventScroll:true});
+}
+$('#hqOpen').addEventListener('click', openHQ);
+$('#hqClose').addEventListener('click', closeHQ);
+$('#hqBack').addEventListener('click', closeHQ);
+addEventListener('keydown', e => { if(e.key === 'Escape' && hqModal.classList.contains('open')) closeHQ(); });
+
+
 $('#hqForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const mom = $('#momNum').value.trim(), dad = $('#dadNum').value.trim();
@@ -1302,6 +1745,7 @@ $('#hqForm').addEventListener('submit', async (e) => {
 
   if(!mom && !dad){
     msg.textContent = 'Give me at least one number 🥺';
+    Sound.sfx('wrong');
     return;
   }
 
@@ -1330,6 +1774,7 @@ $('#hqForm').addEventListener('submit', async (e) => {
     });
     if(!res.ok) throw new Error('bad status');
     msg.textContent = 'Sent 🤫 You saw nothing.';
+    Sound.sfx('sent');
     $('#hqForm').reset();
     FX.confetti(60, innerWidth/2, innerHeight*.7, 13);
     FX.hearts(24, innerWidth/2, innerHeight*.7, 11);
@@ -1341,45 +1786,35 @@ $('#hqForm').addEventListener('submit', async (e) => {
   }
 });
 
-/* ── background music (off by default) ──────────────────────── */
-const bgm = $('#bgm'), musicBtn = $('#music');
+/* ── music toggle ───────────────────────────────────────────── */
+const musicBtn = $('#music');
 let musicOn = false;
-musicBtn.addEventListener('click', async () => {
-  if(!CONFIG.musicUrl || CONFIG.musicUrl === 'MUSIC_URL_HERE'){
-    musicBtn.textContent = '🎵';
-    musicBtn.title = 'Set CONFIG.musicUrl to a direct .mp3 link';
-    setTimeout(() => { musicBtn.textContent = musicOn ? '💗' : '🤍'; }, 1400);
-    return;
-  }
-  if(!bgm.src) { bgm.src = CONFIG.musicUrl; bgm.volume = 0; }
-  if(musicOn){
-    fade(bgm.volume, 0, 600, v => { bgm.volume = v; if(v <= .01) bgm.pause(); });
-    musicOn = false; musicBtn.textContent = '🤍'; musicBtn.classList.remove('on');
-  }else{
-    try{
-      await bgm.play();
-      fade(0, .45, 1400, v => bgm.volume = v);
-      musicOn = true; musicBtn.textContent = '💗'; musicBtn.classList.add('on');
-    }catch(err){
-      musicBtn.title = 'Tap again to allow audio';
-    }
-  }
-});
-function fade(from, to, dur, set){
-  const t0 = performance.now();
-  (function step(now){
-    const k = Math.min(1, (now - t0)/dur);
-    set(from + (to - from) * k);
-    if(k < 1) requestAnimationFrame(step);
-  })(performance.now());
+
+function setMusic(on){
+  if(on === musicOn) return;
+  if(!Sound.music(on)) return;
+  musicOn = on;
+  musicBtn.textContent = on ? '💗' : '🤍';
+  musicBtn.classList.toggle('on', on);
+  musicBtn.setAttribute('aria-pressed', String(on));
+  hideHint();
 }
+musicBtn.addEventListener('click', () => { Sound.wake(); setMusic(!musicOn); });
+
+/* a small nudge toward the music button, until she taps anything */
+const hint = $('#soundHint');
+let hintTimer = setTimeout(() => { if(!musicOn) hint.classList.add('show'); }, 6200);
+function hideHint(){ clearTimeout(hintTimer); hint.classList.remove('show'); }
+addEventListener('pointerdown', e => { if(!e.target.closest('#music')) hideHint(); }, {passive:true, once:true});
 
 /* ── little touches ─────────────────────────────────────────── */
 // a heart wherever she taps, anywhere in the site
 addEventListener('pointerdown', e => {
-  if(REDUCED) return;
-  if(e.target.closest('input, textarea, select')) return;
-  FX.hearts(3, e.clientX, e.clientY, 5);
+  if(e.target.closest('input, textarea, select, .jdot')) return;
+  // the journey's own buttons play their own step sound
+  const btn = e.target.closest('button, a.btn');
+  if(btn && !btn.closest('.jnav') && !btn.closest('#music')) Sound.sfx('ui');
+  if(!REDUCED) FX.hearts(3, e.clientX, e.clientY, 5);
 }, {passive:true});
 
 document.title = 'Happy 3 Months, ' + CONFIG.herName + ' 💗';
