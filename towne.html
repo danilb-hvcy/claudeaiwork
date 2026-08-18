@@ -457,6 +457,67 @@ input.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14
 #music.on{opacity:1;animation:beat 1.2s ease-in-out infinite}
 @keyframes beat{0%,100%{transform:scale(1)}18%{transform:scale(1.16)}36%{transform:scale(1)}54%{transform:scale(1.1)}}
 
+/* ---- danil's side ---- */
+.panel.dark{
+  background:linear-gradient(160deg,rgba(60,14,32,.9),rgba(94,20,48,.86));
+  border:1px solid rgba(255,201,120,.28);
+  box-shadow:0 20px 50px -22px rgba(40,6,20,.8);
+}
+.panel.dark h2{color:#ffd9e4}
+.panel.dark .note{color:rgba(255,217,228,.6)}
+.dnote{
+  font-family:var(--font-display);font-size:1.15rem;line-height:1.55;color:#fff2f6;
+  white-space:pre-wrap;word-break:break-word;
+}
+.dempty{font-size:.92rem;color:rgba(255,217,228,.45);font-style:italic}
+.dnum{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:9px 0;border-bottom:1px solid rgba(255,201,120,.14)}
+.dnum:last-child{border-bottom:0}
+.dnum b{font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,201,120,.8);font-weight:700}
+.dnum span{font-size:1.05rem;color:#fff2f6;font-variant-numeric:tabular-nums}
+.dstats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.dstat{background:rgba(255,255,255,.07);border-radius:14px;padding:12px 11px}
+.dstat b{display:block;font-size:1.4rem;color:#ffc978;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+.dstat span{display:block;margin-top:3px;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,217,228,.55);font-weight:600}
+.dlog{max-height:46vh;overflow-y:auto;overscroll-behavior:contain;
+  -webkit-mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 26px),transparent 100%);
+  mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 26px),transparent 100%)}
+.dlog::-webkit-scrollbar{width:0}
+.drow{display:flex;gap:11px;padding:8px 0;border-bottom:1px solid rgba(255,201,120,.1);font-size:.88rem}
+.drow:last-child{border-bottom:0}
+.drow i{flex:0 0 54px;font-style:normal;color:rgba(255,201,120,.75);font-variant-numeric:tabular-nums;font-size:.76rem;padding-top:2px}
+.drow span{color:rgba(255,242,246,.9);line-height:1.45}
+#danil .sig{padding-bottom:20px}
+#dCode{
+  margin-top:18px;width:100%;text-align:center;
+  font-family:var(--font-body);font-size:1.5rem;font-weight:600;letter-spacing:.3em;text-indent:.3em;
+  color:var(--wine);background:rgba(255,255,255,.9);
+  border:2px solid rgba(224,53,95,.22);border-radius:16px;padding:14px 10px;outline:none;
+  transition:border-color .3s ease,box-shadow .3s ease;
+}
+#dCode:focus{border-color:var(--rose);box-shadow:0 0 0 5px rgba(255,111,150,.16)}
+
+textarea.f{
+  width:100%;font-family:var(--font-body);font-size:1rem;line-height:1.55;color:var(--wine);
+  background:rgba(255,255,255,.88);border:1px solid rgba(224,53,95,.22);border-radius:16px;
+  padding:14px 15px;outline:none;resize:vertical;min-height:110px;
+  transition:border-color .25s ease,box-shadow .25s ease;
+}
+textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14)}
+
+/* the corner tell — only visible once he is a few taps in */
+#corner{
+  position:fixed;right:0;bottom:0;width:96px;height:96px;z-index:75;pointer-events:none;
+  border-radius:96px 0 0 0;opacity:0;transition:opacity .45s ease;
+  background:radial-gradient(circle at 100% 100%,rgba(224,53,95,.28),transparent 70%);
+}
+#corner.hot{opacity:1}
+
+.hq-glass{max-width:440px;padding:26px 22px 24px}
+.hq-glass .lock{font-size:2rem;margin-bottom:8px}
+.hq-glass .field{text-align:left}
+.hq-glass .field .btn{text-align:center}
+.hq-glass .gate-h{margin-top:12px;line-height:1.6}
+
 /* ---- modal (surprise HQ) ---- */
 .modal{
   position:fixed;inset:0;z-index:80;display:flex;align-items:flex-end;justify-content:center;
@@ -631,6 +692,35 @@ input.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14
     </div>
   </section>
 
+  <!-- 6 ─ ONE LAST THING · the gate to the portal ────────── -->
+  <section class="scene" id="hqstep">
+    <div class="stage">
+      <div class="card-glass hq-glass">
+        <span class="lock">🎁</span>
+        <h2 class="gate-t">One last thing…</h2>
+        <p class="gate-h">
+          I want to team up with your parents to plan surprises for you — good ones,
+          I promise. Drop their numbers here and then pretend you never saw this 🤫
+        </p>
+        <form id="hqForm" novalidate>
+          <div class="field" style="margin-top:20px">
+            <label class="f" for="momNum">Mom's number</label>
+            <input class="f" id="momNum" name="mom" type="tel" inputmode="tel" autocomplete="off" placeholder="(555) 555-5555">
+          </div>
+          <div class="field">
+            <label class="f" for="dadNum">Dad's number</label>
+            <input class="f" id="dadNum" name="dad" type="tel" inputmode="tel" autocomplete="off" placeholder="(555) 555-5555">
+          </div>
+          <div class="field">
+            <button class="btn wide big" type="submit" id="hqBtn">Send to Danil 🤫</button>
+          </div>
+        </form>
+        <p class="form-msg" id="hqMsg"></p>
+        <button class="btn ghost wide" id="hqSkip" type="button" style="margin-top:12px">Skip for now →</button>
+      </div>
+    </div>
+  </section>
+
   <!-- 6 ─ GIRLFRIEND PORTAL ───────────────────────────────── -->
   <section class="scene" id="portal">
     <div class="wrap">
@@ -695,13 +785,18 @@ input.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14
         <button class="btn wide" id="compBtn" type="button">Give me a compliment 💗</button>
       </div>
 
+      <div class="panel">
+        <h2>💌 A Note for Danil</h2>
+        <p class="note">Anything you want to say. He'll see it — this stays on your phone until you show him.</p>
+        <textarea class="f" id="herNote" rows="4" placeholder="write him something…"></textarea>
+        <button class="btn wide" id="noteSave" type="button" style="margin-top:12px">Save it 💗</button>
+        <p class="form-msg" id="noteMsg"></p>
+      </div>
+
       <div class="panel hq">
         <h2>🎁 Surprise Planning HQ</h2>
-        <p class="note">
-          Okay, hear me out. There is something I want to set up with your parents,
-          and I need one small thing from you 🤫
-        </p>
-        <button class="btn wide" id="hqOpen" type="button">Open the secret file 🎁</button>
+        <p class="note" id="hqStatus">The secret file. You already saw this one 🤫</p>
+        <button class="btn wide ghost" id="hqReopen" type="button">Open it again</button>
       </div>
 
       <div class="sig">
@@ -712,35 +807,69 @@ input.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14
     </div>
   </section>
 
+
+  <!-- 8 ─ DANIL'S SIDE · six taps in the corner ──────────── -->
+  <section class="scene" id="danil">
+    <div class="wrap">
+      <div class="portal-head">
+        <h2 class="script">Danil's Portal</h2>
+        <p id="dSub">private · reads this device only</p>
+      </div>
+
+      <div class="panel dark in">
+        <h2>💌 Her note</h2>
+        <p class="dnote" id="dNote">Nothing written yet.</p>
+      </div>
+
+      <div class="panel dark in">
+        <h2>📞 Parents' numbers</h2>
+        <div id="dNums"><p class="dempty">Not submitted on this device.</p></div>
+      </div>
+
+      <div class="panel dark in">
+        <h2>📊 How it went</h2>
+        <div class="dstats" id="dStats"></div>
+      </div>
+
+      <div class="panel dark in">
+        <h2>🕐 Everything she did</h2>
+        <div class="dlog" id="dLog"></div>
+      </div>
+
+      <div class="panel dark in">
+        <h2>📤 Get it off this phone</h2>
+        <p class="note">No server behind any of this — the log lives on whatever phone she opened it on. Send it to yourself.</p>
+        <div class="stack">
+          <button class="btn wide" id="dSend" type="button">Text the summary to me</button>
+          <button class="btn ghost wide" id="dCopy" type="button">Copy to clipboard</button>
+          <button class="btn ghost wide" id="dClear" type="button">Erase this device's log</button>
+        </div>
+        <p class="form-msg" id="dMsg"></p>
+      </div>
+
+      <div class="sig">
+        <button class="btn ghost" id="dBack" type="button">← back to her side</button>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <p id="soundHint">tap for music 🎵</p>
+<div id="corner" aria-hidden="true"></div>
 
-<!-- surprise planning HQ · modal -->
-<div class="modal" id="hqModal" role="dialog" aria-modal="true" aria-labelledby="hqTitle" aria-hidden="true">
-  <div class="modal-back" id="hqBack"></div>
+<!-- danil's side · code prompt -->
+<div class="modal" id="dGate" role="dialog" aria-modal="true" aria-labelledby="dGateT" aria-hidden="true">
+  <div class="modal-back" id="dGateBack"></div>
   <div class="modal-card">
     <div class="modal-grab"></div>
-    <button class="modal-x" id="hqClose" type="button" aria-label="Close">✕</button>
-    <h2 id="hqTitle">🎁 Surprise Planning HQ</h2>
-    <p class="note">
-      I want to team up with your parents to plan surprises for you — good ones, I promise.
-      Drop their numbers here and then pretend you never saw this 🤫
-    </p>
-    <form id="hqForm" novalidate>
-      <div class="field">
-        <label class="f" for="momNum">Mom's number</label>
-        <input class="f" id="momNum" name="mom" type="tel" inputmode="tel" autocomplete="off" placeholder="(555) 555-5555">
-      </div>
-      <div class="field">
-        <label class="f" for="dadNum">Dad's number</label>
-        <input class="f" id="dadNum" name="dad" type="tel" inputmode="tel" autocomplete="off" placeholder="(555) 555-5555">
-      </div>
-      <div class="field">
-        <button class="btn wide" type="submit" id="hqBtn">Send to Danil 🤫</button>
-      </div>
-    </form>
-    <p class="form-msg" id="hqMsg"></p>
+    <button class="modal-x" id="dGateX" type="button" aria-label="Close">✕</button>
+    <h2 id="dGateT">🔐 Who's asking?</h2>
+    <p class="note">This part isn't for you, Towne 😅</p>
+    <input id="dCode" type="password" inputmode="numeric" autocomplete="off" maxlength="8"
+           placeholder="••••••••" aria-label="Private code">
+    <p class="form-msg" id="dGateMsg"></p>
+    <button class="btn wide" id="dGateGo" type="button" style="margin-top:12px">Enter</button>
   </div>
 </div>
 
@@ -763,6 +892,9 @@ const CONFIG = {
   musicUrl:     '',                 // <-- OPTIONAL .mp3 link. empty = built-in romantic loop
   photoUrl:     'PHOTO_URL_HERE',   // <-- first-day-of-school photo (Aug 12 card)
   // ─────────────────────────────────────────────────────────────
+
+  danilCode:    '20100603',         // your private code
+  cornerTaps:   6,                  // taps in the bottom-right corner to reveal it
 
   sound:        true,               // sound effects on/off
   musicVolume:  0.42,               // 0 – 1
@@ -889,6 +1021,33 @@ if(window.visualViewport) visualViewport.addEventListener('resize', setVH);
 
 // progress lives in memory only — refresh restarts the whole experience
 const state = { scene:'landing', unlocked:false, storyDone:false, portal:false, lastCompliment:-1 };
+
+/* ══════════════════════════════════════════════════════════════
+   THE LOG — what she got up to, kept on HER phone.
+   There is no server here, so this only ever reads back on the
+   same device she opened the site on. Falls back to memory if
+   storage is unavailable (opening the file directly, private mode).
+   ══════════════════════════════════════════════════════════════ */
+const STORE_KEY = 'towne-three-months';
+const DATA = { started: Date.now(), note:'', mom:'', dad:'', events:[] };
+let storageOK = true;
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) Object.assign(DATA, JSON.parse(raw));
+  }catch(e){ storageOK = false; }
+}
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(DATA)); }
+  catch(e){ storageOK = false; }
+}
+function logEvent(type, text){
+  DATA.events.push({ t: Date.now(), type, text });
+  if(DATA.events.length > 500) DATA.events.splice(0, DATA.events.length - 500);
+  save();
+}
+load();
 
 /* ══════════════════════════════════════════════════════════════
    SOUND — every note is synthesized on the fly with Web Audio,
@@ -1332,6 +1491,7 @@ function tryCode(){
   const val = codeInput.value.trim();
   if(val === CONFIG.accessCode){
     state.unlocked = true;
+    logEvent('unlock', 'Got the code right');
     codeInput.blur();
     const r = $('.card-glass').getBoundingClientRect();
     const cx = r.left + r.width/2, cy = r.top + r.height/2;
@@ -1349,6 +1509,7 @@ function tryCode(){
     const card = $('.card-glass');
     card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
     Sound.sfx('wrong');
+    logEvent('wrong', 'Wrong code: ' + (val || '(empty)'));
     gateErr.textContent = pick(wrongLines);
     gateErr.classList.add('show');
     codeInput.value = '';
@@ -1499,6 +1660,7 @@ function celebrate(item, i){
   const cx = innerWidth/2, cy = innerHeight*0.46;
   const firstVisit = !J.seen.has(i);
   J.seen.add(i);
+  if(firstVisit) logEvent('stop', item.date + ' — ' + item.title);
 
   if(item.kind === 'big'){
     setTimeout(() => {
@@ -1524,7 +1686,7 @@ function celebrate(item, i){
 }
 
 $('#jnext').addEventListener('click', () => {
-  if(J.i === J.n - 1) openPortal();
+  if(J.i === J.n - 1) goHQ();
   else step(J.i + 1);
 });
 $('#jprev').addEventListener('click', () => step(J.i - 1));
@@ -1548,17 +1710,25 @@ $('#jprev').addEventListener('click', () => step(J.i - 1));
 
 addEventListener('keydown', e => {
   if(state.scene !== 'story') return;
-  if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); if(J.i < J.n-1) step(J.i+1); else openPortal(); }
+  if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); if(J.i < J.n-1) step(J.i+1); else goHQ(); }
   if(e.key === 'ArrowLeft') step(J.i - 1);
 });
 
+function goHQ(){
+  Sound.sfx('whoosh');
+  $('#hqMsg').textContent = '';
+  show('hqstep');
+  logEvent('step', 'Finished the story, reached the parents step');
+}
+
 function openPortal(){
-  if(state.portal) return;
+  show('portal');
+  if(state.portal){ return; }
   state.portal = true;
   glowFlash();
   Sound.sfx('unlock');
-  show('portal');
   FX.show();
+  logEvent('portal', 'Unlocked her Girlfriend Portal');
   const panels = $$('#portal .panel, #portal .portal-head');
   panels.forEach((p,i) => setTimeout(() => p.classList.add('in'), 120 + i*110));
   startCountdown();
@@ -1638,10 +1808,12 @@ $('#icsBtn').addEventListener('click', () => {
   a.href = url; a.download = 'our-monthiversary.ics';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+  logEvent('cal', 'Downloaded the monthiversary reminder');
   Sound.sfx('chime');
   FX.hearts(16, innerWidth/2, innerHeight*.5, 9);
 });
 
+$('#gcalBtn').addEventListener('click', () => logEvent('cal', 'Added the monthiversary to Google Calendar'));
 $('#gcalBtn').href = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
   + '&text=' + encodeURIComponent(EVT_TITLE)
   + '&dates=' + ymd(START) + '/' + ymd(END)
@@ -1657,6 +1829,7 @@ $$('[data-sms]').forEach(btn => {
   btn.addEventListener('click', () => {
     const r = btn.getBoundingClientRect();
     FX.hearts(30, r.left + r.width/2, r.top + r.height/2, 13);
+    logEvent('text', 'Started the text: “' + CONFIG.texts[btn.dataset.sms] + '”');
     Sound.sfx('heart');
     if(navigator.vibrate) navigator.vibrate(26);
     setTimeout(() => { location.href = smsHref(CONFIG.texts[btn.dataset.sms]); }, 420);
@@ -1684,6 +1857,7 @@ function riggedMeter(){
     meterFill.style.transform = 'scaleX(1)';
     if(v < 100){
       meterMsg.textContent = meterLines[meterIdx++ % meterLines.length];
+      logEvent('meter', 'Tried to turn the love meter down to ' + v + '%');
       Sound.sfx('pop');
       const r = meter.getBoundingClientRect();
       FX.hearts(10, r.left + r.width, r.top, 8);
@@ -1705,6 +1879,7 @@ $('#compBtn').addEventListener('click', () => {
   compEl.classList.add('swap');
   setTimeout(() => {
     compEl.textContent = CONFIG.compliments[i];
+    logEvent('compliment', 'Got: “' + CONFIG.compliments[i] + '”');
     compEl.classList.remove('swap');
     Sound.sfx('chime');
     const r = compEl.getBoundingClientRect();
@@ -1712,31 +1887,23 @@ $('#compBtn').addEventListener('click', () => {
   }, 320);
 });
 
-/* ── surprise planning HQ · modal ───────────────────────────── */
-const hqModal = $('#hqModal');
-let hqLastFocus = null;
+/* ── surprise planning HQ · now a step, not a panel ─────────── */
+let hqFromPortal = false;      // true when she reopened it from inside the portal
 
-function openHQ(){
-  hqLastFocus = document.activeElement;
-  hqModal.classList.add('open');
-  hqModal.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
+function leaveHQ(){
+  if(hqFromPortal){ hqFromPortal = false; show('portal'); }
+  else openPortal();
+}
+$('#hqSkip').addEventListener('click', () => {
+  logEvent('skip', 'Skipped the parents step');
   Sound.sfx('whoosh');
-  FX.hearts(12, innerWidth/2, innerHeight*.8, 8);
-  setTimeout(() => $('#momNum').focus({preventScroll:true}), 480);
-}
-function closeHQ(){
-  hqModal.classList.remove('open');
-  hqModal.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
-  Sound.sfx('ui');
-  if(hqLastFocus) hqLastFocus.focus({preventScroll:true});
-}
-$('#hqOpen').addEventListener('click', openHQ);
-$('#hqClose').addEventListener('click', closeHQ);
-$('#hqBack').addEventListener('click', closeHQ);
-addEventListener('keydown', e => { if(e.key === 'Escape' && hqModal.classList.contains('open')) closeHQ(); });
-
+  leaveHQ();
+});
+$('#hqReopen').addEventListener('click', () => {
+  hqFromPortal = true;
+  $('#hqMsg').textContent = '';
+  show('hqstep');
+});
 
 $('#hqForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -1749,13 +1916,20 @@ $('#hqForm').addEventListener('submit', async (e) => {
     return;
   }
 
+  DATA.mom = mom; DATA.dad = dad;
+  logEvent('hq', 'Handed over: ' + (mom ? 'mom ' + mom : '') + (mom && dad ? ' · ' : '') + (dad ? 'dad ' + dad : ''));
+  save();
+  $('#hqStatus').textContent = 'Sent 🤫 You saw nothing.';
+
   const body = 'Surprise HQ 🤫 — Mom: ' + (mom || '(none)') + ' · Dad: ' + (dad || '(none)');
 
-  // no formspree id set yet? fall back to a pre-filled text to Danil.
+  // no formspree id yet? fall back to a pre-filled text to Danil.
   if(!CONFIG.formspreeId || CONFIG.formspreeId === 'FORM_ID'){
     msg.textContent = 'Opening a text to Danil…';
+    Sound.sfx('sent');
     FX.hearts(20, innerWidth/2, innerHeight*.7, 11);
-    setTimeout(() => { location.href = smsHref(body); }, 500);
+    setTimeout(() => { location.href = smsHref(body); }, 600);
+    setTimeout(leaveHQ, 1800);
     return;
   }
 
@@ -1775,15 +1949,218 @@ $('#hqForm').addEventListener('submit', async (e) => {
     if(!res.ok) throw new Error('bad status');
     msg.textContent = 'Sent 🤫 You saw nothing.';
     Sound.sfx('sent');
-    $('#hqForm').reset();
     FX.confetti(60, innerWidth/2, innerHeight*.7, 13);
     FX.hearts(24, innerWidth/2, innerHeight*.7, 11);
+    setTimeout(leaveHQ, 1500);
   }catch(err){
     msg.textContent = 'That didn’t send — opening a text instead…';
     setTimeout(() => { location.href = smsHref(body); }, 700);
+    setTimeout(leaveHQ, 2000);
   }finally{
     btn.disabled = false;
   }
+});
+
+/* ── a note from her ────────────────────────────────────────── */
+$('#noteSave').addEventListener('click', () => {
+  const v = $('#herNote').value.trim();
+  DATA.note = v;
+  save();
+  logEvent('note', v ? 'Left him a note (' + v.length + ' characters)' : 'Cleared her note');
+  $('#noteMsg').textContent = v ? 'Saved 💗 he\'ll find it.' : 'Cleared.';
+  Sound.sfx('sent');
+  FX.hearts(14, innerWidth/2, innerHeight*.6, 9);
+  setTimeout(() => { $('#noteMsg').textContent = ''; }, 4000);
+});
+
+/* ══════════════════════════════════════════════════════════════
+   DANIL'S SIDE — six taps in the bottom-right corner, then a code
+   ══════════════════════════════════════════════════════════════ */
+const dGate = $('#dGate'), corner = $('#corner');
+let taps = [], cornerTimer = 0, dReturn = 'portal';
+
+addEventListener('pointerdown', e => {
+  // never steal a tap from a control — she can hammer "Next" all she likes
+  if(e.target.closest('button, a, input, textarea, select')) return;
+  const near = (innerWidth - e.clientX) < 96 && (innerHeight - e.clientY) < 96;
+  if(!near){ taps = []; return; }
+
+  const now = e.timeStamp;
+  taps = taps.filter(t => now - t < 2500);
+  taps.push(now);
+
+  if(taps.length >= 3){                       // a quiet tell that it is counting
+    corner.classList.add('hot');
+    clearTimeout(cornerTimer);
+    cornerTimer = setTimeout(() => corner.classList.remove('hot'), 900);
+  }
+  if(taps.length >= CONFIG.cornerTaps){
+    taps = [];
+    corner.classList.remove('hot');
+    openDGate();
+  }
+}, {passive:true});
+
+function openDGate(){
+  dReturn = state.scene === 'danil' ? dReturn : state.scene;
+  dGate.classList.add('open');
+  dGate.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  $('#dCode').value = '';
+  $('#dGateMsg').textContent = '';
+  Sound.sfx('whoosh');
+  if(navigator.vibrate) navigator.vibrate([12,40,12]);
+  setTimeout(() => $('#dCode').focus({preventScroll:true}), 480);
+}
+function closeDGate(){
+  dGate.classList.remove('open');
+  dGate.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+$('#dGateX').addEventListener('click', closeDGate);
+$('#dGateBack').addEventListener('click', closeDGate);
+$('#dGateGo').addEventListener('click', tryDCode);
+$('#dCode').addEventListener('keydown', e => { if(e.key === 'Enter') tryDCode(); });
+$('#dCode').addEventListener('input', () => {
+  $('#dCode').value = $('#dCode').value.replace(/\D/g,'').slice(0, CONFIG.danilCode.length);
+  if($('#dCode').value.length === CONFIG.danilCode.length) setTimeout(tryDCode, 200);
+});
+addEventListener('keydown', e => { if(e.key === 'Escape' && dGate.classList.contains('open')) closeDGate(); });
+
+function tryDCode(){
+  if($('#dCode').value !== CONFIG.danilCode){
+    const card = dGate.querySelector('.modal-card');
+    card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    $('#dGateMsg').textContent = 'Nope.';
+    $('#dCode').value = '';
+    Sound.sfx('wrong');
+    return;
+  }
+  closeDGate();
+  Sound.sfx('chime');
+  renderDanil();
+  show('danil');
+}
+$('#dBack').addEventListener('click', () => {
+  Sound.sfx('ui');
+  // if he slipped in before the experience really started, restart it cleanly
+  if(dReturn === 'landing' || dReturn === 'message' || dReturn === 'danil'){ location.reload(); return; }
+  show(dReturn);
+});
+
+/* ── build his view out of the log ──────────────────────────── */
+const clock = ms => new Date(ms).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+const day   = ms => new Date(ms).toLocaleDateString([], {month:'short', day:'numeric'});
+
+function summary(){
+  const ev = DATA.events;
+  const count = t => ev.filter(e => e.type === t).length;
+  const stops = new Set(ev.filter(e => e.type === 'stop').map(e => e.text)).size;
+  const span  = ev.length ? ev[ev.length-1].t - (DATA.started || ev[0].t) : 0;
+  const secs  = Math.max(0, Math.round(span / 1000));
+  const spent = secs < 60 ? secs + 's' : Math.round(secs / 60) + 'm';
+  return {
+    stops, spent, secs,
+    compliments: count('compliment'),
+    meter:       count('meter'),
+    texts:       count('text'),
+    wrong:       count('wrong'),
+    visits:      count('open'),
+    got_in:      count('unlock') > 0,
+    portal:      count('portal') > 0
+  };
+}
+
+function renderDanil(){
+  const S = summary();
+
+  $('#dSub').textContent = storageOK
+    ? 'private · reads this device only'
+    : 'private · storage blocked, this session only';
+
+  const note = $('#dNote');
+  if(DATA.note){ note.textContent = DATA.note; note.classList.remove('dempty'); }
+  else { note.textContent = 'She hasn’t written one yet.'; note.classList.add('dempty'); }
+
+  $('#dNums').innerHTML = (DATA.mom || DATA.dad)
+    ? (DATA.mom ? '<div class="dnum"><b>Mom</b><span>' + esc(DATA.mom) + '</span></div>' : '') +
+      (DATA.dad ? '<div class="dnum"><b>Dad</b><span>' + esc(DATA.dad) + '</span></div>' : '')
+    : '<p class="dempty">' + (S.portal ? 'She skipped that step.' : 'Not submitted on this device.') + '</p>';
+
+  $('#dStats').innerHTML = [
+    [S.stops + '/' + CONFIG.timeline.length, 'stops seen'],
+    [S.spent,             'time spent'],
+    [S.compliments,       'compliments'],
+    [S.meter,             'meter attempts'],
+    [S.texts,             'texts started'],
+    [S.wrong,             'wrong codes']
+  ].map(([v,l]) => '<div class="dstat"><b>' + v + '</b><span>' + l + '</span></div>').join('');
+
+  const log = $('#dLog');
+  if(!DATA.events.length){
+    log.innerHTML = '<p class="dempty">Nothing logged on this device yet.</p>';
+  } else {
+    let lastDay = '';
+    log.innerHTML = DATA.events.slice().reverse().map(e => {
+      const d = day(e.t);
+      const head = d !== lastDay ? (lastDay = d, '<div class="drow"><i></i><span style="color:rgba(255,201,120,.8);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase">' + d + '</span></div>') : '';
+      return head + '<div class="drow"><i>' + clock(e.t) + '</i><span>' + esc(e.text) + '</span></div>';
+    }).join('');
+  }
+}
+function esc(t){
+  return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function plainSummary(){
+  const S = summary();
+  const lines = [
+    'Towne · 3 months — session log',
+    '',
+    'Got in: ' + (S.got_in ? 'yes' : 'no') + (S.wrong ? ' (after ' + S.wrong + ' wrong ' + (S.wrong===1?'try':'tries') + ')' : ''),
+    'Stops seen: ' + S.stops + '/' + CONFIG.timeline.length,
+    'Time spent: ' + S.spent,
+    'Compliments: ' + S.compliments + ' · meter attempts: ' + S.meter + ' · texts started: ' + S.texts,
+    'Mom: ' + (DATA.mom || '—') + '  Dad: ' + (DATA.dad || '—'),
+    '',
+    'Her note: ' + (DATA.note || '(none)'),
+    '',
+    ...DATA.events.map(e => clock(e.t) + '  ' + e.text)
+  ];
+  return lines.join('\n');
+}
+
+$('#dSend').addEventListener('click', () => {
+  location.href = smsHref(plainSummary().slice(0, 1200));
+});
+$('#dCopy').addEventListener('click', async () => {
+  const txt = plainSummary();
+  try{
+    await navigator.clipboard.writeText(txt);
+    $('#dMsg').textContent = 'Copied.';
+  }catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    $('#dMsg').textContent = document.execCommand('copy') ? 'Copied.' : 'Copy failed — select it by hand.';
+    ta.remove();
+  }
+  setTimeout(() => { $('#dMsg').textContent = ''; }, 3000);
+});
+$('#dClear').addEventListener('click', () => {
+  if($('#dClear').dataset.armed !== '1'){
+    $('#dClear').dataset.armed = '1';
+    $('#dClear').textContent = 'Tap again to erase everything';
+    setTimeout(() => { $('#dClear').dataset.armed = '0'; $('#dClear').textContent = 'Erase this device’s log'; }, 4000);
+    return;
+  }
+  DATA.note = ''; DATA.mom = ''; DATA.dad = ''; DATA.events = []; DATA.started = Date.now();
+  save();
+  renderDanil();
+  $('#dClear').dataset.armed = '0';
+  $('#dClear').textContent = 'Erase this device’s log';
+  $('#dMsg').textContent = 'Wiped.';
+  setTimeout(() => { $('#dMsg').textContent = ''; }, 3000);
 });
 
 /* ── music toggle ───────────────────────────────────────────── */
@@ -1816,6 +2193,13 @@ addEventListener('pointerdown', e => {
   if(btn && !btn.closest('.jnav') && !btn.closest('#music')) Sound.sfx('ui');
   if(!REDUCED) FX.hearts(3, e.clientX, e.clientY, 5);
 }, {passive:true});
+
+// pick up anything she wrote on a previous visit, then log this one
+$('#herNote').value = DATA.note || '';
+if(DATA.mom) $('#momNum').value = DATA.mom;
+if(DATA.dad) $('#dadNum').value = DATA.dad;
+if(DATA.mom || DATA.dad) $('#hqStatus').textContent = 'Already handed over 🤫 You saw nothing.';
+logEvent('open', 'Opened the site');
 
 document.title = 'Happy 3 Months, ' + CONFIG.herName + ' 💗';
 </script>
