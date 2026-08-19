@@ -145,6 +145,9 @@ main{position:relative;z-index:10}
   filter:blur(6px);will-change:opacity,transform;
 }
 .line.in{opacity:1;transform:none;filter:blur(0)}
+.ch{visibility:hidden}
+.ch.on{visibility:visible}
+.ch.cursor{border-right:2px solid currentColor;margin-right:-2px;animation:caret .9s steps(1) infinite}
 .line.d1{opacity:.5}
 .line.d2{opacity:.24}
 .line.gone{opacity:0;transform:translate3d(0,-18px,0);filter:blur(5px)}
@@ -990,6 +993,9 @@ const CONFIG = {
   danilCode:    '20100603',         // your private code
   cornerTaps:   6,                  // taps in the bottom-right corner to reveal it
 
+  messageSeconds: 30,               // how long each written passage takes to type out
+  storyTypeSpeed: 19,               // ms per character on the story cards
+
   sound:        true,               // sound effects on/off
   musicVolume:  0.42,               // 0 – 1
 
@@ -1252,7 +1258,7 @@ const Sound = (function(){
   }
 
   const CUES = {
-    line:    () => note(88, 0, .9, {type:'sine', gain:.03, attack:.06}),
+    line:    () => note(88, 0, 1.1, {type:'sine', gain:.022, attack:.09}),
     ui:      () => note(79, 0, .16, {type:'sine', gain:.09}),
     next:    () => { note(74, 0, .22, {type:'triangle', gain:.11}); note(81, .07, .4, {type:'sine', gain:.09}); },
     back:    () => { note(79, 0, .2,  {type:'triangle', gain:.09}); note(72, .07, .36,{type:'sine', gain:.07}); },
@@ -1273,6 +1279,36 @@ const Sound = (function(){
     whoosh:  () => noise(0, .55, 2600, 320, .06),
     sent:    () => arp([72,79,84], 0, .08, {type:'sine', gain:.12, dur:1.1})
   };
+
+  // one keystroke. deliberately tiny: a short filtered noise burst with a
+  // little pitched body, so a whole paragraph of them stays soft.
+  function tick(){
+    if(!CONFIG.sound) return;
+    if(!ctx || ctx.state !== 'running') return;
+    try{
+      const t = ctx.currentTime;
+      const src = ctx.createBufferSource(); src.buffer = noiseBuf;
+      src.playbackRate.value = 0.8 + Math.random()*0.5;
+      const f = ctx.createBiquadFilter();
+      f.type = 'bandpass'; f.Q.value = 1.6;
+      f.frequency.value = 1500 + Math.random()*1500;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(.0001, t);
+      g.gain.exponentialRampToValueAtTime(.055 + Math.random()*.02, t + .004);
+      g.gain.exponentialRampToValueAtTime(.0001, t + .036);
+      src.connect(f); f.connect(g); g.connect(master);
+      src.start(t); src.stop(t + .06);
+
+      const o = ctx.createOscillator(), og = ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.value = 320 + Math.random()*140;
+      og.gain.setValueAtTime(.0001, t);
+      og.gain.exponentialRampToValueAtTime(.03, t + .003);
+      og.gain.exponentialRampToValueAtTime(.0001, t + .028);
+      o.connect(og); og.connect(master);
+      o.start(t); o.stop(t + .05);
+    }catch(e){}
+  }
 
   function sfx(name){
     if(!CONFIG.sound || !CUES[name]) return;
@@ -1354,7 +1390,7 @@ const Sound = (function(){
     })(performance.now());
   }
 
-  return { wake, sfx, music, ready: () => !!ctx && ctx.state === 'running' };
+  return { wake, sfx, tick, music, ready: () => !!ctx && ctx.state === 'running' };
 })();
 
 // the audio context can only start from a real gesture — take the first one
@@ -1503,10 +1539,98 @@ function show(id){
   $('#parallax').classList.toggle('on', id === 'gratitude');
 }
 
+/* ── the typewriter ──────────────────────────────────────────
+   Every character is wrapped in a span and hidden, then revealed
+   one at a time. Laying the text out up front means centred lines
+   never shuffle as they fill — the words simply arrive. Markup
+   (<b>, <em>) survives, and punctuation gets a longer beat so it
+   reads like someone typing rather than a metronome.            */
+function splitChars(el){
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const texts = [];
+  for(let n = walk.nextNode(); n; n = walk.nextNode()) if(n.data.length) texts.push(n);
+
+  const chars = [];
+  texts.forEach(n => {
+    const frag = document.createDocumentFragment();
+    for(const ch of n.data){
+      const sp = document.createElement('span');
+      sp.className = 'ch';
+      sp.textContent = ch;
+      frag.appendChild(sp);
+      chars.push(sp);
+    }
+    n.parentNode.replaceChild(frag, n);
+  });
+  return chars;
+}
+
+function typeInto(el, msPerChar, onDone, preSplit){
+  if(REDUCED){ onDone && onDone(); return { done:true, cancel(){} }; }
+
+  const chars = preSplit || splitChars(el);
+  if(!chars.length){ onDone && onDone(); return { done:true, cancel(){} }; }
+
+  let i = 0, timer = 0, beat = 0, dead = false, cursor = null;
+
+  function finish(){
+    if(dead) return;
+    dead = true;
+    clearTimeout(timer);
+    chars.forEach(c => { c.classList.add('on'); c.classList.remove('cursor'); });
+  }
+  function tick(){
+    if(dead) return;
+    if(i >= chars.length){ finish(); onDone && onDone(); return; }
+
+    if(cursor) cursor.classList.remove('cursor');
+    const sp = chars[i++];
+    sp.classList.add('on', 'cursor');
+    cursor = sp;
+
+    const ch = sp.textContent;
+    if(ch !== ' ' && (beat++ % 2 === 0)) Sound.tick();
+
+    let d = msPerChar * (0.72 + Math.random() * 0.56);
+    if('.!?…'.indexOf(ch) > -1)      d += msPerChar * 10;
+    else if(',;:—'.indexOf(ch) > -1) d += msPerChar * 4.5;
+    else if(ch === ' ')              d += msPerChar * 0.4;
+    timer = setTimeout(tick, d);
+  }
+  timer = setTimeout(tick, 80);
+
+  return {
+    get done(){ return dead; },
+    cancel: finish,
+    skip(){ if(!dead){ finish(); onDone && onDone(); } }
+  };
+}
+// A character is not a unit of time here — full stops hold ten times as
+// long as a letter. Weighting them is what makes the passage land on its
+// intended length instead of drifting a third over.
+const CHAR_WEIGHT = ch =>
+  '.!?…'.indexOf(ch) > -1 ? 11 :
+  ',;:—'.indexOf(ch) > -1 ? 5.5 :
+  ch === ' '             ? 1.4 : 1;
+
+function typedWeight(html){
+  let w = 0;
+  for(const ch of html.replace(/<[^>]+>/g, '')) w += CHAR_WEIGHT(ch);
+  return w;
+}
+
 /* ── line-by-line sequence runner ───────────────────────────── */
-function runSequence(host, lines, perLine, onDone){
+function runSequence(host, lines, totalMs, onDone){
   host.innerHTML = '';
-  let i = 0, timers = [], finished = false;
+  let i = 0, timers = [], typer = null, finished = false;
+
+  // pace the whole passage to land on totalMs, whatever the wording is
+  const HOLD   = 1500;
+  const LEAD   = 80;                       // the pause before each line starts
+  const TAIL   = 1800;                     // the beat before the scene moves on
+  const weight = lines.reduce((a, l) => a + typedWeight(l), 0) || 1;
+  const budget = Math.max(2500, totalMs - lines.length * (HOLD + LEAD) - TAIL);
+  const msPerChar = Math.min(95, Math.max(16, budget / weight));
 
   function refresh(){
     const kids = [...host.children];
@@ -1521,20 +1645,22 @@ function runSequence(host, lines, perLine, onDone){
     });
   }
   function step(){
-    if(i >= lines.length){ timers.push(setTimeout(done, 2000)); return; }
+    if(i >= lines.length){ timers.push(setTimeout(done, TAIL)); return; }
     const p = document.createElement('p');
-    p.className = 'line'; p.innerHTML = lines[i];
+    p.className = 'line';
+    p.innerHTML = lines[i];
     host.appendChild(p);
     Sound.sfx('line');
     requestAnimationFrame(() => requestAnimationFrame(() => p.classList.add('in')));
     refresh();
     i++;
-    timers.push(setTimeout(step, perLine));
+    typer = typeInto(p, msPerChar, () => { timers.push(setTimeout(step, HOLD)); });
   }
   function done(){
     if(finished) return;
     finished = true;
     timers.forEach(clearTimeout);
+    if(typer) typer.cancel();
     onDone();
   }
   step();
@@ -1570,7 +1696,8 @@ setTimeout(startMessage, 10300);
 function startMessage(){
   if(state.scene !== 'landing') return;   // she already moved on
   show('message');
-  runSequence($('#msgLines'), CONFIG.openingLines, 4000, () => { Sound.sfx('whoosh'); show('gate'); });
+  runSequence($('#msgLines'), CONFIG.openingLines, CONFIG.messageSeconds * 1000,
+              () => { Sound.sfx('whoosh'); show('gate'); });
 }
 
 /* ── 3. ACCESS GATE ─────────────────────────────────────────── */
@@ -1690,7 +1817,7 @@ function tryCode(){
 function startGratitude(){
   show('gratitude');
   $('#gratGo').style.display = 'none';
-  runSequence($('#gratLines'), CONFIG.gratitudeLines, 4200, () => {
+  runSequence($('#gratLines'), CONFIG.gratitudeLines, CONFIG.messageSeconds * 1000, () => {
     $('#gratGo').style.display = 'block';
     FX.hearts(22, innerWidth/2, innerHeight*.75, 10);
     Sound.sfx('chime');
@@ -1781,7 +1908,50 @@ function step(i, first){
   $('#jhint').style.opacity = last ? '0' : (i > 1 ? '0' : '1');
 
   if(!first) Sound.sfx(back ? 'back' : 'next');
+  typeCard(i);
   celebrate(item, i);
+}
+
+/* Type the card out. The characters are already laid out, so the card
+   holds its shape from the first frame — only the ink arrives late.  */
+let cardCancel = null;
+function typeCard(i){
+  if(cardCancel){ cardCancel(); cardCancel = null; }
+  const card = J.cards[i] && J.cards[i].querySelector('.card');
+  if(!card || REDUCED) return;
+  if(J.seen.has(i)) return;                    // only the first time she lands here
+
+  const parts = [...card.children].filter(el =>
+    el.tagName === 'H3' || (el.tagName === 'P' && !el.classList.contains('livecount')));
+  if(!parts.length) return;
+
+  // split every block up front — .ch starts hidden, so nothing flashes
+  const groups = parts.map(el => splitChars(el));
+  const all = groups.flat();
+
+  const revealAll = () => all.forEach(c => {
+    c.classList.add('on');
+    c.classList.remove('cursor');
+  });
+
+  let n = 0, running = null;
+  const chain = () => {
+    if(n >= groups.length){ running = null; cardCancel = null; return; }
+    const k = n++;
+    running = typeInto(parts[k], CONFIG.storyTypeSpeed, chain, groups[k]);
+  };
+  // whether she taps away or taps the card, the writing is left finished
+  cardCancel = () => {
+    n = groups.length;
+    if(running){ running.cancel(); running = null; }
+    revealAll();
+  };
+  chain();
+
+  card.addEventListener('pointerdown', function rush(){
+    if(cardCancel){ cardCancel(); cardCancel = null; }
+    card.removeEventListener('pointerdown', rush);
+  });
 }
 
 // each stop gets its own little moment
