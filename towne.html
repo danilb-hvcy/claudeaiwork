@@ -119,12 +119,10 @@ main{position:relative;z-index:10}
   opacity:0;transform:translate3d(0,26px,0) scale(.92);
   text-shadow:0 6px 30px rgba(255,111,150,.55),0 1px 0 rgba(255,255,255,.6);
 }
-.hi.in{animation:hiIn 2.6s cubic-bezier(.16,1,.3,1) forwards}
-@keyframes hiIn{
-  0%{opacity:0;transform:translate3d(0,26px,0) scale(.92);filter:blur(8px)}
-  60%{opacity:1;filter:blur(0)}
-  100%{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}
-}
+.hi.in{opacity:1;transform:none}
+.hi u{display:inline-block;text-decoration:none;opacity:0;transform:translate3d(0,34px,0) rotate(-6deg);filter:blur(7px)}
+.hi.in u{animation:letterIn 1.15s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes letterIn{to{opacity:1;transform:none;filter:blur(0)}}
 .hi.out{animation:hiOut 1.1s ease forwards}
 @keyframes hiOut{to{opacity:0;transform:translate3d(0,-24px,0) scale(1.06);filter:blur(6px)}}
 
@@ -202,15 +200,28 @@ main{position:relative;z-index:10}
 @keyframes bob{50%{transform:translateY(-8px) rotate(-4deg)}}
 .gate-t{font-family:var(--font-display);font-size:1.7rem;font-weight:600;color:var(--wine)}
 .gate-h{margin-top:9px;font-size:.9rem;color:rgba(74,34,51,.62);font-weight:400}
-#code{
-  margin-top:24px;width:100%;text-align:center;
-  font-family:var(--font-body);font-size:1.85rem;font-weight:600;letter-spacing:.34em;text-indent:.34em;
-  color:var(--wine);background:rgba(255,255,255,.85);
-  border:2px solid rgba(224,53,95,.22);border-radius:18px;padding:15px 10px;outline:none;
-  transition:border-color .3s ease,box-shadow .3s ease;
+.codewrap{position:relative;margin-top:24px}
+.boxes{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+.boxes i{
+  aspect-ratio:3/4;max-height:62px;border-radius:13px;
+  display:grid;place-items:center;font-style:normal;
+  font-size:1.5rem;font-weight:600;color:var(--wine);
+  background:rgba(255,255,255,.9);
+  box-shadow:inset 0 0 0 2px rgba(224,53,95,.18),0 6px 14px -10px rgba(163,18,63,.5);
+  transition:box-shadow .3s ease,transform .3s cubic-bezier(.34,1.56,.64,1),background .3s ease;
 }
-#code::placeholder{color:rgba(163,18,63,.22);letter-spacing:.3em}
-#code:focus{border-color:var(--rose);box-shadow:0 0 0 5px rgba(255,111,150,.16)}
+.boxes i.on{
+  background:#fff;transform:translateY(-2px);
+  box-shadow:inset 0 0 0 2px var(--rose),0 10px 20px -10px rgba(224,53,95,.75);
+}
+.boxes i.cursor{box-shadow:inset 0 0 0 2px var(--rose),0 0 0 4px rgba(255,111,150,.18)}
+.boxes i.cursor::after{content:'';width:2px;height:22px;background:var(--rose-deep);border-radius:2px;animation:caret 1.1s steps(1) infinite}
+@keyframes caret{50%{opacity:0}}
+#code{
+  position:absolute;inset:0;width:100%;height:100%;
+  opacity:0;font-size:16px;                    /* 16px stops iOS zooming on focus */
+  border:0;outline:none;background:transparent;color:transparent;caret-color:transparent;
+}
 .shake{animation:shake .55s cubic-bezier(.36,.07,.19,.97)}
 @keyframes shake{
   10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)}
@@ -319,16 +330,71 @@ main{position:relative;z-index:10}
 .jcard.joy.live .card{animation:joyPop .95s cubic-bezier(.34,1.56,.64,1)}
 @keyframes joyPop{0%{transform:scale(.92) rotate(-1.2deg)}60%{transform:scale(1.03) rotate(.6deg)}100%{transform:none}}
 
-/* photo slot */
-.photo{
-  margin-top:14px;width:100%;aspect-ratio:4/5;max-height:38vh;border-radius:18px;overflow:hidden;position:relative;
+/* the photo, framed like something she'd keep */
+.polaroid{
+  margin:16px auto 4px;width:88%;max-width:280px;
+  background:linear-gradient(160deg,#fffdfb,#fff4f7);
+  padding:11px 11px 0;border-radius:5px;
+  box-shadow:0 16px 34px -14px rgba(120,20,50,.55),0 2px 5px rgba(120,20,50,.16),inset 0 0 0 1px rgba(255,255,255,.9);
+  transform:rotate(-2.2deg);
+  position:relative;
+}
+.polaroid::before{                              /* a strip of tape */
+  content:'';position:absolute;top:-11px;left:50%;width:74px;height:22px;
+  transform:translateX(-50%) rotate(-1.6deg);
+  background:linear-gradient(180deg,rgba(255,236,242,.85),rgba(255,214,228,.7));
+  box-shadow:0 2px 5px rgba(120,20,50,.14);
+  border-left:1px dashed rgba(255,255,255,.75);border-right:1px dashed rgba(255,255,255,.75);
+}
+.pshot{
+  position:relative;width:100%;aspect-ratio:3/4;max-height:34vh;overflow:hidden;
   background:linear-gradient(150deg,#ffe6ee,#ffd0de);
-  border:1px dashed rgba(224,53,95,.4);
   display:grid;place-items:center;
 }
-.photo img{width:100%;height:100%;object-fit:cover;display:block}
-.photo .ph{padding:18px;text-align:center;color:rgba(163,18,63,.6);font-size:.84rem;line-height:1.6}
-.photo .ph b{display:block;font-size:1.6rem;margin-bottom:6px}
+.pshot img{width:100%;height:100%;object-fit:cover;display:block}
+.pshot::after{                                  /* a slow shine across the print */
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.42) 48%,transparent 62%);
+  transform:translateX(-120%);
+}
+.jcard.live .pshot::after{animation:shine 2.6s cubic-bezier(.4,0,.2,1) .5s}
+@keyframes shine{to{transform:translateX(120%)}}
+.pcap{
+  font-family:var(--font-script);font-size:1.35rem;line-height:1;
+  color:var(--wine);text-align:center;padding:11px 4px 13px;opacity:.85;
+}
+.pshot .ph{padding:18px;text-align:center;color:rgba(163,18,63,.6);font-size:.8rem;line-height:1.6}
+.pshot .ph b{display:block;font-size:1.7rem;margin-bottom:7px}
+.jcard.live .polaroid{animation:drop 1s cubic-bezier(.34,1.3,.64,1) .15s backwards}
+@keyframes drop{
+  0%{opacity:0;transform:rotate(7deg) translate3d(0,-26px,0) scale(.9)}
+  100%{opacity:1;transform:rotate(-2.2deg) translate3d(0,0,0) scale(1)}
+}
+
+/* a ghost of the stop's icon, watermarked into the card */
+.card{position:relative;isolation:isolate}
+.card::before{
+  content:attr(data-emoji);position:absolute;top:-2px;right:4px;
+  font-size:4.4rem;line-height:1;opacity:.055;z-index:-1;
+  filter:saturate(.3);transform:rotate(11deg);pointer-events:none;user-select:none;
+}
+
+/* the live "together for" readout */
+.livecount{
+  margin-top:14px !important;font-family:var(--font-body) !important;
+  font-size:.72rem !important;letter-spacing:.16em;text-transform:uppercase;font-weight:600;
+  color:var(--rose-deep) !important;font-variant-numeric:tabular-nums;
+}
+.together{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:9px;text-align:center;margin-top:4px;
+}
+.together div{background:linear-gradient(160deg,rgba(255,255,255,.9),rgba(255,229,238,.8));border-radius:16px;padding:13px 4px;box-shadow:inset 0 0 0 1px rgba(224,53,95,.14)}
+.together b{display:block;font-size:1.5rem;font-weight:700;color:var(--wine);font-variant-numeric:tabular-nums;line-height:1.1}
+.together span{display:block;margin-top:4px;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(163,18,63,.55);font-weight:600}
+
+/* old photo slot (kept for the portal keepsake) */
+.panel .polaroid{margin:6px auto 0;transform:rotate(1.8deg)}
+.panel .pshot{max-height:none}
 
 /* finale */
 .jcard.finale .card{
@@ -633,7 +699,7 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
   <!-- 1 ─ LANDING ────────────────────────────────────────── -->
   <section class="scene on" id="landing">
     <div class="stage">
-      <h1 class="script hi" id="hiText">Hi, Towne<span class="emj">💗</span></h1>
+      <h1 class="script hi" id="hiText" aria-label="Hi, Towne"></h1>
       <p class="sub" id="hiSub">three months of you</p>
     </div>
   </section>
@@ -652,8 +718,11 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
         <span class="lock">🔒</span>
         <h2 class="gate-t">Enter your access code</h2>
         <p class="gate-h">Hint: the day we became official 😉</p>
-        <input id="code" type="text" inputmode="numeric" autocomplete="off"
-               autocorrect="off" spellcheck="false" maxlength="6" placeholder="••••••" aria-label="Access code">
+        <div class="codewrap" id="codeWrap">
+          <div class="boxes" id="boxes" aria-hidden="true"></div>
+          <input id="code" type="text" inputmode="numeric" autocomplete="one-time-code"
+                 autocorrect="off" spellcheck="false" maxlength="6" aria-label="Access code">
+        </div>
         <p class="err" id="gateErr"></p>
         <button class="btn wide" id="gateBtn" type="button">Unlock 💗</button>
       </div>
@@ -731,6 +800,23 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
       </div>
 
       <div class="panel">
+        <h2>💞 Together For</h2>
+        <p class="note">Since the night you said yes. It hasn't stopped since.</p>
+        <div class="together">
+          <div><b id="td">0</b><span>days</span></div>
+          <div><b id="th">00</b><span>hrs</span></div>
+          <div><b id="tm">00</b><span>min</span></div>
+          <div><b id="ts">00</b><span>sec</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>📸 Our First Picture</h2>
+        <p class="note">August 12 — the first day we walked in together.</p>
+        <div id="portalPhoto"></div>
+      </div>
+
+      <div class="panel">
         <h2>📅 Our Dates</h2>
         <p class="note">Every day that got us here, in order.</p>
         <ul class="datelist" id="dateList"></ul>
@@ -797,6 +883,12 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
         <h2>🎁 Surprise Planning HQ</h2>
         <p class="note" id="hqStatus">The secret file. You already saw this one 🤫</p>
         <button class="btn wide ghost" id="hqReopen" type="button">Open it again</button>
+      </div>
+
+      <div class="panel">
+        <h2>🔁 One More Time</h2>
+        <p class="note">Any time you want to go back through it.</p>
+        <button class="btn wide ghost" id="replay" type="button">Watch our story again</button>
       </div>
 
       <div class="sig">
@@ -890,7 +982,9 @@ const CONFIG = {
   myPhone:      '+15551234567',     // <-- your number (sms: links)
   formspreeId:  'FORM_ID',          // <-- formspree.io form id, e.g. 'xldwabcd'
   musicUrl:     '',                 // <-- OPTIONAL .mp3 link. empty = built-in romantic loop
-  photoUrl:     'PHOTO_URL_HERE',   // <-- first-day-of-school photo (Aug 12 card)
+  photoUrl:     'PHOTO_URL_HERE',   // <-- first-day photo. run tools/embed-photo.py to bake one in
+  photoCaption: 'first day of school',
+  askedHour:    20,                 // roughly what time you asked her (for the live counter)
   // ─────────────────────────────────────────────────────────────
 
   danilCode:    '20100603',         // your private code
@@ -993,7 +1087,7 @@ const CONFIG = {
       body:['Our first day of school together — and our first real picture together.',
             'Finally walking in next to you instead of just hoping I’d see you.'] },
 
-    { date:'August 22', badge:'Today · Aug 22', icon:'🎉', title:'Happy 3 Months, Towne 🎉', kind:'finale',
+    { date:'August 22', badge:'Today · Aug 22', icon:'🎉', title:'Happy 3 Months, Towne 🎉', kind:'finale', live:true,
       body:['Three months of you has been the best three months of my life.',
             'And the part that gets me is that this is still just the beginning.',
             '<b>I love you. Here’s to every month after this one.</b>'] }
@@ -1448,8 +1542,18 @@ function runSequence(host, lines, perLine, onDone){
 }
 
 /* ── 1. LANDING ─────────────────────────────────────────────── */
+(function buildTitle(){
+  const t = $('#hiText');
+  t.innerHTML = ('Hi, ' + CONFIG.herName).split('').map((ch, i) =>
+    '<u style="animation-delay:' + (i*90) + 'ms">' + (ch === ' ' ? '&nbsp;' : ch) + '</u>'
+  ).join('') + '<span class="emj">💗</span>';
+  const emj = t.querySelector('.emj');
+  emj.style.cssText += ';opacity:0;transition:opacity .9s ease ' + (('Hi, ' + CONFIG.herName).length*90 + 500) + 'ms';
+})();
+
 setTimeout(() => {
   $('#hiText').classList.add('in');
+  $('#hiText').querySelector('.emj').style.opacity = '1';
   $('#hiSub').classList.add('in');
   FX.hearts(18, innerWidth/2, innerHeight*0.58, 9);
 }, 5000);
@@ -1471,6 +1575,23 @@ function startMessage(){
 
 /* ── 3. ACCESS GATE ─────────────────────────────────────────── */
 const codeInput = $('#code'), gateErr = $('#gateErr');
+const boxes = $('#boxes');
+boxes.innerHTML = Array.from({length: CONFIG.accessCode.length}, () => '<i></i>').join('');
+const boxEls = [...boxes.children];
+
+function paintBoxes(){
+  const v = codeInput.value;
+  const focused = document.activeElement === codeInput;
+  boxEls.forEach((el, i) => {
+    el.textContent = v[i] ? '•' : '';
+    el.classList.toggle('on', !!v[i]);
+    el.classList.toggle('cursor', focused && i === v.length && v.length < boxEls.length);
+  });
+}
+$('#codeWrap').addEventListener('click', () => codeInput.focus());
+codeInput.addEventListener('focus', paintBoxes);
+codeInput.addEventListener('blur', paintBoxes);
+paintBoxes();
 const wrongLines = [
   'Nice try… but only my girlfriend gets in 💕',
   'Wrong code. Suspicious. Who is this? 👀',
@@ -1479,9 +1600,11 @@ const wrongLines = [
 ];
 
 codeInput.addEventListener('input', () => {
-  codeInput.value = codeInput.value.replace(/\D/g,'').slice(0,6);
+  codeInput.value = codeInput.value.replace(/\D/g,'').slice(0, CONFIG.accessCode.length);
   gateErr.classList.remove('show');
-  if(codeInput.value.length === 6) setTimeout(tryCode, 220);
+  paintBoxes();
+  if(codeInput.value.length) Sound.sfx('ui');
+  if(codeInput.value.length === CONFIG.accessCode.length) setTimeout(tryCode, 260);
 });
 codeInput.addEventListener('keydown', e => { if(e.key === 'Enter') tryCode(); });
 $('#gateBtn').addEventListener('click', tryCode);
@@ -1513,6 +1636,7 @@ function tryCode(){
     gateErr.textContent = pick(wrongLines);
     gateErr.classList.add('show');
     codeInput.value = '';
+    paintBoxes();
     if(navigator.vibrate) navigator.vibrate([28,60,28]);
   }
 }
@@ -1586,6 +1710,16 @@ const J = {
   seen: new Set()
 };
 
+function havePhoto(){
+  return !!(CONFIG.photoUrl && CONFIG.photoUrl !== 'PHOTO_URL_HERE');
+}
+function polaroid(){
+  return '<div class="polaroid"><div class="pshot">' + (havePhoto()
+    ? '<img src="' + CONFIG.photoUrl + '" alt="Our first day of school together">'
+    : '<div class="ph"><b>📷</b>our first picture<br><span style="opacity:.7">run tools/embed-photo.py</span></div>')
+    + '</div><p class="pcap">' + CONFIG.photoCaption + '</p></div>';
+}
+
 function buildJourney(){
   if(J.built) return;
   J.built = true;
@@ -1597,18 +1731,13 @@ function buildJourney(){
     wrap.className = 'jcard' + (item.kind ? ' ' + item.kind : '');
 
     let inner = item.kind === 'big' ? '<div class="halo"></div>' : '';
-    inner += '<div class="card">';
+    inner += '<div class="card" data-emoji="' + item.icon + '">';
     inner += '<span class="badge">' + (item.badge || item.date) + '</span>';
     inner += '<h3>' + item.title + (item.kind === 'big' ? ' 💍' : '') + '</h3>';
     item.body.forEach(p => inner += '<p>' + p + '</p>');
     if(item.yes) inner += '<span class="yes">' + item.yes + '</span>';
-    if(item.photo){
-      const has = CONFIG.photoUrl && CONFIG.photoUrl !== 'PHOTO_URL_HERE';
-      inner += '<div class="photo">' + (has
-        ? '<img src="' + CONFIG.photoUrl + '" alt="Our first day of school together">'
-        : '<div class="ph"><b>📷</b>drop our first-day photo here<br><span style="opacity:.7">set CONFIG.photoUrl</span></div>')
-        + '</div>';
-    }
+    if(item.photo) inner += polaroid();
+    if(item.live)  inner += '<p class="livecount" data-live="1"></p>';
     inner += '</div>';
     wrap.innerHTML = inner;
     stage.appendChild(wrap);
@@ -1673,6 +1802,7 @@ function celebrate(item, i){
   } else if(item.kind === 'joy'){
     setTimeout(() => { FX.hearts(30, cx, cy, 12); Sound.sfx('joy'); }, 300);
   } else if(item.kind === 'finale'){
+    startTogether();
     setTimeout(() => {
       glowFlash();
       FX.show();
@@ -1729,9 +1859,11 @@ function openPortal(){
   Sound.sfx('unlock');
   FX.show();
   logEvent('portal', 'Unlocked her Girlfriend Portal');
+  $('#portalPhoto').innerHTML = polaroid();
   const panels = $$('#portal .panel, #portal .portal-head');
   panels.forEach((p,i) => setTimeout(() => p.classList.add('in'), 120 + i*110));
   startCountdown();
+  startTogether();
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1774,6 +1906,27 @@ function startCountdown(){
   }
   tick();
   cdTimer = setInterval(tick, 1000);
+}
+
+/* ── how long it's been ───────────────────────────────────── */
+const TOGETHER_SINCE = new Date(
+  CONFIG.anniversary.y, CONFIG.anniversary.m - 1, CONFIG.anniversary.d, CONFIG.askedHour || 0, 0, 0, 0
+);
+let togetherTimer = 0;
+function tickTogether(){
+  const ms = Math.max(0, Date.now() - TOGETHER_SINCE.getTime());
+  const d = Math.floor(ms/864e5), h = Math.floor(ms/36e5)%24,
+        m = Math.floor(ms/6e4)%60, sec = Math.floor(ms/1000)%60;
+  const pad = n => String(n).padStart(2,'0');
+  const set = (id, v) => { const el = $(id); if(el) el.textContent = v; };
+  set('#td', d); set('#th', pad(h)); set('#tm', pad(m)); set('#ts', pad(sec));
+  $$('[data-live]').forEach(el => {
+    el.textContent = d + ' days · ' + pad(h) + ':' + pad(m) + ':' + pad(sec) + ' and counting';
+  });
+}
+function startTogether(){
+  tickTogether();
+  if(!togetherTimer) togetherTimer = setInterval(tickTogether, 1000);
 }
 
 /* ── calendar ───────────────────────────────────────────────── */
@@ -1905,10 +2058,10 @@ $('#hqReopen').addEventListener('click', () => {
   show('hqstep');
 });
 
-$('#hqForm').addEventListener('submit', async (e) => {
+$('#hqForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const mom = $('#momNum').value.trim(), dad = $('#dadNum').value.trim();
-  const msg = $('#hqMsg'), btn = $('#hqBtn');
+  const msg = $('#hqMsg');
 
   if(!mom && !dad){
     msg.textContent = 'Give me at least one number 🥺';
@@ -1916,27 +2069,21 @@ $('#hqForm').addEventListener('submit', async (e) => {
     return;
   }
 
+  // straight into Danil's side — no texting, no sending, she just taps done
   DATA.mom = mom; DATA.dad = dad;
   logEvent('hq', 'Handed over: ' + (mom ? 'mom ' + mom : '') + (mom && dad ? ' · ' : '') + (dad ? 'dad ' + dad : ''));
   save();
-  $('#hqStatus').textContent = 'Sent 🤫 You saw nothing.';
+  $('#hqStatus').textContent = 'Already handed over 🤫 You saw nothing.';
 
-  const body = 'Surprise HQ 🤫 — Mom: ' + (mom || '(none)') + ' · Dad: ' + (dad || '(none)');
+  msg.textContent = 'Locked away 🤫 Danil will find them.';
+  Sound.sfx('sent');
+  FX.confetti(60, innerWidth/2, innerHeight*.66, 13);
+  FX.hearts(26, innerWidth/2, innerHeight*.66, 11);
+  if(navigator.vibrate) navigator.vibrate([14,40,14]);
 
-  // no formspree id yet? fall back to a pre-filled text to Danil.
-  if(!CONFIG.formspreeId || CONFIG.formspreeId === 'FORM_ID'){
-    msg.textContent = 'Opening a text to Danil…';
-    Sound.sfx('sent');
-    FX.hearts(20, innerWidth/2, innerHeight*.7, 11);
-    setTimeout(() => { location.href = smsHref(body); }, 600);
-    setTimeout(leaveHQ, 1800);
-    return;
-  }
-
-  btn.disabled = true;
-  msg.textContent = 'Sending…';
-  try{
-    const res = await fetch('https://formspree.io/f/' + CONFIG.formspreeId, {
+  // if a formspree id is set, quietly mirror it to your inbox too. she never sees this.
+  if(CONFIG.formspreeId && CONFIG.formspreeId !== 'FORM_ID'){
+    fetch('https://formspree.io/f/' + CONFIG.formspreeId, {
       method:'POST',
       headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
       body: JSON.stringify({
@@ -1945,20 +2092,10 @@ $('#hqForm').addEventListener('submit', async (e) => {
         dadNumber: dad || '(not given)',
         _subject: 'Surprise HQ 🤫 — numbers from ' + CONFIG.herName
       })
-    });
-    if(!res.ok) throw new Error('bad status');
-    msg.textContent = 'Sent 🤫 You saw nothing.';
-    Sound.sfx('sent');
-    FX.confetti(60, innerWidth/2, innerHeight*.7, 13);
-    FX.hearts(24, innerWidth/2, innerHeight*.7, 11);
-    setTimeout(leaveHQ, 1500);
-  }catch(err){
-    msg.textContent = 'That didn’t send — opening a text instead…';
-    setTimeout(() => { location.href = smsHref(body); }, 700);
-    setTimeout(leaveHQ, 2000);
-  }finally{
-    btn.disabled = false;
+    }).catch(() => {});
   }
+
+  setTimeout(leaveHQ, 1500);
 });
 
 /* ── a note from her ────────────────────────────────────────── */
@@ -2041,6 +2178,13 @@ function tryDCode(){
   renderDanil();
   show('danil');
 }
+$('#replay').addEventListener('click', () => {
+  Sound.sfx('whoosh');
+  J.seen.clear();
+  show('story');
+  step(0);
+});
+
 $('#dBack').addEventListener('click', () => {
   Sound.sfx('ui');
   // if he slipped in before the experience really started, restart it cleanly
