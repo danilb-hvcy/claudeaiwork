@@ -333,47 +333,6 @@ main{position:relative;z-index:10}
 .jcard.joy.live .card{animation:joyPop .95s cubic-bezier(.34,1.56,.64,1)}
 @keyframes joyPop{0%{transform:scale(.92) rotate(-1.2deg)}60%{transform:scale(1.03) rotate(.6deg)}100%{transform:none}}
 
-/* the photo, framed like something she'd keep */
-.polaroid{
-  margin:16px auto 4px;width:88%;max-width:280px;
-  background:linear-gradient(160deg,#fffdfb,#fff4f7);
-  padding:11px 11px 0;border-radius:5px;
-  box-shadow:0 16px 34px -14px rgba(120,20,50,.55),0 2px 5px rgba(120,20,50,.16),inset 0 0 0 1px rgba(255,255,255,.9);
-  transform:rotate(-2.2deg);
-  position:relative;
-}
-.polaroid::before{                              /* a strip of tape */
-  content:'';position:absolute;top:-11px;left:50%;width:74px;height:22px;
-  transform:translateX(-50%) rotate(-1.6deg);
-  background:linear-gradient(180deg,rgba(255,236,242,.85),rgba(255,214,228,.7));
-  box-shadow:0 2px 5px rgba(120,20,50,.14);
-  border-left:1px dashed rgba(255,255,255,.75);border-right:1px dashed rgba(255,255,255,.75);
-}
-.pshot{
-  position:relative;width:100%;aspect-ratio:3/4;max-height:34vh;overflow:hidden;
-  background:linear-gradient(150deg,#ffe6ee,#ffd0de);
-  display:grid;place-items:center;
-}
-.pshot img{width:100%;height:100%;object-fit:cover;display:block}
-.pshot::after{                                  /* a slow shine across the print */
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.42) 48%,transparent 62%);
-  transform:translateX(-120%);
-}
-.jcard.live .pshot::after{animation:shine 2.6s cubic-bezier(.4,0,.2,1) .5s}
-@keyframes shine{to{transform:translateX(120%)}}
-.pcap{
-  font-family:var(--font-script);font-size:1.35rem;line-height:1;
-  color:var(--wine);text-align:center;padding:11px 4px 13px;opacity:.85;
-}
-.pshot .ph{padding:18px;text-align:center;color:rgba(163,18,63,.6);font-size:.8rem;line-height:1.6}
-.pshot .ph b{display:block;font-size:1.7rem;margin-bottom:7px}
-.jcard.live .polaroid{animation:drop 1s cubic-bezier(.34,1.3,.64,1) .15s backwards}
-@keyframes drop{
-  0%{opacity:0;transform:rotate(7deg) translate3d(0,-26px,0) scale(.9)}
-  100%{opacity:1;transform:rotate(-2.2deg) translate3d(0,0,0) scale(1)}
-}
-
 /* a ghost of the stop's icon, watermarked into the card */
 .card{position:relative;isolation:isolate}
 .card::before{
@@ -394,10 +353,6 @@ main{position:relative;z-index:10}
 .together div{background:linear-gradient(160deg,rgba(255,255,255,.9),rgba(255,229,238,.8));border-radius:16px;padding:13px 4px;box-shadow:inset 0 0 0 1px rgba(224,53,95,.14)}
 .together b{display:block;font-size:1.5rem;font-weight:700;color:var(--wine);font-variant-numeric:tabular-nums;line-height:1.1}
 .together span{display:block;margin-top:4px;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(163,18,63,.55);font-weight:600}
-
-/* old photo slot (kept for the portal keepsake) */
-.panel .polaroid{margin:6px auto 0;transform:rotate(1.8deg)}
-.panel .pshot{max-height:none}
 
 /* finale */
 .jcard.finale .card{
@@ -662,7 +617,6 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
   .card p{font-size:.93rem;line-height:1.5}
   .card p+p{margin-top:8px}
   .yes{font-size:2.4rem;margin-top:10px}
-  .photo{max-height:30vh}
   .jnav{margin-top:11px}
   .jbtn{width:44px;height:44px}
   .jnav .btn{padding:15px 22px}
@@ -679,7 +633,6 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
   .card p+p{margin-top:7px}
   .badge{font-size:.6rem;padding:6px 11px}
   .yes{font-size:2rem;margin-top:8px}
-  .photo{max-height:26vh}
   .jhint{display:none}
   .jnav{margin-top:9px}
   .jnav .btn{padding:13px 20px;font-size:.94rem}
@@ -811,12 +764,6 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
           <div><b id="tm">00</b><span>min</span></div>
           <div><b id="ts">00</b><span>sec</span></div>
         </div>
-      </div>
-
-      <div class="panel">
-        <h2>📸 Our First Picture</h2>
-        <p class="note">August 12 — the first day we walked in together.</p>
-        <div id="portalPhoto"></div>
       </div>
 
       <div class="panel">
@@ -985,8 +932,6 @@ const CONFIG = {
   myPhone:      '+15551234567',     // <-- your number (sms: links)
   formspreeId:  'FORM_ID',          // <-- formspree.io form id, e.g. 'xldwabcd'
   musicUrl:     '',                 // <-- OPTIONAL .mp3 link. empty = built-in romantic loop
-  photoUrl:     'PHOTO_URL_HERE',   // <-- first-day photo. run tools/embed-photo.py to bake one in
-  photoCaption: 'first day of school',
   askedHour:    20,                 // roughly what time you asked her (for the live counter)
   // ─────────────────────────────────────────────────────────────
 
@@ -1089,7 +1034,7 @@ const CONFIG = {
       body:['Two months of you.',
             'Somehow it just kept getting better.'] },
 
-    { date:'August 12', icon:'📸', title:'First Day of School', photo:true,
+    { date:'August 12', icon:'📸', title:'First Day of School',
       body:['Our first day of school together — and our first real picture together.',
             'Finally walking in next to you instead of just hoping I’d see you.'] },
 
@@ -1837,16 +1782,6 @@ const J = {
   seen: new Set()
 };
 
-function havePhoto(){
-  return !!(CONFIG.photoUrl && CONFIG.photoUrl !== 'PHOTO_URL_HERE');
-}
-function polaroid(){
-  return '<div class="polaroid"><div class="pshot">' + (havePhoto()
-    ? '<img src="' + CONFIG.photoUrl + '" alt="Our first day of school together">'
-    : '<div class="ph"><b>📷</b>our first picture<br><span style="opacity:.7">run tools/embed-photo.py</span></div>')
-    + '</div><p class="pcap">' + CONFIG.photoCaption + '</p></div>';
-}
-
 function buildJourney(){
   if(J.built) return;
   J.built = true;
@@ -1863,7 +1798,6 @@ function buildJourney(){
     inner += '<h3>' + item.title + (item.kind === 'big' ? ' 💍' : '') + '</h3>';
     item.body.forEach(p => inner += '<p>' + p + '</p>');
     if(item.yes) inner += '<span class="yes">' + item.yes + '</span>';
-    if(item.photo) inner += polaroid();
     if(item.live)  inner += '<p class="livecount" data-live="1"></p>';
     inner += '</div>';
     wrap.innerHTML = inner;
@@ -2029,7 +1963,6 @@ function openPortal(){
   Sound.sfx('unlock');
   FX.show();
   logEvent('portal', 'Unlocked her Girlfriend Portal');
-  $('#portalPhoto').innerHTML = polaroid();
   const panels = $$('#portal .panel, #portal .portal-head');
   panels.forEach((p,i) => setTimeout(() => p.classList.add('in'), 120 + i*110));
   startCountdown();
