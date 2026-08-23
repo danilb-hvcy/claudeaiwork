@@ -510,6 +510,11 @@ input.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14
 .drow:last-child{border-bottom:0}
 .drow i{flex:0 0 54px;font-style:normal;color:rgba(255,201,120,.75);font-variant-numeric:tabular-nums;font-size:.76rem;padding-top:2px}
 .drow span{color:rgba(255,242,246,.9);line-height:1.45}
+.dtag{
+  display:inline-block;min-width:1.2em;text-align:center;margin-right:7px;
+  font-size:.6rem;font-weight:700;padding:1px 4px;border-radius:5px;
+  background:rgba(255,201,120,.2);color:rgba(255,201,120,.95);vertical-align:1px;
+}
 #danil .sig{padding-bottom:20px}
 #dCode{
   margin-top:18px;width:100%;text-align:center;
@@ -823,7 +828,7 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
 
       <div class="panel">
         <h2>💌 A Note for Danil</h2>
-        <p class="note">Anything you want to say. He'll see it — this stays on your phone until you show him.</p>
+        <p class="note">Anything you want to say. This one goes straight to him.</p>
         <textarea class="f" id="herNote" rows="4" placeholder="write him something…"></textarea>
         <button class="btn wide" id="noteSave" type="button" style="margin-top:12px">Save it 💗</button>
         <p class="form-msg" id="noteMsg"></p>
@@ -844,6 +849,9 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
       <div class="sig">
         <p class="script">Happy 3 months, Towne</p>
         <p class="credit">made for you · with love · danil</p>
+        <p class="credit" style="margin-top:10px;text-transform:none;letter-spacing:.06em;opacity:.85">
+          ps — danil can see what you get up to in here 👀
+        </p>
       </div>
 
     </div>
@@ -856,6 +864,10 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
       <div class="portal-head">
         <h2 class="script">Danil's Portal</h2>
         <p id="dSub">private · reads this device only</p>
+      </div>
+
+      <div class="panel dark in">
+        <button class="btn wide ghost" id="dSync" type="button">Refresh from sheet</button>
       </div>
 
       <div class="panel dark in">
@@ -879,12 +891,12 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
       </div>
 
       <div class="panel dark in">
-        <h2>📤 Get it off this phone</h2>
-        <p class="note">No server behind any of this — the log lives on whatever phone she opened it on. Send it to yourself.</p>
+        <h2>📤 Take it with you</h2>
+        <p class="note">Everything above is pulled live from your Google Sheet. Grab a copy if you want it somewhere else.</p>
         <div class="stack">
           <button class="btn wide" id="dSend" type="button">Text the summary to me</button>
           <button class="btn ghost wide" id="dCopy" type="button">Copy to clipboard</button>
-          <button class="btn ghost wide" id="dClear" type="button">Erase this device's log</button>
+          <button class="btn ghost wide" id="dClear" type="button">Erase this device’s copy</button>
         </div>
         <p class="form-msg" id="dMsg"></p>
       </div>
@@ -934,6 +946,13 @@ const CONFIG = {
   musicUrl:     '',                 // <-- OPTIONAL .mp3 link. empty = built-in romantic loop
   askedHour:    20,                 // roughly what time you asked her (for the live counter)
   // ─────────────────────────────────────────────────────────────
+
+  // The little backend: a Google Sheet behind an Apps Script web app.
+  // See apps-script/Code.gs for the script and the setup steps.
+  db: {
+    url: 'APPS_SCRIPT_URL_HERE',    // <-- your web app URL, ends in /exec
+    key: 'CHANGE_ME_SECRET'         // <-- must match SECRET in Code.gs
+  },
 
   danilCode:    '20100603',         // your private code
   cornerTaps:   6,                  // taps in the bottom-right corner to reveal it
@@ -1074,7 +1093,7 @@ const state = { scene:'landing', unlocked:false, storyDone:false, portal:false, 
    storage is unavailable (opening the file directly, private mode).
    ══════════════════════════════════════════════════════════════ */
 const STORE_KEY = 'towne-three-months';
-const DATA = { started: Date.now(), note:'', mom:'', dad:'', events:[] };
+const DATA = { started: Date.now(), note:'', mom:'', dad:'', events:[], visitor:'' };
 let storageOK = true;
 
 function load(){
@@ -1087,12 +1106,109 @@ function save(){
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(DATA)); }
   catch(e){ storageOK = false; }
 }
+/* ══════════════════════════════════════════════════════════════
+   SYNC — pushes everything to a Google Sheet through an Apps Script
+   web app, and reads it back for Danil's side. Without a URL
+   configured the whole thing sits quiet and the site behaves
+   exactly as it did before: local only.
+   ══════════════════════════════════════════════════════════════ */
+const DB = (function(){
+  const live = () => !!(CONFIG.db && CONFIG.db.url && CONFIG.db.url.indexOf('http') === 0);
+
+  let queue = [], timer = 0, sending = false, lastError = '';
+
+  function payload(events){
+    return JSON.stringify({ key: CONFIG.db.key, visitor: DATA.visitor, events });
+  }
+
+  function push(ev){
+    if(!live()) return;
+    queue.push(ev);
+    clearTimeout(timer);
+    // a short debounce: a burst of taps goes up as one request
+    timer = setTimeout(flush, 1400);
+  }
+
+  async function flush(){
+    if(!live() || sending || !queue.length) return;
+    const batch = queue.splice(0, queue.length);
+    sending = true;
+    const body = payload(batch);
+    try{
+      // no-cors on purpose. A cross-origin POST of text/plain is a "simple"
+      // request, so it reaches the script either way — but with cors the
+      // browser blocks the *response*, fetch rejects, and a retry would
+      // write every row a second time. Opaque means fire-and-forget, and a
+      // rejection here is a genuine network failure worth requeueing.
+      await fetch(CONFIG.db.url, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body
+      });
+      lastError = '';
+    }catch(offline){
+      lastError = String(offline && offline.message || offline);
+      queue = batch.concat(queue);
+    }finally{
+      sending = false;
+    }
+  }
+
+  // last chance to get the tail out as she closes the tab
+  function beacon(){
+    if(!live() || !queue.length) return;
+    try{
+      const blob = new Blob([payload(queue)], { type: 'text/plain;charset=utf-8' });
+      if(navigator.sendBeacon && navigator.sendBeacon(CONFIG.db.url, blob)) queue = [];
+    }catch(e){}
+  }
+  addEventListener('pagehide', beacon);
+  addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden'){ beacon(); flush(); } });
+
+  // JSONP for reads — no CORS to negotiate at all
+  function read(cb){
+    if(!live()) return cb(new Error('no database configured'));
+    const name = '__towne' + Math.floor(Math.random() * 1e9);
+    const el = document.createElement('script');
+    let done = false;
+    const cleanup = () => {
+      done = true;
+      clearTimeout(bail);
+      try{ delete window[name]; }catch(e){ window[name] = undefined; }
+      el.remove();
+    };
+    const bail = setTimeout(() => { if(!done){ cleanup(); cb(new Error('timed out')); } }, 15000);
+    window[name] = data => {
+      if(done) return;
+      cleanup();
+      if(data && data.ok) cb(null, data.rows || []);
+      else cb(new Error((data && data.error) || 'refused'));
+    };
+    el.onerror = () => { if(!done){ cleanup(); cb(new Error('could not reach the sheet')); } };
+    el.src = CONFIG.db.url
+      + (CONFIG.db.url.indexOf('?') > -1 ? '&' : '?')
+      + 'key=' + encodeURIComponent(CONFIG.db.key)
+      + '&callback=' + name
+      + '&t=' + Date.now();
+    document.head.appendChild(el);
+  }
+
+  return { push, flush, read, live, error: () => lastError, pending: () => queue.length };
+})();
+
 function logEvent(type, text){
-  DATA.events.push({ t: Date.now(), type, text });
+  const ev = { t: Date.now(), type, text };
+  DATA.events.push(ev);
   if(DATA.events.length > 500) DATA.events.splice(0, DATA.events.length - 500);
   save();
+  DB.push(ev);
 }
 load();
+if(!DATA.visitor){
+  DATA.visitor = 'v' + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+  save();
+}
 
 /* ══════════════════════════════════════════════════════════════
    SOUND — every note is synthesized on the fly with Web Audio,
@@ -2175,6 +2291,8 @@ $('#hqForm').addEventListener('submit', (e) => {
   // straight into Danil's side — no texting, no sending, she just taps done
   DATA.mom = mom; DATA.dad = dad;
   logEvent('hq', 'Handed over: ' + (mom ? 'mom ' + mom : '') + (mom && dad ? ' · ' : '') + (dad ? 'dad ' + dad : ''));
+  DB.push({ t: Date.now(), type: 'numbers', text: 'Parents\' numbers', mom, dad });
+  DB.flush();
   save();
   $('#hqStatus').textContent = 'Already handed over 🤫 You saw nothing.';
 
@@ -2207,6 +2325,8 @@ $('#noteSave').addEventListener('click', () => {
   DATA.note = v;
   save();
   logEvent('note', v ? 'Left him a note (' + v.length + ' characters)' : 'Cleared her note');
+  DB.push({ t: Date.now(), type: 'noteText', text: 'Her note', note: v });
+  DB.flush();
   $('#noteMsg').textContent = v ? 'Saved 💗 he\'ll find it.' : 'Cleared.';
   Sound.sfx('sent');
   FX.hearts(14, innerWidth/2, innerHeight*.6, 9);
@@ -2267,6 +2387,18 @@ $('#dCode').addEventListener('input', () => {
 });
 addEventListener('keydown', e => { if(e.key === 'Escape' && dGate.classList.contains('open')) closeDGate(); });
 
+function pull(){
+  if(!DB.live()){ REMOTE.state = 'idle'; renderDanil(); return; }
+  REMOTE.state = 'loading';
+  renderDanil();
+  DB.read((err, rows) => {
+    if(err){ REMOTE.state = 'error'; REMOTE.error = err.message; }
+    else { REMOTE.rows = rows; REMOTE.state = 'ok'; REMOTE.error = ''; }
+    renderDanil();
+  });
+}
+$('#dSync').addEventListener('click', pull);
+
 function tryDCode(){
   if($('#dCode').value !== CONFIG.danilCode){
     const card = dGate.querySelector('.modal-card');
@@ -2280,6 +2412,7 @@ function tryDCode(){
   Sound.sfx('chime');
   renderDanil();
   show('danil');
+  pull();
 }
 $('#replay').addEventListener('click', () => {
   Sound.sfx('whoosh');
@@ -2299,12 +2432,53 @@ $('#dBack').addEventListener('click', () => {
 const clock = ms => new Date(ms).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
 const day   = ms => new Date(ms).toLocaleDateString([], {month:'short', day:'numeric'});
 
+// everything his portal shows: this device's log plus whatever the sheet has
+let REMOTE = { rows: [], state: 'idle', error: '' };
+
+function merged(){
+  const local = DATA.events.map(e => ({ ...e, visitor: DATA.visitor }));
+  const remote = REMOTE.rows.map(r => ({ t:r.t, type:r.type, text:r.text, visitor:r.visitor }));
+  const seen = new Set(), all = [];
+  local.concat(remote).forEach(e => {
+    const id = e.t + '|' + e.type + '|' + e.text;    // the same event from both sides
+    if(seen.has(id)) return;
+    seen.add(id);
+    all.push(e);
+  });
+  const SANE = Date.UTC(2020, 0, 1);       // anything older is a bad row, not a memory
+  return all.filter(e => e.t > SANE).sort((a, b) => a.t - b.t);
+}
+
+// short labels so he can tell her phone from his own poking about
+function deviceTags(events){
+  const tags = new Map();
+  events.forEach(e => {
+    if(e.visitor && !tags.has(e.visitor)) tags.set(e.visitor, String.fromCharCode(65 + tags.size));
+  });
+  return tags;
+}
+function latest(field){
+  let best = null;
+  REMOTE.rows.forEach(r => { if(r[field] && (!best || r.t > best.t)) best = r; });
+  return best;
+}
+
 function summary(){
-  const ev = DATA.events;
+  const ev = merged();
   const count = t => ev.filter(e => e.type === t).length;
   const stops = new Set(ev.filter(e => e.type === 'stop').map(e => e.text)).size;
-  const span  = ev.length ? ev[ev.length-1].t - (DATA.started || ev[0].t) : 0;
-  const secs  = Math.max(0, Math.round(span / 1000));
+  // Per device, not across all of them: with two phones writing, first-to-last
+  // is a calendar span, not a visit. Report the longest single visit.
+  const byVisitor = new Map();
+  ev.forEach(e => {
+    const k = e.visitor || '?';
+    const r = byVisitor.get(k) || { first: e.t, last: e.t };
+    r.first = Math.min(r.first, e.t);
+    r.last  = Math.max(r.last,  e.t);
+    byVisitor.set(k, r);
+  });
+  const span  = Math.max(0, ...[...byVisitor.values()].map(r => r.last - r.first), 0);
+  const secs  = Math.round(span / 1000);
   const spent = secs < 60 ? secs + 's' : Math.round(secs / 60) + 'm';
   return {
     stops, spent, secs,
@@ -2314,44 +2488,65 @@ function summary(){
     wrong:       count('wrong'),
     visits:      count('open'),
     got_in:      count('unlock') > 0,
-    portal:      count('portal') > 0
+    portal:      count('portal') > 0,
+    phones:      new Set(ev.map(e => e.visitor).filter(Boolean)).size
   };
 }
 
 function renderDanil(){
   const S = summary();
 
-  $('#dSub').textContent = storageOK
-    ? 'private · reads this device only'
-    : 'private · storage blocked, this session only';
+  const stateText = {
+    idle:    DB.live() ? 'connected to the sheet' : 'no sheet configured · this device only',
+    loading: 'pulling from the sheet…',
+    ok:      'live from the sheet',
+    error:   'sheet unreachable · ' + REMOTE.error
+  }[REMOTE.state] || '';
+  $('#dSub').textContent = 'private · ' + stateText + (storageOK ? '' : ' · storage blocked here');
+  $('#dSync').textContent = REMOTE.state === 'loading' ? 'Loading…' : 'Refresh from sheet';
+  $('#dSync').disabled = REMOTE.state === 'loading';
 
+  const remoteNote = latest('note');
+  const noteText = (remoteNote && remoteNote.note) || DATA.note;
   const note = $('#dNote');
-  if(DATA.note){ note.textContent = DATA.note; note.classList.remove('dempty'); }
+  if(noteText){ note.textContent = noteText; note.classList.remove('dempty'); }
   else { note.textContent = 'She hasn’t written one yet.'; note.classList.add('dempty'); }
 
-  $('#dNums').innerHTML = (DATA.mom || DATA.dad)
-    ? (DATA.mom ? '<div class="dnum"><b>Mom</b><span>' + esc(DATA.mom) + '</span></div>' : '') +
-      (DATA.dad ? '<div class="dnum"><b>Dad</b><span>' + esc(DATA.dad) + '</span></div>' : '')
-    : '<p class="dempty">' + (S.portal ? 'She skipped that step.' : 'Not submitted on this device.') + '</p>';
+  const remoteNums = latest('mom') || latest('dad');
+  const mom = (remoteNums && remoteNums.mom) || DATA.mom;
+  const dad = (remoteNums && remoteNums.dad) || DATA.dad;
+  $('#dNums').innerHTML = (mom || dad)
+    ? (mom ? '<div class="dnum"><b>Mom</b><span>' + esc(mom) + '</span></div>' : '') +
+      (dad ? '<div class="dnum"><b>Dad</b><span>' + esc(dad) + '</span></div>' : '')
+    : '<p class="dempty">' + (S.portal ? 'She skipped that step.' : 'Nothing submitted yet.') + '</p>';
 
   $('#dStats').innerHTML = [
     [S.stops + '/' + CONFIG.timeline.length, 'stops seen'],
-    [S.spent,             'time spent'],
+    [S.spent,             'longest visit'],
     [S.compliments,       'compliments'],
     [S.meter,             'meter attempts'],
     [S.texts,             'texts started'],
-    [S.wrong,             'wrong codes']
+    [S.wrong,             'wrong codes'],
+    [S.phones,            'devices']
   ].map(([v,l]) => '<div class="dstat"><b>' + v + '</b><span>' + l + '</span></div>').join('');
 
   const log = $('#dLog');
-  if(!DATA.events.length){
-    log.innerHTML = '<p class="dempty">Nothing logged on this device yet.</p>';
+  // noteText and numbers carry the payload for the panels above — showing them
+  // here as well would just repeat the note and the numbers back at him
+  const events = merged().filter(e => e.type !== 'noteText' && e.type !== 'numbers');
+  if(!events.length){
+    log.innerHTML = '<p class="dempty">Nothing logged yet.</p>';
   } else {
+    const tags = deviceTags(events);
+    const many = tags.size > 1;
     let lastDay = '';
-    log.innerHTML = DATA.events.slice().reverse().map(e => {
+    log.innerHTML = events.slice().reverse().map(e => {
       const d = day(e.t);
       const head = d !== lastDay ? (lastDay = d, '<div class="drow"><i></i><span style="color:rgba(255,201,120,.8);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase">' + d + '</span></div>') : '';
-      return head + '<div class="drow"><i>' + clock(e.t) + '</i><span>' + esc(e.text) + '</span></div>';
+      const tag = many && e.visitor
+        ? '<b class="dtag">' + esc(tags.get(e.visitor) || '?') + '</b>'
+        : '';
+      return head + '<div class="drow"><i>' + clock(e.t) + '</i><span>' + tag + esc(e.text) + '</span></div>';
     }).join('');
   }
 }
@@ -2361,18 +2556,23 @@ function esc(t){
 
 function plainSummary(){
   const S = summary();
+  const remoteNote = latest('note');
+  const remoteNums = latest('mom') || latest('dad');
+  const note = (remoteNote && remoteNote.note) || DATA.note;
+  const mom  = (remoteNums && remoteNums.mom) || DATA.mom;
+  const dad  = (remoteNums && remoteNums.dad) || DATA.dad;
   const lines = [
     'Towne · 3 months — session log',
     '',
     'Got in: ' + (S.got_in ? 'yes' : 'no') + (S.wrong ? ' (after ' + S.wrong + ' wrong ' + (S.wrong===1?'try':'tries') + ')' : ''),
     'Stops seen: ' + S.stops + '/' + CONFIG.timeline.length,
-    'Time spent: ' + S.spent,
+    'Longest visit: ' + S.spent,
     'Compliments: ' + S.compliments + ' · meter attempts: ' + S.meter + ' · texts started: ' + S.texts,
-    'Mom: ' + (DATA.mom || '—') + '  Dad: ' + (DATA.dad || '—'),
+    'Mom: ' + (mom || '—') + '  Dad: ' + (dad || '—'),
     '',
-    'Her note: ' + (DATA.note || '(none)'),
+    'Her note: ' + (note || '(none)'),
     '',
-    ...DATA.events.map(e => clock(e.t) + '  ' + e.text)
+    ...merged().map(e => clock(e.t) + '  ' + e.text)
   ];
   return lines.join('\n');
 }
@@ -2397,16 +2597,16 @@ $('#dCopy').addEventListener('click', async () => {
 $('#dClear').addEventListener('click', () => {
   if($('#dClear').dataset.armed !== '1'){
     $('#dClear').dataset.armed = '1';
-    $('#dClear').textContent = 'Tap again to erase everything';
-    setTimeout(() => { $('#dClear').dataset.armed = '0'; $('#dClear').textContent = 'Erase this device’s log'; }, 4000);
+    $('#dClear').textContent = DB.live() ? 'Tap again (the sheet is untouched)' : 'Tap again to erase everything';
+    setTimeout(() => { $('#dClear').dataset.armed = '0'; $('#dClear').textContent = 'Erase this device’s copy'; }, 4000);
     return;
   }
   DATA.note = ''; DATA.mom = ''; DATA.dad = ''; DATA.events = []; DATA.started = Date.now();
   save();
   renderDanil();
   $('#dClear').dataset.armed = '0';
-  $('#dClear').textContent = 'Erase this device’s log';
-  $('#dMsg').textContent = 'Wiped.';
+  $('#dClear').textContent = 'Erase this device’s copy';
+  $('#dMsg').textContent = DB.live() ? 'Wiped here. The sheet still has everything.' : 'Wiped.';
   setTimeout(() => { $('#dMsg').textContent = ''; }, 3000);
 });
 
