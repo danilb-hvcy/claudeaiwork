@@ -57,6 +57,34 @@ your own. Your portal labels them A, B, C… in the log.
 - **No URL configured?** The whole layer sits quiet and the site behaves
   exactly as it did before: everything local to the device.
 
+## After her first visit
+
+Once she reaches the portal, that device is flagged as done. Every visit
+after opens **straight into the Girlfriend Portal** — no landing, no
+message, no code, no story. The story is still there behind *Watch our
+story again* in the portal.
+
+The flag lives in that browser's storage, so it is per device and per
+browser. Clearing site data, or opening it in a different browser, starts
+her from the beginning again.
+
+## Adding it to her phone
+
+The page ships as an installable web app: a manifest, an apple-touch-icon
+(a white heart on a pink gradient) and the Apple meta tags are all inline,
+so nothing extra needs hosting. After the parents step she is told you
+love her and asked to get you to walk her through **Add to Home Screen**,
+with the steps for her platform on screen.
+
+Once installed it opens full screen with no browser chrome, and since it
+is a return visit it lands straight in her portal. If she opens it from
+the home screen the add-to-home-screen step is skipped automatically.
+
+Two things this needs: the site must be served over **https** (GitHub
+Pages, Netlify, Vercel all qualify — a `file://` copy will not install),
+and on iPhone the Add to Home Screen option only appears in **Safari**,
+not Chrome.
+
 ## Worth knowing
 
 The secret sits in the page source, so anyone who reads the HTML could post

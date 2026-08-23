@@ -9,6 +9,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%97%3C/text%3E%3C/svg%3E">
+<!-- so "add to home screen" gives her a real app, not a bookmark -->
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Towne%27s%20Girlfriend%20Portal%22%2C%22short_name%22%3A%22Towne%20%F0%9F%92%97%22%2C%22start_url%22%3A%22.%22%2C%22scope%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%23ffe3ec%22%2C%22theme_color%22%3A%22%23ffe3ec%22%2C%22description%22%3A%22Three%20months%2C%20and%20everything%20since.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAH%2B0lEQVR42u2dSXNUVRiGTzfZkISyLEat4geoxUrdKVoiKCiWliIIAmEyVlHggoQEQhIShoQhAxACCgljBAJLNwpa6lZd5SdEMw84EJbXRZru0H1uku7b957peeouSIck577nve%2F5vjt0x7xL3wuAXCnwPA8VIHcDCfwDgQyEg4AEAhIISCBwsQvDQUACATUQkEBAAgGQQEAXBiQQOGIgHAS5E0cCIIGABAJTuzACCAItYbRhQBsPJBCQQEACAdCFAQkE1EBAAgGQQBCygXAQBOnC0ABIIFAFt3MACQQkENDGg6NdGA4CEgiUGQgHAQkEJBCQQEACAWTZxuMfCLaE4SDIHS5lAAkEJBCQQOBmF4YGQAIBNRCYmkBGjnvuJ28l%2FrVsqd%2F%2FeVx7TZfR1m31%2FV5Pb2K0934ycSJiEzVXzDHNihlN42%2Bmq5GbpiTrn0mZ6UdzDFStu4HmrluRm2nkTqoJ10lz60vy84t6eoUQj%2B%2Fq7qTYo%2BpObQdXuO7tnCNnesLI3cL6bXn%2BjU8CaeLuA40NdEhHAxV%2BGpZ1Uh7Ka%2FQWHtkWlhZJG3U%2F0NNAHfq5Z2Wo1pnioc48uWd76KL09AohJrrv62egKo0MVLh%2BZdjBI7FRgAwuPLo9OnWSUXTnvk4GOnhZF%2FdsWBWxdVIeyukoKjy2Q4FMk1F0%2BwdNZi2uiXUS7lE1gOytoMY92iiWMpCnAanhqIifpCFmP2CV7pkikQ5zpz6Bij57J6GLOvckRnJ8Zx7%2FW7geWrY0JZ3iJczzFG46SJBujukHrNw9mYef0hlUmUBFG99VvnIZzBPRUjI6lUDauqeoYZfvmBt26eshBxNIW4oav5jli6CmCyvatFrzxWu6VlHPENq02pUurPjzNfofWMUnSqf5UtMxqxBW6Q1lmtfOptxqt2xp8ipH9GOOC%2BFFuRVvXmPItIjik6WJMZ8sNWbMm9dEPKHxaP%2BcOfGTPKA9Q0IobcxRbbF%2Fy9qjOz62vG%2BYgQwiuYoJ8d%2F176KrgXiqxz6inFNFz4URP%2BGW0tHNKScSIaCBojrnPa9kLXJHw7yStVzKADPg2XgKaWogUJhAHglkZwCRQEANBNRAACQQCUQCgbZdGCIQQEGWMD5sxVILRbWERX8rmXjq5hXID2mSRjWtFNGsYYYU0X9fvMe02ie1ugTq6eW2stDWr%2BjmlI86oH4OWkRH9xz1w%2FZuSumw4%2BdhezfPxoMx0IXRfxnShSUC9vwdVrEQ1680eZ1IINqxfDVfkcePECLuRf0srBhvu83Uh8F42%2B3oZ1PNO5SNn7vFQpbf%2BBk%2Fd4t3KAPziI3tbFT1t5%2FduzH9JYqhnEqf8bPfKmzjmRALWndlfzkeedWV2sbPdM3cVsCM8XOmS%2BEkxpW%2BS7UYa%2B3CEkEYa%2B1SO4MFmh5hFEOzOeujAYo%2F6kB43ljLTbyRY%2Fy03FQ%2BfXFdhKAYyjJ%2BNDnw1CdQIoeab%2BChLNzTfEOTidPoRCIeysI92qD9u3M4fqlVdghpNWV6XcoYbbpuSvehyj1yidQRG9lyREPp5pdtTX%2FJtRzKcM%2Fo6WtatvGcBWFnLejC0rbRU1fd9ZB05Tp1Vc%2BZ0jeBfD1ksY189k4uhSZdmM431Y%2BevCKEmL9%2Fm7NN2KQCOhMb3lSnv44LKmQesqmslgXPyIkr%2Bg%2Fc5Ld3seYUke%2BibMDUxNXdSZLFNtLYaW1r5rMLI42dRkxNbHhjrUFqL6jcYdVaJl25GjsM2gMzEigVRQ0d9uSQ1D0NHWbNiHlPZfh6yCAb%2BYxWvmuad2FDG2oMjf%2BFB3cauZzJrDN8%2FLKhs8BzYRAwgdZXmzv6hVW75N%2FQM4d8FtnhY5cwkH420s1D0pXLZOtMMqf8peWm78PEr38ULX85%2FdWhf8TiZ7R2z9FvLFjCLKmB5JOhSV9mr3uEELHBdVU21XSLqks1Ws5k1hk68rVNgrvRhSmJIjfuXppT%2FuLrNu3Po19%2BL3rjFck3Ii6JfNwzVH%2FRtjZ%2B8OODVh4Zi2q%2FVLaWSVeuuotW6hwXZl16mfU2VHdBzbIid88FW3WOW7pfQnhi6HDkHpK65%2FAFi0WeU%2FbCaxaXeI9%2B%2Fq34zVcjqodk7hk83G53EW1zAk1ug7XtUeSQ1D217dbLGxv4qEK4weK63WHV1BnuGaw974iqbr9HYl7uqpaGmTOqxgY%2BrHDKM4vr85pDmdlTc94pPfmwlQA5JM8et%2FSM217kpW8D1W35qallPzJQ3eaanrH%2BD8odDJ0lR%2FcEOk8tdc%2Bhcw4q6egtrXmfbDfdI4SI9a8tc7b4WXJsby4hlBE%2FA1VnndXQaQPJbTS9h552j8vWoQvLB86rF%2Bt7bx82eK7hq1mF0NPx03%2FgDNLFHes65Vv%2FgdaZu%2Fp097Sim%2BW3c2S19Ve2zv6w669sRbHks%2FHI8CSHKlt8Q2jKl%2F2VLWiV3PjAuRwKZySgBvILoYpmSepMjZ%2BKZlSiBpq2GNrf7Fv67G9Gn7StwCORs1i70CpzCeMwytj6ypsyleorb0IZSQJxDGV12QvSz0T%2FtWovKkh5%2FnTqKmFf2WkE8evCAIIk0Mo9qOAbQk3lQoi%2BfaeQwo8C%2BgpOHAYyEDckzMJBSDSdgRCBCApQA%2F25YjcqAAkEqgyEgyBQF4Z%2FgAQCaiAggYAEAiCBgC4MDIHbOSBoDUQEAQkEJBDQxoODXRgOAhII1BkIBwEJBCQQkEBAFwZAAgE1EJBAQAIBkEAQJtzOAYH4H8JcrHeYM42CAAAAAElFTkSuQmCC%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%22%7D%2C%7B%22src%22%3A%22data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAATt0lEQVR42u3d67dcZX0H8D2eecM5RF21kAQX7%2BslXLTtsgqCilYQrW1VomINIhK8oARyAgkkkpCQm2BAbqKIchWwb%2BpyeV1tlVpX6w3zJ6C5ogGanLwcXxRras7Mmdl79uz9PL%2FPZ521WgtD8Tmzv9%2Fn9zyTczq9e79TABBPt9frWQWAgF5kCQAUAAAKAAAFAECWuoVLYAATAAAKAAAFAIACACAb3cIdMEDQAtAAACE5AgJQAAAoAACy5xIYIGoByH%2BAqBOAEQAgJHcAAAoAgEhcAgOYAACINQEYAQBMAAAoAAAy5xIYwAQAgAIAIHs%2BBQRgAgAg1gRgAAAwAQAQaAIwAACYAACINAH4FBBA1AKQ%2FwAhOQICUAAAKAAAsucSGCBsAch%2FgJAcAQEoAAAUAAAKAIA8dYueW2AAEwAACgAABQBAhvxCGICoBeBPAgNELQANABCSOwAABQCAAgAgey6BAcIWgAYACMkREIACAEABAJA9l8AAJgAAYk0ARgAAEwAACgCAzHX9SmAAEwAACgCA3PkUEIAJAIBYE4ABAMAEAIACACBzLoEBTAAAxJoADAAAJgAAFAAACgCAHPkUEEDYApD%2FACE5AgKIOgEYAABMAAAoAABy1y38UmAAEwAACgAABQCAAgAgGy6BAUwAACgAABQAAAoAgIz4cdAAYQtAAwCE5AgIIOoEYP8PYAIAINIE4AoAwAQAQKgJwAgAYAIAQAEAkDmXwAAmAABiTQBGAAATAAAKAIDMuQQGMAEAoAAAyJ5PAQGYAAAINQH0DAAAJgAAFAAACgCAHPkUEEDYApD%2FACE5AgJQAAAoAACy5xIYIGwByH%2BAkBwBASgAABQAAAoAgDx1Cz8PGiBmAYh%2FgJgcAQEoAAAUAADZ8yeBAcIWgAYACMkREIACAEABAJA9l8AAYQtAAwR2wnveMugvLzv1f%2F%2Fn0Q33W6v0vrk3rnjhf9v99IC%2F7egTP7BWYXXm1n%2FFKoQO%2Bj%2BkfBUaosl8r6J%2FNygGBUBeoT%2BOrFcGyYf%2B6K2gDBQAKW%2F2JxL9yiDh0B9uONAE2RXADQog%2FYx4b4tCv28ZrFcGQ39DN65o17%2FQvGXwuDJQAIh%2BNZBx9KuB3AvgPquQYO6fl1buH1cDth3HR%2F8lyfy7zt8E3%2FdNTK8AjiiApEwnHv3Hcv%2F0wvc0oehfqAbm1IACQPRrgmxzXw1kVQDXK4DWJ8X7so3%2B%2F5caYa6jpjddktt%2FpXlr4DE1oAAYb%2B7nGP1xaiDD6F%2BoBjSBAkD064Dc018NpFkAX7YKbYr%2Bt0aO%2FmM6ILd9yfSmj8R6K%2Fetge95zNvDj4NuffovOzVa%2BucXl%2BHSv%2F%2F7tu8Wh2YmgHUmgHZkxEVvDb7rn3%2FDmPgR5fRNH%2FFNPH4amPu6OUAB0C%2F6pX%2F6NSD6B3eAGlAAot%2BJf54dIP2H7AA10HgBfMkqNJT%2Bb5P%2Bo9dA2%2Fcr0zdd6ts0egd819o0wiVwm9I%2F5H0vgfS7Ge63GaL2CWCtCWCy0b%2Fcxr%2FaENDiQ8vpzbb%2F1UaBR40CCkD6k1oNiH4dkCJHQE2nv2Of9ANX%2BpfR7zhoueMgBRBn70%2FisSv9PSzp6hxee69VqNvM8r%2FtuwmimmY%2Fxjaz%2BaO%2BBVX1OQs68uh3rE39BXCdAqg5I94v%2FWvugIbusWa2SP%2BaO%2BARHVAvR0DSP%2F1FbiKIpf849Xkc%2Bj4%2BKIBU09%2BtLwz9XOgABZDX3p%2F09%2BO2%2Fx6lPLgDmOxb1t6%2FZnXfB4j%2B2rkPmKBu0etZhckNudS%2FNz9S255m5ubLrPAkHpN5O0BS1cARUA0x8YG3S38Y71Zp%2FscKBZBA%2BjPJb0E9%2B3Tbfw%2BXAqDUG9T2P%2FEOkP5tGAJ0gAKQ%2FqADGI%2FO4TVftApjSP8PSv%2FWOXLteG6DZ7ba%2Fjen34eCHvq2tRnLBNDzVfFL%2Bre0lbdeNoZvrvRv5xzwwbdLnupfjoAA4k4AVDz8Od%2F2v8VDwMcafDk1DwHnWxsF0Mr0J%2F0OkP4ewOx1C3%2B8boJ7FprhTZ7BA9XnNtg3t1IB9KxfWSdefIFFSCT%2FvcnzHQIuPv%2Fwg9%2ByDuU4ArL9D1DV2y6fwEvwWCkA23%2BS7wDp72FUANinROwA6e%2FhisMlcKko%2BZAdR5q82%2FMdAg4%2F4CbABGCHAh4xhi4Afx56tC%2Fb%2F4T3idsvX%2BCbu935T9JzuYDyoyDsTcCDhiOgGnYZ77AI4PHMpQCMQSN92ZUkfwq0st8398TtK61P8kOAjBrlywQwSnb8k%2F1FFt%2FHHSuH%2FD%2FiIXUERIX9COCha6uuj0YPvbO40CJkxNs%2B5yHg8Ne%2BaR1MAHYi9MmIHVcM%2BI949MJMAHZCw%2BTFh23%2FzQCkNK8f%2FqohwAQAQL8JwDYIAwC%2Bv2EnAJ%2BGXeBrkfOfHC3aecUL39%2BdLgBy%2FP5%2B%2BELZ5UdB1Mw1FHgAk9V5ftUdVmHQPmLFO73%2FoL36%2Fa7goiiK4n%2Fu%2FxcrNPgICAAFAIACYGHOf8BjmDI%2FCgLImHwbPAH4KFT%2Fr0Ur3uUtAulatOJdcsyPgwbg%2BAmAcpw8godRAQCgALKy6BIXAOBBzlm36LklB7Im5UwAACgAABQAQFR%2BIQyQOSnXtwBcjwC5N4CUm58joPm9%2BNJ3WwTwOCsAABQAAAoAgKR1XZAD%2BRN08xeAhQE0QEiOgAAUAAAKAIDsuQQGAhB0JgAAjpkANGM5u5%2F2m0ihLQ%2BjEcAEMEbP3%2FvPFgE8zgoAgAx1%2FZxUIG9SzgRQg6FOHgGPYVsnAHcjQPYzgCUwAQCgAAAUQNErfM379dw93%2FD%2BgNQ9d883pFm%2FLxNANS6gwAPoCAiAtPgUEJA3EWcCAOBPC8BNyIB74Luf8BaBdD139xNyzCVwnVxDgUfPERAACsBOBPDQtZ1PAQEZk2%2BDJwA3IYPvge963H4EUtz%2BP3fX4xLMJTAA800AWnDBr2cNAZDa9v%2FZux6XXQt%2BmQAAgnIJDGRJsg1xBGQKGubr2TsfcwoEyZz%2F3PmY1HIJDMCACYDhGAIgme0%2FCgAABdDGfQrgsWpWt%2Bi5Kx%2FWs3d8%2FaWfuMg6QJsfUotgArBbAQ8UCsD%2BAjyeKAB7FvAooQDsMsCDGV3Xn5eud%2Bey7FTLAJPY%2FouyMgVg2YAciLKROQIqNWx%2B4dHx71%2BAso%2FPCI8kx04ASnMSb2IHQVBb%2Btv8mwAm7ZAdB3gYU58AVKchAJLe%2FguxKhOAn4pd8uvQ7Y94A0HD2%2F%2FbH5FFpb8cAbVyRwMeFiYyAVBx9%2BFtDc2kvylcAegAkP6U4RIYSJPsMgG0Ygi4zRAAk93%2B32b7P5YJQI0C9v8mACoMAQ8bAmBS2%2F%2BHLZgCiPJ2B48D9RSAPwwxpq9Dux72poe60%2F%2FQroelzbi%2BTABjPQjSAVB3%2BuMIKJ8OADxczRWAQWjcPyNo10OGABjvm%2F%2FQrodki58FZAoGb3vGY2r2zPOswtgd%2FcnuE1532ggvOPB8sfgl1g3pP6%2Ffff4ha1bTERC1GPkta0OE9Jf%2BCkAHgPSX%2FhPgR0G07%2FHwu8OQ%2Fn8koEwACQ8BD07kIYEM07%2FM48NoE4B%2BrbsDbn3wz6662DrAqA%2BORTAB2CuBtzQKINRexgND4PS3%2FVcAOkAHIP2p0dSaM99sFSbj6E9%2BdcLfnD7aa%2FwBMcKl%2FwOWbWJcAqfwCPlgKDHSvyh87HOiHAFN1O9ueWByDxKklv4lHxAUgA4A6Y8C0AEg%2FVEAOgCkP31MrTndp4CacfQ%2Fnzrh9aeP%2FDKfCyKz9P%2Fc16xcYwUwe4YCaLIDpnUAgdP%2Ft9K%2FUY6AGlbyAXAWhPRHAegAkP4oAB0A0p8RTM2e%2Fiar0AZHf%2FzU9OvPGPll7gNILv13ftXKmQBo8iEEbzwUQIuU3xl5FEkk%2FW3%2FFQA6AOmPAmC8HaAGqDv6pX9GpmZP8wfBWufoj5%2BafsMZJV%2FsWpiWbfyLovjtDunfzgLwKaCWdsAvdQC5pP%2F91q%2BdOs98aKNVaLOXrV5R8pV%2BjQxNp7%2Fobzl3AG1X%2FhFyH4D0RwHoAJD%2BHG9q9jR3AAk4%2Bh9lrwTcBzD59N8u%2FU0AjHcOKP1QmQOQ%2FvSZAM61CknNAWeaA2hx%2Bn%2FF4qVUAKsdASVlTgfQ1vR%2FRvqnxhFQeso%2FZs6CkP4cOwHMLjMBpDkHnGUOoDXpv036mwCY5BywrcIcYBRgfO8K6Z%2FyBOASOOE54Bcl5wCjAOPY%2BBdF8cy2%2B6yfCYCm5oD7Gnnskf7SXwGgA5D%2BpGpqdtm5ViF1c086C2Ky6b9V%2BpsAaM8csNUcgPRHAegAHYD0ZwhTs8vOsQrZmHvyF9Nnvabki50FSf%2BF0%2F%2FL1i8nnYMf2GAV8vPn115a8pV%2BjYz0F%2F2BJoBXn2sV8hwFzi41CpgDpP%2Fx6X%2Bz9M91Ani%2FCSDfOeC6Syu93jQQO%2Felf%2FZcAues6qPrZlj6S38FgA5A%2BpOfqdU%2BBZS7uSd%2FPnP2a8q%2F3q1AyPQ%2FePOXLGH2OgeWr7cKQZy09qPlX%2Bw%2BIEz6H9wi%2BqNwBBRIpQfbWZD0RwGgA5D%2BKAB0ANKfhHUOLL%2FBKsR00trLSr7SfUBe6X9wy70WL6ap1a%2FyKaCg5n7085k3vrbMK30uKKf03yz943IEFFr5h99ZkPQnfZ0DFzkCiu6kdZdVer0TodRyX%2FpjAmBMQWAakP4oAHQA0p%2BEdA6873qrwP856fqPlX%2Bxs6DWp%2F%2FBm75o%2FTABUENAmAOkPwoAHYD0RwGgA5D%2BKAB0ANKfNpla%2Fco3WgXmNffDn82c89qSL%2FanhVuS%2FpukP3119r93nVVgsJNvuLz8i300qKHoP7DpHuvHYI6AqDlKHAdJfxQAOgDpjwJAByD9aZ5LYEZw5N9%2FNnPOX5ZNJtfC9af%2FRumPCYD65oCN5gDpTz4TwNlWgRHngJ%2BaA9qX%2FndbP0wATGYOqBA35gDpTzt09r9nrVWgtJPXryz5Sn8%2BYBzpL%2FqpVgD%2FqACo1gEbVpZ%2FsRqosvG%2FUfpTiSMgqqoUQ8GPg6Q%2FjeoWRc8qULkD7jp5wxXWYZILbhEwAZB%2BJIUdAkqf%2B0t%2FFAA6QPpDFZ39%2F3CdVWCMTv5shbOgCHfCVc79Pyv9MQHQ5jmgSkhlPwpIf1o1AewzAVCPxaVHgVzngLLpv1%2F0U4%2Bpa15xllWgDkf%2B7b9PPPevSu11c%2FxxEeXT%2F07vJWriCIgaCS8LSJt19v39tVaBui2%2B8eNlXpbHWVCpvf%2F%2BDaIfEwB57GTLxVkGd8LSHwUAETtA%2BqMAIGIHSH9az88CYsIdcMfiGz9hHfotjkVgkjr73r3GKjBhizeW6oBU7oTL7f3XS38mzREQTWx1y4VdEmdB0h8FACLPUqAAYHzB1%2FIhYPR%2FPelPg1wCk5rdT7f0MqBkOXkAaUxn39%2FNWgWatXjTJ0d%2BTds6oMTe%2F4Yv%2BNbTLEdANK9MFLbqLEj6owAgYgdIfxQAROwA6U%2FKpq7%2BizdYBVri8L%2F%2B14lv%2FuvRXtPgLw8YPf33SX%2FapFv0fAiBFtl3%2Fe1LbvpUrv%2FVfH9pFUdApB%2BUjRwEjfj%2FVPqjACCLDpD%2BKACI2AHSHwUAETtA%2BpORzt53rrYKtNmSzSPeCdf3h4RHTf910p9W87OAaP0csO62JZuvTPFf2%2FeOlnMERHZhWtNB0Cj%2FWOmPAoCGjL0Dkv7d9KAACDQEjDeyRz76t%2F0nDV1XACTTAWtvW7Llyvb%2FS%2FpOkYrO3guvtgqkZcmWTw%2F7t1b%2FRNDQ2%2F99a3f51pAWR0CkOAoMHbUVD4KkPwoAAAUAqQ0Bwf5lYHhdPw2azJX%2BJfJDn%2F94iEhUZ887XAKTsKU3D3chPGoHDJf%2Be6%2Bz9yftAlhlFUi8Az4z5g4YNv0%2Fb%2FFJmjsAAAUAaWpkJ277TwY6ey5wBEQOlm79zMJ%2F0zCnQEOc%2F%2By9VvpjAoD2zAGTCmXpjwKABDtgwd39Qn%2BD9CcnnT0XXGUVyMnSrQu9pfsdBC2c%2FrdaXkwAACTPj4MmN3vX3Lp021V1%2FGOtLSYASKADBv3leY96Bp7%2FSH8UAAD56BbOgMhzCLhl6bZV4%2FpHWU9MAJBYB%2FT9a39y4NP%2F%2FEf6k%2FUEYACAATwgmAAgySFgdoghYMD2f9b2n6wnAPsb8rZn9pZTtq8q90KrhwkAgBwnAGec0IdHg%2BwLwJuc3O1Z%2FblTdlw96kusG9lzBESUDpD%2BoADQAX%2Bw%2B%2BnjPwIk%2FVEAACgAAHLU%2Bc3brrQKxHHKzmsG%2FNU91%2By0RJgAAFAAkJEBe3zbfxQAAAoAwgwBtv8E1C16%2FigwFB4ETAAAKADI156rdwz4jxCE3wcAfiIiJgAAIun8%2BrxPWQVievktq4ui%2BM0q5z8E5RfCgEeAoBwBASgAABQAANnzO4EJzyNAVJ1fv%2BWTVgEg5ARg%2FwMQkjsAAAUAQCQugQFMAADEmgCMAAAmAAAUAACZ6%2FpNqAAmAAAUAAC58ykgABMAALEmAAMAgAkAAAUAgAIAIEc%2BBQQQtgDkP0BIjoAAFAAACgCA7LkEBghbAPIfIGYByH%2BAmNwBACgAABQAANnrFn4pMIAJAAAFAIACAEABAJANfxIYIGwBaACAkBwBASgAABQAANlzCQwQtgA0AEBIjoAAok4A9v8AJgAAIk0ArgAATAAAhJoAjAAAJgAAFAAAmXMJDGACAEABAJA9nwICMAEAEGsCMAAAmAAAUAAAZM4lMEDUAhD%2FAFEnAA0AEJI7AAAFAIACACB7PgUEELYA5D9ASI6AABQAAAoAAAUAQJ66Rc8tMIAJAAAFAIACAEABAKAAAEja7wHa8%2Fn7bbhOLgAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%22%7D%5D%7D">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Towne 💗">
 <style>
 /* ============================================================
    TOWNE — 3 MONTHS
@@ -481,6 +488,31 @@ input.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14
 #music.on{opacity:1;animation:beat 1.2s ease-in-out infinite}
 @keyframes beat{0%,100%{transform:scale(1)}18%{transform:scale(1.16)}36%{transform:scale(1)}54%{transform:scale(1.1)}}
 
+/* ---- "I love you" + add to home screen ---- */
+.love{
+  font-size:clamp(2.6rem,13vw,4.4rem);color:var(--wine);line-height:1.05;
+  text-shadow:0 4px 30px rgba(255,111,150,.6);
+  margin-bottom:24px;opacity:0;
+}
+.scene.on .love{animation:loveIn 1.8s cubic-bezier(.16,1,.3,1) forwards,glowPulse 4.5s 1.8s ease-in-out infinite}
+@keyframes loveIn{
+  0%{opacity:0;transform:translate3d(0,22px,0) scale(.88);filter:blur(9px)}
+  100%{opacity:1;transform:none;filter:blur(0)}
+}
+.install-glass{max-width:440px;padding:26px 22px 24px}
+.steps{
+  margin-top:18px;padding:15px 16px 13px;border-radius:18px;text-align:left;
+  background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 1px rgba(224,53,95,.16);
+}
+.steps b{
+  display:block;font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(163,18,63,.6);margin-bottom:10px;font-weight:700;
+}
+.steps ol{margin:0;padding-left:1.15em}
+.steps li{font-size:.92rem;line-height:1.55;color:rgba(74,34,51,.85);font-weight:300;margin-bottom:5px}
+.steps li:last-child{margin-bottom:0}
+.steps li em{font-style:normal;font-weight:600;color:var(--rose-deep)}
+
 /* ---- danil's side ---- */
 .panel.dark{
   background:linear-gradient(160deg,rgba(60,14,32,.9),rgba(94,20,48,.86));
@@ -751,7 +783,25 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
     </div>
   </section>
 
-  <!-- 6 ─ GIRLFRIEND PORTAL ───────────────────────────────── -->
+  <!-- 7 ─ I LOVE YOU · and take this with you ──────────────── -->
+  <section class="scene" id="installstep">
+    <div class="stage">
+      <h2 class="script love">I love you, Towne</h2>
+      <div class="card-glass install-glass">
+        <p class="gate-t" style="font-size:1.35rem">Take this with you 📲</p>
+        <p class="gate-h" style="margin-top:12px">
+          Ask Danil, right now, to walk you through putting this on your home screen.
+          Then your portal is one tap away on your phone — no link to dig up, no laptop.
+        </p>
+        <div class="steps" id="installSteps"></div>
+        <button class="btn wide big" id="installGo" type="button" style="margin-top:18px">
+          Okay — take me in 💗
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 ─ GIRLFRIEND PORTAL ───────────────────────────────── -->
   <section class="scene" id="portal">
     <div class="wrap">
 
@@ -858,7 +908,7 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
   </section>
 
 
-  <!-- 8 ─ DANIL'S SIDE · six taps in the corner ──────────── -->
+  <!-- 9 ─ DANIL'S SIDE · six taps in the corner ──────────── -->
   <section class="scene" id="danil">
     <div class="wrap">
       <div class="portal-head">
@@ -950,8 +1000,8 @@ const CONFIG = {
   // The little backend: a Google Sheet behind an Apps Script web app.
   // See apps-script/Code.gs for the script and the setup steps.
   db: {
-    url: 'APPS_SCRIPT_URL_HERE',    // <-- your web app URL, ends in /exec
-    key: 'CHANGE_ME_SECRET'         // <-- must match SECRET in Code.gs
+    url: 'https://script.google.com/macros/s/AKfycbxMxkLxmwmZBow-Tgx_MNe8a3gMld8XKhsA6laljd6At1mLZOZR5LUMOEVOq3HiDbHNbg/exec',
+    key: 'CHANGE_ME_SECRET'         // <-- must match SECRET at the top of Code.gs
   },
 
   danilCode:    '20100603',         // your private code
@@ -1729,6 +1779,11 @@ function runSequence(host, lines, totalMs, onDone){
 }
 
 /* ── 1. LANDING ─────────────────────────────────────────────── */
+/* Once she has been all the way through on this device, every visit after
+   opens straight into her portal. The story is still there behind the
+   replay button — she just does not have to sit through it again.        */
+const RETURNING = !!DATA.completed;
+
 (function buildTitle(){
   const t = $('#hiText');
   t.innerHTML = ('Hi, ' + CONFIG.herName).split('').map((ch, i) =>
@@ -1738,6 +1793,7 @@ function runSequence(host, lines, totalMs, onDone){
   emj.style.cssText += ';opacity:0;transition:opacity .9s ease ' + (('Hi, ' + CONFIG.herName).length*90 + 500) + 'ms';
 })();
 
+if(!RETURNING) {
 setTimeout(() => {
   $('#hiText').classList.add('in');
   $('#hiText').querySelector('.emj').style.opacity = '1';
@@ -1752,6 +1808,7 @@ setTimeout(() => {
 }, 9200);
 
 setTimeout(startMessage, 10300);
+}
 
 /* ── 2. OPENING MESSAGE (~30s) ──────────────────────────────── */
 function startMessage(){
@@ -2071,16 +2128,24 @@ function goHQ(){
   logEvent('step', 'Finished the story, reached the parents step');
 }
 
-function openPortal(){
+function openPortal(quiet){
   show('portal');
-  if(state.portal){ return; }
+  if(state.portal) return;
   state.portal = true;
-  glowFlash();
-  Sound.sfx('unlock');
-  FX.show();
-  logEvent('portal', 'Unlocked her Girlfriend Portal');
+
+  if(!quiet){
+    glowFlash();
+    Sound.sfx('unlock');
+    FX.show();
+  }
+  logEvent('portal', quiet ? 'Came straight back to her portal' : 'Unlocked her Girlfriend Portal');
+
+  // from here on this device goes straight in — she has earned it once
+  DATA.completed = true;
+  save();
+
   const panels = $$('#portal .panel, #portal .portal-head');
-  panels.forEach((p,i) => setTimeout(() => p.classList.add('in'), 120 + i*110));
+  panels.forEach((p,i) => setTimeout(() => p.classList.add('in'), quiet ? 60 + i*45 : 120 + i*110));
   startCountdown();
   startTogether();
 }
@@ -2263,9 +2328,42 @@ $('#compBtn').addEventListener('click', () => {
 let hqFromPortal = false;      // true when she reopened it from inside the portal
 
 function leaveHQ(){
-  if(hqFromPortal){ hqFromPortal = false; show('portal'); }
-  else openPortal();
+  if(hqFromPortal){ hqFromPortal = false; show('portal'); return; }
+  goInstall();
 }
+
+/* ── "I love you" + get this onto her phone ─────────────────── */
+const standalone = () =>
+  (window.matchMedia && matchMedia('(display-mode: standalone)').matches) ||
+  navigator.standalone === true;
+
+function goInstall(){
+  // already opened from the home screen? she has done this bit
+  if(standalone()){ openPortal(); return; }
+  Sound.sfx('whoosh');
+  $('#installSteps').innerHTML = installHow();
+  show('installstep');
+  logEvent('install', 'Reached the add-to-home-screen step');
+  setTimeout(() => FX.hearts(26, innerWidth/2, innerHeight*.42, 12), 500);
+}
+
+function installHow(){
+  const ua = navigator.userAgent || '';
+  const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if(ios) return '<b>on iPhone · in Safari</b><ol>'
+    + '<li>Tap the <em>share</em> button at the bottom — the square with the arrow going up.</li>'
+    + '<li>Scroll down and tap <em>Add to Home Screen</em>.</li>'
+    + '<li>Tap <em>Add</em>. Look for the pink heart 💗</li></ol>';
+  return '<b>on android · in chrome</b><ol>'
+    + '<li>Tap the <em>⋮</em> menu, top right.</li>'
+    + '<li>Tap <em>Add to Home screen</em> (or <em>Install app</em>).</li>'
+    + '<li>Tap <em>Install</em>. Look for the pink heart 💗</li></ol>';
+}
+
+$('#installGo').addEventListener('click', () => {
+  logEvent('install', 'Moved on from the home-screen step');
+  openPortal();
+});
 $('#hqSkip').addEventListener('click', () => {
   logEvent('skip', 'Skipped the parents step');
   Sound.sfx('whoosh');
@@ -2416,6 +2514,7 @@ function tryDCode(){
 }
 $('#replay').addEventListener('click', () => {
   Sound.sfx('whoosh');
+  buildJourney();          // she may have come straight here and never built it
   J.seen.clear();
   show('story');
   step(0);
@@ -2500,7 +2599,9 @@ function renderDanil(){
     idle:    DB.live() ? 'connected to the sheet' : 'no sheet configured · this device only',
     loading: 'pulling from the sheet…',
     ok:      'live from the sheet',
-    error:   'sheet unreachable · ' + REMOTE.error
+    error:   (/bad key/i.test(REMOTE.error)
+               ? 'CONFIG.db.key does not match SECRET in Code.gs'
+               : 'sheet unreachable · ' + REMOTE.error)
   }[REMOTE.state] || '';
   $('#dSub').textContent = 'private · ' + stateText + (storageOK ? '' : ' · storage blocked here');
   $('#dSync').textContent = REMOTE.state === 'loading' ? 'Loading…' : 'Refresh from sheet';
@@ -2649,6 +2750,11 @@ if(DATA.mom || DATA.dad) $('#hqStatus').textContent = 'Already handed over 🤫 
 logEvent('open', 'Opened the site');
 
 document.title = 'Happy 3 Months, ' + CONFIG.herName + ' 💗';
+
+// Straight in, but only once everything above has finished declaring itself —
+// calling this any earlier tripped the temporal dead zone on the timer
+// handles below and took the whole script down with it.
+if(RETURNING) openPortal(true);
 </script>
 </body>
 </html>
