@@ -488,6 +488,55 @@ input.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,.14
 #music.on{opacity:1;animation:beat 1.2s ease-in-out infinite}
 @keyframes beat{0%,100%{transform:scale(1)}18%{transform:scale(1.16)}36%{transform:scale(1)}54%{transform:scale(1.1)}}
 
+/* ---- messages ---- */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chip{
+  -webkit-tap-highlight-color:transparent;
+  border:0;cursor:pointer;font-family:var(--font-body);font-size:.84rem;font-weight:600;
+  color:var(--wine);background:rgba(255,255,255,.85);
+  padding:9px 14px;border-radius:999px;
+  box-shadow:inset 0 0 0 1px rgba(224,53,95,.22),0 5px 12px -8px rgba(163,18,63,.5);
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),background .2s ease,box-shadow .2s ease;
+}
+.chip:active{transform:scale(.93)}
+.chip.sent{background:linear-gradient(135deg,var(--rose),var(--rose-deep));color:#fff;box-shadow:0 8px 18px -10px rgba(224,53,95,.9)}
+.sent{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.bubble{
+  align-self:flex-end;max-width:85%;
+  background:linear-gradient(135deg,#ff8fae,#e0355f);color:#fff;
+  padding:10px 14px;border-radius:18px 18px 5px 18px;
+  font-size:.94rem;line-height:1.45;word-break:break-word;
+  box-shadow:0 8px 18px -12px rgba(224,53,95,.9);
+  animation:bubbleIn .5s cubic-bezier(.34,1.4,.64,1);
+}
+@keyframes bubbleIn{from{opacity:0;transform:translate3d(0,10px,0) scale(.92)}to{opacity:1;transform:none}}
+.bubble time{display:block;margin-top:4px;font-size:.62rem;opacity:.75;letter-spacing:.06em}
+.dmsg{
+  background:rgba(255,255,255,.08);border-radius:16px 16px 16px 5px;
+  padding:11px 13px;margin-bottom:9px;
+}
+.dmsg:last-child{margin-bottom:0}
+.dmsg p{font-size:1rem;line-height:1.5;color:#fff2f6;word-break:break-word}
+.dmsg time{display:block;margin-top:5px;font-size:.64rem;color:rgba(255,201,120,.8);letter-spacing:.1em;text-transform:uppercase}
+
+/* ---- the first-open note ---- */
+.modal.mid{align-items:center;padding:0 var(--pad)}
+.modal.mid .modal-card{
+  border-radius:30px;padding:34px 24px 28px;text-align:center;
+  transform:translate3d(0,26px,0) scale(.92);opacity:0;
+  transition:transform .6s cubic-bezier(.16,1,.3,1),opacity .45s ease;
+}
+.modal.mid.open .modal-card{transform:none;opacity:1}
+.hello-emoji{font-size:3rem;line-height:1;display:inline-block;animation:bob 3.2s ease-in-out infinite}
+.hello-eyebrow{
+  margin-top:14px;font-size:.66rem;letter-spacing:.34em;text-transform:uppercase;
+  color:rgba(163,18,63,.55);font-weight:600;
+}
+.hello-line{
+  font-family:var(--font-script);font-size:clamp(2rem,9.5vw,2.9rem);line-height:1.15;
+  color:var(--wine);margin-top:12px;text-shadow:0 3px 24px rgba(255,111,150,.5);
+}
+
 /* ---- "I love you" + add to home screen ---- */
 .love{
   font-size:clamp(2.6rem,13vw,4.4rem);color:var(--wine);line-height:1.05;
@@ -693,7 +742,7 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
   <section class="scene on" id="landing">
     <div class="stage">
       <h1 class="script hi" id="hiText" aria-label="Hi, Towne"></h1>
-      <p class="sub" id="hiSub">three months of you</p>
+      <p class="sub" id="hiSub"></p>
     </div>
   </section>
 
@@ -851,14 +900,18 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
 
       <div class="panel">
         <h2>💌 Say Something</h2>
-        <p class="note">Tap one. It opens a text to me, already written. All you do is hit send.</p>
-        <div class="stack">
-          <button class="btn wide big" data-sms="miss" type="button">Tell Danil you miss him 🥺</button>
-          <div class="row2">
-            <button class="btn ghost" data-sms="handsome" type="button">He's handsome 😍</button>
-            <button class="btn ghost" data-sms="date" type="button">Demand date night 💅</button>
-          </div>
+        <p class="note">Write me anything at all. It lands on my side the second you send it.</p>
+        <div class="chips">
+          <button class="chip" type="button" data-msg="I miss you 🥺">I miss you 🥺</button>
+          <button class="chip" type="button" data-msg="You are so handsome 😍">You're handsome 😍</button>
+          <button class="chip" type="button" data-msg="I want a date night 💅">Date night 💅</button>
+          <button class="chip" type="button" data-msg="Come here right now 🫶">Come here 🫶</button>
+          <button class="chip" type="button" data-msg="I love you 💗">I love you 💗</button>
         </div>
+        <textarea class="f" id="msgBox" rows="3" placeholder="…or say it in your own words"></textarea>
+        <button class="btn wide" id="msgSend" type="button" style="margin-top:12px">Send it to Danil 💗</button>
+        <p class="form-msg" id="msgMsg"></p>
+        <div class="sent" id="sentList"></div>
       </div>
 
       <div class="panel">
@@ -897,7 +950,7 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
       </div>
 
       <div class="sig">
-        <p class="script">Happy 3 months, Towne</p>
+        <p class="script" id="sigLine"></p>
         <p class="credit">made for you · with love · danil</p>
         <p class="credit" style="margin-top:10px;text-transform:none;letter-spacing:.06em;opacity:.85">
           ps — danil can see what you get up to in here 👀
@@ -926,6 +979,11 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
       </div>
 
       <div class="panel dark in">
+        <h2>💬 Messages from her</h2>
+        <div id="dMsgs"></div>
+      </div>
+
+      <div class="panel dark in">
         <h2>📞 Parents' numbers</h2>
         <div id="dNums"><p class="dempty">Not submitted on this device.</p></div>
       </div>
@@ -944,7 +1002,6 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
         <h2>📤 Take it with you</h2>
         <p class="note">Everything above is pulled live from your Google Sheet. Grab a copy if you want it somewhere else.</p>
         <div class="stack">
-          <button class="btn wide" id="dSend" type="button">Text the summary to me</button>
           <button class="btn ghost wide" id="dCopy" type="button">Copy to clipboard</button>
           <button class="btn ghost wide" id="dClear" type="button">Erase this device’s copy</button>
         </div>
@@ -961,6 +1018,17 @@ textarea.f:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(255,111,150,
 
 <p id="soundHint">tap for music 🎵</p>
 <div id="corner" aria-hidden="true"></div>
+
+<!-- the very first thing she sees, once ever -->
+<div class="modal mid" id="helloModal" role="dialog" aria-modal="true" aria-labelledby="helloLine" aria-hidden="true">
+  <div class="modal-back"></div>
+  <div class="modal-card">
+    <span class="hello-emoji">💌</span>
+    <p class="hello-eyebrow">before anything else</p>
+    <p class="hello-line" id="helloLine">I can’t wait to go to hoco with you soon 💗</p>
+    <button class="btn wide big" id="helloGo" type="button" style="margin-top:22px">Okay — show me 💗</button>
+  </div>
+</div>
 
 <!-- danil's side · code prompt -->
 <div class="modal" id="dGate" role="dialog" aria-modal="true" aria-labelledby="dGateT" aria-hidden="true">
@@ -991,7 +1059,6 @@ const CONFIG = {
   accessCode:   '052226',           // the day we became official
 
   // ── PLACEHOLDERS TO REPLACE ──────────────────────────────────
-  myPhone:      '+15551234567',     // <-- your number (sms: links)
   formspreeId:  'FORM_ID',          // <-- formspree.io form id, e.g. 'xldwabcd'
   musicUrl:     '',                 // <-- OPTIONAL .mp3 link. empty = built-in romantic loop
   askedHour:    20,                 // roughly what time you asked her (for the live counter)
@@ -1016,11 +1083,6 @@ const CONFIG = {
   anniversary:  { y: 2026, m: 5, d: 22 },  // May 22, 2026 — the yes
   monthiversaryDay: 22,
 
-  texts: {
-    miss:     'I miss you 🥺💗',
-    handsome: 'Just so you know: you are extremely handsome 😍',
-    date:     'This is an official demand for a date night. Non-negotiable 💅'
-  },
 
   compliments: [
     'You have the kind of laugh that makes a whole room lighter.',
@@ -1035,13 +1097,13 @@ const CONFIG = {
     'You are the smartest person I know who somehow acts like she isn’t.',
     'Being around you feels like exhaling.',
     'You have the prettiest smile and you use it way too rarely on purpose.',
-    'You made three months feel like both a lifetime and about a week.',
+    'You make the months feel like both a lifetime and about a week.',
     'I am so proud that you are mine.',
     'You are my favorite thing that has ever happened to me.'
   ],
 
   openingLines: [
-    'These past three months have been the best three months of my life.',
+    'These past {monthsWord} months have been the best {monthsWord} months of my life.',
     'Every single day with you has somehow made me happier than the last.',
     'I don’t know how you do that. You just make everything better.',
     'I am so grateful for you, <b>Towne</b>.',
@@ -1055,7 +1117,7 @@ const CONFIG = {
     'Towne, I am so grateful for you.',
     'You take ordinary days and make them into something I want to remember.',
     'You’re the person I want to tell everything to first.',
-    'Three months in, and you are still the best part of my day.',
+    '{MonthsWord} months in, and you are still the best part of my day.',
     'Everything in here is ours. Every date, every first, every stupid little moment.',
     '<em>Now… let me take you through our story.</em>'
   ],
@@ -1107,12 +1169,40 @@ const CONFIG = {
       body:['Our first day of school together — and our first real picture together.',
             'Finally walking in next to you instead of just hoping I’d see you.'] },
 
-    { date:'August 22', badge:'Today · Aug 22', icon:'🎉', title:'Happy 3 Months, Towne 🎉', kind:'finale', live:true,
-      body:['Three months of you has been the best three months of my life.',
-            'And the part that gets me is that this is still just the beginning.',
-            '<b>I love you. Here’s to every month after this one.</b>'] }
+    { date:'August 22', icon:'🎉', title:'Three Months',
+      body:['Three months. The first number that felt like it meant something.',
+            'I remember thinking: this is the best thing that has happened to me, and we are barely started.'] },
+
+    { date:'September 22', icon:'🤍', title:'Four Months',
+      body:['Four months, and the thing I keep noticing is how ordinary it feels to be this happy.',
+            'Somewhere in here you stopped being something new and started being home.'] },
+
+    { date:'Today', badge:'Right now', icon:'💗', title:'And here we are', kind:'finale', live:true,
+      body:['{MonthsWord} months in, and your name coming up on my phone still does the same thing to me it did in May.',
+            'Homecoming is coming up, and I cannot wait to walk in there with you on my arm.',
+            '<b>I love you, Towne. Here’s to every month after this one.</b>'] }
   ]
 };
+
+/* how far in we are, worked out fresh every time she opens it */
+const MONTHS = (function(){
+  const a = CONFIG.anniversary, now = new Date();
+  let m = (now.getFullYear() - a.y) * 12 + (now.getMonth() + 1 - a.m);
+  if(now.getDate() < a.d) m--;
+  return Math.max(0, m);
+})();
+const NUMBER_WORDS = ['zero','one','two','three','four','five','six','seven','eight',
+                      'nine','ten','eleven','twelve'];
+const monthWord = n => NUMBER_WORDS[n] || String(n);
+
+// {months} -> 4, {monthsWord} -> four, {Name} -> Towne
+function fill(t){
+  return String(t)
+    .replace(/\{months\}/g, MONTHS)
+    .replace(/\{monthsWord\}/g, monthWord(MONTHS))
+    .replace(/\{MonthsWord\}/g, monthWord(MONTHS).charAt(0).toUpperCase() + monthWord(MONTHS).slice(1))
+    .replace(/\{Name\}/g, CONFIG.herName);
+}
 
 /* ══════════════════════════════════════════════════════════════
    TINY HELPERS
@@ -1759,7 +1849,7 @@ function runSequence(host, lines, totalMs, onDone){
     if(i >= lines.length){ timers.push(setTimeout(done, TAIL)); return; }
     const p = document.createElement('p');
     p.className = 'line';
-    p.innerHTML = lines[i];
+    p.innerHTML = fill(lines[i]);
     host.appendChild(p);
     Sound.sfx('line');
     requestAnimationFrame(() => requestAnimationFrame(() => p.classList.add('in')));
@@ -1793,7 +1883,7 @@ const RETURNING = !!DATA.completed;
   emj.style.cssText += ';opacity:0;transition:opacity .9s ease ' + (('Hi, ' + CONFIG.herName).length*90 + 500) + 'ms';
 })();
 
-if(!RETURNING) {
+function startExperience(){
 setTimeout(() => {
   $('#hiText').classList.add('in');
   $('#hiText').querySelector('.emj').style.opacity = '1';
@@ -1967,9 +2057,9 @@ function buildJourney(){
 
     let inner = item.kind === 'big' ? '<div class="halo"></div>' : '';
     inner += '<div class="card" data-emoji="' + item.icon + '">';
-    inner += '<span class="badge">' + (item.badge || item.date) + '</span>';
-    inner += '<h3>' + item.title + (item.kind === 'big' ? ' 💍' : '') + '</h3>';
-    item.body.forEach(p => inner += '<p>' + p + '</p>');
+    inner += '<span class="badge">' + fill(item.badge || item.date) + '</span>';
+    inner += '<h3>' + fill(item.title) + (item.kind === 'big' ? ' 💍' : '') + '</h3>';
+    item.body.forEach(p => inner += '<p>' + fill(p) + '</p>');
     if(item.yes) inner += '<span class="yes">' + item.yes + '</span>';
     if(item.live)  inner += '<p class="livecount" data-live="1"></p>';
     inner += '</div>';
@@ -2156,7 +2246,7 @@ function openPortal(quiet){
 
 /* ── our dates list ─────────────────────────────────────────── */
 $('#dateList').innerHTML = CONFIG.timeline.map(i =>
-  '<li><span class="d">' + i.date + '</span><span class="t">' + i.icon + ' ' + i.title + '</span></li>'
+  '<li><span class="d">' + fill(i.date) + '</span><span class="t">' + i.icon + ' ' + fill(i.title) + '</span></li>'
 ).join('');
 
 /* ── countdown to the next monthiversary ────────────────────── */
@@ -2257,21 +2347,54 @@ $('#gcalBtn').href = 'https://calendar.google.com/calendar/render?action=TEMPLAT
   + '&recur=' + encodeURIComponent('RRULE:FREQ=MONTHLY;BYMONTHDAY=' + CONFIG.monthiversaryDay)
   + '&details=' + encodeURIComponent(EVT_DESC);
 
-/* ── sms buttons ────────────────────────────────────────────── */
-function smsHref(body){
-  // ?& keeps both iOS and Android happy
-  return 'sms:' + CONFIG.myPhone + '?&body=' + encodeURIComponent(body);
+/* ── messages · straight to his dashboard, no texting ──────── */
+DATA.messages = DATA.messages || [];
+
+function paintSent(){
+  const list = $('#sentList');
+  const recent = DATA.messages.slice(-4);
+  list.innerHTML = recent.map(m =>
+    '<div class="bubble">' + esc(m.text) +
+    '<time>' + new Date(m.t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) + '</time></div>'
+  ).join('');
 }
-$$('[data-sms]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const r = btn.getBoundingClientRect();
-    FX.hearts(30, r.left + r.width/2, r.top + r.height/2, 13);
-    logEvent('text', 'Started the text: “' + CONFIG.texts[btn.dataset.sms] + '”');
-    Sound.sfx('heart');
-    if(navigator.vibrate) navigator.vibrate(26);
-    setTimeout(() => { location.href = smsHref(CONFIG.texts[btn.dataset.sms]); }, 420);
+
+function sendMessage(text, el){
+  const t = String(text || '').trim().slice(0, 900);
+  const msg = $('#msgMsg');
+  if(!t){
+    msg.textContent = 'Say something first 🥺';
+    Sound.sfx('wrong');
+    return;
+  }
+
+  const row = { t: Date.now(), type: 'message', text: t };
+  DATA.messages.push(row);
+  if(DATA.messages.length > 100) DATA.messages.splice(0, DATA.messages.length - 100);
+  save();
+  DB.push(row);
+  DB.flush();
+
+  paintSent();
+  $('#msgBox').value = '';
+  msg.textContent = 'Sent 💗 he’ll see it on his side.';
+  Sound.sfx('sent');
+  if(navigator.vibrate) navigator.vibrate([12, 40, 12]);
+
+  const r = (el || $('#msgSend')).getBoundingClientRect();
+  FX.hearts(22, r.left + r.width / 2, r.top, 12);
+  setTimeout(() => { msg.textContent = ''; }, 4000);
+}
+
+$$('[data-msg]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    sendMessage(chip.dataset.msg, chip);
+    chip.classList.add('sent');
+    setTimeout(() => chip.classList.remove('sent'), 1200);
   });
 });
+$('#msgSend').addEventListener('click', () => sendMessage($('#msgBox').value));
+paintSent();
 
 /* ── love meter (rigged) ────────────────────────────────────── */
 const meter = $('#meter'), meterFill = $('#meterFill'), meterMsg = $('#meterMsg');
@@ -2556,6 +2679,20 @@ function deviceTags(events){
   });
   return tags;
 }
+// her messages, from this device and from the sheet, newest first
+function allMessages(){
+  const local  = (DATA.messages || []).map(m => ({ t:m.t, text:m.text }));
+  const remote = REMOTE.rows.filter(r => r.type === 'message').map(r => ({ t:r.t, text:r.text }));
+  const seen = new Set(), all = [];
+  local.concat(remote).forEach(m => {
+    const id = m.t + '|' + m.text;
+    if(seen.has(id) || !m.text) return;
+    seen.add(id);
+    all.push(m);
+  });
+  return all.sort((a, b) => b.t - a.t);
+}
+
 function latest(field){
   let best = null;
   REMOTE.rows.forEach(r => { if(r[field] && (!best || r.t > best.t)) best = r; });
@@ -2583,7 +2720,7 @@ function summary(){
     stops, spent, secs,
     compliments: count('compliment'),
     meter:       count('meter'),
-    texts:       count('text'),
+    messages:    allMessages().length,
     wrong:       count('wrong'),
     visits:      count('open'),
     got_in:      count('unlock') > 0,
@@ -2613,6 +2750,12 @@ function renderDanil(){
   if(noteText){ note.textContent = noteText; note.classList.remove('dempty'); }
   else { note.textContent = 'She hasn’t written one yet.'; note.classList.add('dempty'); }
 
+  const msgs = allMessages();
+  $('#dMsgs').innerHTML = msgs.length
+    ? msgs.map(m => '<div class="dmsg"><p>' + esc(m.text) + '</p><time>'
+        + day(m.t) + ' · ' + clock(m.t) + '</time></div>').join('')
+    : '<p class="dempty">She hasn’t sent anything yet.</p>';
+
   const remoteNums = latest('mom') || latest('dad');
   const mom = (remoteNums && remoteNums.mom) || DATA.mom;
   const dad = (remoteNums && remoteNums.dad) || DATA.dad;
@@ -2626,7 +2769,7 @@ function renderDanil(){
     [S.spent,             'longest visit'],
     [S.compliments,       'compliments'],
     [S.meter,             'meter attempts'],
-    [S.texts,             'texts started'],
+    [S.messages,          'messages'],
     [S.wrong,             'wrong codes'],
     [S.phones,            'devices']
   ].map(([v,l]) => '<div class="dstat"><b>' + v + '</b><span>' + l + '</span></div>').join('');
@@ -2634,7 +2777,8 @@ function renderDanil(){
   const log = $('#dLog');
   // noteText and numbers carry the payload for the panels above — showing them
   // here as well would just repeat the note and the numbers back at him
-  const events = merged().filter(e => e.type !== 'noteText' && e.type !== 'numbers');
+  const events = merged().filter(e =>
+    e.type !== 'noteText' && e.type !== 'numbers' && e.type !== 'message');
   if(!events.length){
     log.innerHTML = '<p class="dempty">Nothing logged yet.</p>';
   } else {
@@ -2663,24 +2807,24 @@ function plainSummary(){
   const mom  = (remoteNums && remoteNums.mom) || DATA.mom;
   const dad  = (remoteNums && remoteNums.dad) || DATA.dad;
   const lines = [
-    'Towne · 3 months — session log',
+    CONFIG.herName + ' · ' + MONTHS + ' months — session log',
     '',
     'Got in: ' + (S.got_in ? 'yes' : 'no') + (S.wrong ? ' (after ' + S.wrong + ' wrong ' + (S.wrong===1?'try':'tries') + ')' : ''),
     'Stops seen: ' + S.stops + '/' + CONFIG.timeline.length,
     'Longest visit: ' + S.spent,
-    'Compliments: ' + S.compliments + ' · meter attempts: ' + S.meter + ' · texts started: ' + S.texts,
+    'Compliments: ' + S.compliments + ' · meter attempts: ' + S.meter + ' · messages: ' + S.messages,
     'Mom: ' + (mom || '—') + '  Dad: ' + (dad || '—'),
     '',
     'Her note: ' + (note || '(none)'),
+    '',
+    'Messages:',
+    ...(allMessages().length ? allMessages().map(m => '  ' + clock(m.t) + '  ' + m.text) : ['  (none)']),
     '',
     ...merged().map(e => clock(e.t) + '  ' + e.text)
   ];
   return lines.join('\n');
 }
 
-$('#dSend').addEventListener('click', () => {
-  location.href = smsHref(plainSummary().slice(0, 1200));
-});
 $('#dCopy').addEventListener('click', async () => {
   const txt = plainSummary();
   try{
@@ -2749,12 +2893,39 @@ if(DATA.dad) $('#dadNum').value = DATA.dad;
 if(DATA.mom || DATA.dad) $('#hqStatus').textContent = 'Already handed over 🤫 You saw nothing.';
 logEvent('open', 'Opened the site');
 
-document.title = 'Happy 3 Months, ' + CONFIG.herName + ' 💗';
+document.title = 'Happy ' + MONTHS + ' Months, ' + CONFIG.herName + ' 💗';
+$('#hiSub').textContent = monthWord(MONTHS) + ' months of you';
+$('#sigLine').textContent = 'Happy ' + monthWord(MONTHS) + ' months, ' + CONFIG.herName;
+
+/* ── the first hello ─────────────────────────────────────────
+   Her very first open gets a note before anything starts. It also
+   earns the tap that lets the browser play sound, so the music and
+   the typing are there from the first line instead of the gate.  */
+const helloModal = $('#helloModal');
+
+function openHello(){
+  helloModal.classList.add('open');
+  helloModal.setAttribute('aria-hidden', 'false');
+  logEvent('hello', 'Opened it for the very first time');
+}
+$('#helloGo').addEventListener('click', () => {
+  DATA.greeted = true;
+  save();
+  Sound.wake();
+  Sound.sfx('chime');
+  setMusic(true);
+  helloModal.classList.remove('open');
+  helloModal.setAttribute('aria-hidden', 'true');
+  FX.hearts(34, innerWidth / 2, innerHeight * .52, 13);
+  startExperience();
+});
 
 // Straight in, but only once everything above has finished declaring itself —
 // calling this any earlier tripped the temporal dead zone on the timer
 // handles below and took the whole script down with it.
-if(RETURNING) openPortal(true);
+if(RETURNING)            openPortal(true);
+else if(!DATA.greeted)   openHello();
+else                     startExperience();
 </script>
 </body>
 </html>
